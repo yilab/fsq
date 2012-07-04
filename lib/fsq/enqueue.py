@@ -19,7 +19,8 @@ from . import FSQInternalError, FSQTimeFmtError, FSQEnqueueError,\
               FSQMaxEnqueueTriesError, FSQ_DELIMITER, FSQ_TIMEFMT, FSQ_QUEUE,\
               FSQ_TMP, FSQ_ROOT, FSQ_ENCODE, FSQ_USER, FSQ_GROUP, FSQ_MODE,\
               FSQ_ENQUEUE_TRIES, path as fsq_path, construct
-from .internal import uid_gid, rationalize_file
+from .internal import coerce_unicode, uid_gid, rationalize_file,\
+                      wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 # these keyword arguments are supported, but don't have defaults
@@ -46,21 +47,18 @@ def _std_args(entropy=0, tries=0, pid=os.getpid(), timefmt=FSQ_TIMEFMT,
     try:
         fmt_time = now.strftime(timefmt)
     except AttributeError, e:
-        raise FSQInternalError(errno.EINVAL, u'now must be a datetime,'\
-                               u' date, time, or other type supporting'\
-                               u' strftime, not {0}'.format(
-                               now.__class__.__name__))
+        raise TypeError(u'now must be a datetime, date, time, or other type'\
+                        u'supporting strftime, not {0}'.format(
+                        now.__class__.__name__))
     except TypeError, e:
         raise TypeError(u'timefmt must be a string or read-only buffer,'\
                         ' not {0}'.format(timefmt.__class__.__name__))
     except ValueError, e:
         raise FSQTimeFmtError(errno.EINVAL, u'invalid fmt for strftime:'\
                               ' {0}'.format(timefmt))
-    try:
-        return [ unicode(fmt_time), unicode(entropy), unicode(pid),
-                 unicode(hostname), unicode(tries) ]
-    except (UnicodeDecodeError, UnicodeEncodeError, ), e:
-        raise FSQInternalError(errno.EINVAL, e.message)
+    return [ coerce_unicode(fmt_time), coerce_unicode(entropy),
+             coerce_unicode(pid), coerce_unicode(hostname),
+             coerce_unicode(tries) ]
 
 # TODO: provide an internal/external streamable queue item object use that
 #       instead of this for the enqueue family of functions
@@ -88,17 +86,15 @@ def _mkitem(trg_path, args, user=FSQ_USER, group=FSQ_GROUP, mode=FSQ_MODE,
                     break
                 entropy = tried
                 continue
-
-            # re-raise
-            raise e
+            raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
         try:
             # set user/group ownership for file; man 2 fchown
             os.fchown(trg_fd, *uid_gid(user, group))
             # return something that is safe to close in scope
             return trg, os.fdopen(os.dup(trg_fd), 'wb', 1)
-        except Exception, e:
+        except (OSError, IOError, ), e:
             os.unlink(trg)
-            raise e
+            raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
         # we return a file on a dup'ed fd, always close original fd
         finally:
             os.close(trg_fd)
@@ -172,7 +168,9 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
                     os.unlink(name)
                 except OSError, e:
                     if e.errno != errno.ENOENT:
-                       raise e
+                       raise FSQEnqueueException(e.errno, wrap_io_os_err(e))
+                if isinstance(e, OSError) or isinstance(e, IOError):
+                    raise FSQEnqueueException(e.errno, wrap_io_os_err(e))
                 raise e
             finally:
                 pass

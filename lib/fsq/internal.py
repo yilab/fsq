@@ -97,3 +97,14 @@ def rationalize_file(item_f):
 
     # try to open, read+binary, line-buffered
     return open(coerce_unicode(item_f), 'rb', 1)
+
+def wrap_io_os_err(e):
+    '''Formats IO and OS error messages for wrapping in FSQExceptions'''
+    msg = ''
+    if e.strerror:
+        msg = e.strerror
+    if e.message:
+        msg = ' '.join([e.message, msg])
+    if e.filename:
+        msg = ': '.join([msg, e.filename])
+    return msg
