@@ -5,7 +5,7 @@
 #
 # This software is for POSIX compliant systems only.
 import errno
-from . import FSQCoerceError
+from . import FSQCoerceError, FSQEncodeError
 
 _COERCE_THESE_TOO = (int,float,)
 
@@ -24,3 +24,14 @@ def coerce_unicode(s, encoding='utf8'):
                 raise FSQCoerceError(errno.EINVAL, e.message)
 
         raise FSQCoerceError(errno.EINVAL, e.message)
+
+def encodeseq_delimiter(delimiter, encodeseq):
+    delimiter = coerce_unicode(delimiter)
+    encodeseq = coerce_unicode(encodeseq)
+    if 1 != len(encodeseq):
+        raise FSQEncodeError(errno.EINVAL, u'encode sequence must be 1'\
+                             u' character, not {0}'.format(len(encodeseq)))
+    elif delimiter == encodeseq:
+        raise FSQEncodeError(errno.EINVAL, u'delimiter and encoding may not'\
+                             u' be the same: both: {0}'.format(encodeseq))
+    return delimiter, encodeseq

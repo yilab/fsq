@@ -11,7 +11,7 @@ import errno
 import os
 
 from . import FSQEncodeError, FSQ_DELIMITER, FSQ_ENCODE
-from .internal import coerce_unicode
+from .internal import coerce_unicode, encodeseq_delimiter
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 _ENCODED = (os.path.sep,)
@@ -23,12 +23,7 @@ def encode(arg, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE,
     '''Encode a single argument for the file-system'''
     arg = coerce_unicode(arg)
     new_arg = sep = u''
-    delimiter = coerce_unicode(delimiter)
-    encodeseq = coerce_unicode(encodeseq)
-
-    if 1 != len(encodeseq):
-        raise FSQEncodeError(errno.EINVAL, u'encode sequence must be 1'\
-                             u' character, not {0}'.format(len(encodeseq)))
+    delimiter, encodeseq = encodeseq_delimiter(delimiter, encodeseq)
 
     # char-wise encode walk
     for seq in arg:
@@ -50,15 +45,10 @@ def decode(arg, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE):
     '''Decode a single argument from the file-system'''
     arg = coerce_unicode(arg)
     new_arg = sep = u''
-    delimiter = coerce_unicode(delimiter)
-    encodeseq = coerce_unicode(encodeseq)
-
-    if 1 != len(encodeseq):
-        raise FSQEncodeError(errno.EINVAL, u'encode sequence must be 1'\
-                             u' character, not {0}'.format(len(encodeseq)))
+    delimiter, encodeseq = encodeseq_delimiter(delimiter, encodeseq)
 
     # char-wise decode walk -- minimally stateful
-    encoding_trg = ''
+    encoding_trg = sep
     for c in arg:
         if len(encoding_trg):
             encoding_trg = sep.join([encoding_trg, c])
@@ -70,9 +60,9 @@ def decode(arg, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE):
                 raise FSQEncodeError(errno.EINVAL, u'invalid decode'\
                                      u' target: {0}'.format(encoding_trg))
             c = coerce_unicode(c)
-            encoding_trg = ''
+            encoding_trg = sep
         elif c == encodeseq:
-            encoding_trg = '0x'
+            encoding_trg = u'0x'
             continue
 
         new_arg = sep.join([new_arg, c])
