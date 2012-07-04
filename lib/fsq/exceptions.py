@@ -22,8 +22,8 @@ class FSQEnvError(FSQError):
     '''An error if something cannot be loaded from env, or env has an invalid
        value'''
 
-class FSQEscapeError(FSQError):
-    '''An error occured while escaping an argument'''
+class FSQEncodeError(FSQError):
+    '''An error occured while encoding or decoding an argument'''
     pass
 
 class FSQTimeFmtError(FSQError):
