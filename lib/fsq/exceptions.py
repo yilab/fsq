@@ -21,10 +21,14 @@ class FSQInternalError(FSQError):
 class FSQEnvError(FSQError):
     '''An error if something cannot be loaded from env, or env has an invalid
        value'''
+    pass
 
 class FSQEncodeError(FSQError):
     '''An error occured while encoding or decoding an argument'''
     pass
+
+class FSQEnqueueError(FSQError):
+    '''An error occured while enqueuing an item'''
 
 class FSQTimeFmtError(FSQError):
     '''Either time format is invalid, or time is not formatted correctly to
@@ -37,4 +41,8 @@ class FSQMalformedEntryError(FSQError):
 
 class FSQCoerceError(FSQError):
     '''Everything is coerced to unicode'''
+    pass
+
+class FSQMaxEnqueueTriesError(FSQEnqueueError):
+    '''Max attempts to enqueue exhausted'''
     pass

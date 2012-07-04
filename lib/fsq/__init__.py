@@ -24,11 +24,16 @@
 # ORDER MATTERS HERE -- SOME MODULES ARE DEPENDANT ON OTHERS
 from exceptions import FSQError, FSQInternalError, FSQEnvError,\
                        FSQEncodeError, FSQTimeFmtError,\
-                       FSQMalformedEntryError, FSQCoerceError
+                       FSQMalformedEntryError, FSQCoerceError,\
+                       FSQEnqueueError, FSQMaxEnqueueTriesError
 # constants relies on: exceptions
 from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
                       FSQ_DONE,FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_ROOT,\
-                      FSQ_USER, FSQ_GROUP, FSQ_MODE, FSQ_LOCK
+                      FSQ_USER, FSQ_GROUP, FSQ_MODE, FSQ_LOCK,\
+                      FSQ_ENQUEUE_TRIES
+
+# the path module stays in it's own namespace
+import path
 
 # encode relies on: constants, exceptions
 from encode import encode, decode
@@ -37,11 +42,12 @@ from encode import encode, decode
 from construct import construct, deconstruct
 
 # enqueue module relies on: constants, exceptions, construct
-from enqueue import enqueue, enqueues, retry
+from enqueue import enqueue, senqueue, venqueue, vsenqueue
 
 __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
             'FSQ_DONE', 'FSQ_FAIL', 'FSQ_TMP', 'FSQ_DOWN', 'FSQ_ROOT',
-            'FSQ_USER', 'FSQ_GROUP', 'FSQ_MODE', 'FSQ_LOCK', 'enqueue',
-            'enqueues', 'FSQError', 'FSQInternalError', 'FSQEnvError',
+            'FSQ_USER', 'FSQ_GROUP', 'FSQ_MODE', 'FSQ_LOCK',
+            'FSQ_ENQUEUE_TRIES', 'enqueue', 'senqueue', 'venqueue',
+            'vsenqueue', 'FSQError', 'FSQInternalError', 'FSQEnvError',
             'FSQEncodeError', 'FSQTimeFmtError', 'FSQMalformedEntryError',
-            'FSQCoerceError' ]
+            'FSQCoerceError', 'FSQEnqueueError', 'FSQMaxEnqueueTriesError' ]

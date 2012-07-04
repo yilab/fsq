@@ -44,5 +44,6 @@ try:
     FSQ_DONE = int(os.environ.get("FSQ_DONE", 0))
     # get/respect exclusive locks on queue items
     FSQ_LOCK = int(os.environ.get("FSQ_LOCK", 1))
+    FSQ_ENQUEUE_TRIES = int(os.environ.get("FSQ_ENQUEUE_TRIES", 10))
 except ValueError, e:
     raise FSQEnvError(errno.EINVAL, e.message)

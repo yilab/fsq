@@ -12,14 +12,14 @@ import errno
 
 from . import FSQMalformedEntryError, FSQ_DELIMITER, FSQ_ENCODE, encode,\
               decode
-from .internal import coerce_unicode, encodeseq_delimiter
+from .internal import coerce_unicode, delimiter_encodeseq
 
 ####### EXPOSED METHODS #######
 def construct(args, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE):
     '''Construct a queue-name from a set of arguments and a delimiter'''
     # make everything unicode
     name = sep = u''
-    delimiter, encodeseq = encodeseq_delimiter(delimiter, encodeseq)
+    delimiter, encodeseq = delimiter_encodeseq(delimiter, encodeseq)
     for arg in args:
         name = delimiter.join([name, encode(coerce_unicode(arg),
                               encodeseq=encodeseq, delimiter=delimiter)])
@@ -41,7 +41,7 @@ def deconstruct(name, encodeseq=FSQ_ENCODE):
 
     # normal case
     delimiter = name[0]
-    delimiter, encodeseq = encodeseq_delimiter(delimiter, encodeseq)
+    delimiter, encodeseq = delimiter_encodeseq(delimiter, encodeseq)
     encoding_trg = sep
     for c in name[1:]:
         if 3 == len(encoding_trg):

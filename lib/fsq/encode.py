@@ -11,7 +11,7 @@ import errno
 import os
 
 from . import FSQEncodeError, FSQ_DELIMITER, FSQ_ENCODE
-from .internal import coerce_unicode, encodeseq_delimiter
+from .internal import coerce_unicode, delimiter_encodeseq
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 _ENCODED = (os.path.sep,)
@@ -23,7 +23,7 @@ def encode(arg, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE,
     '''Encode a single argument for the file-system'''
     arg = coerce_unicode(arg)
     new_arg = sep = u''
-    delimiter, encodeseq = encodeseq_delimiter(delimiter, encodeseq)
+    delimiter, encodeseq = delimiter_encodeseq(delimiter, encodeseq)
 
     # char-wise encode walk
     for seq in arg:
@@ -45,7 +45,7 @@ def decode(arg, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE):
     '''Decode a single argument from the file-system'''
     arg = coerce_unicode(arg)
     new_arg = sep = u''
-    delimiter, encodeseq = encodeseq_delimiter(delimiter, encodeseq)
+    delimiter, encodeseq = delimiter_encodeseq(delimiter, encodeseq)
 
     # char-wise decode walk -- minimally stateful
     encoding_trg = sep
