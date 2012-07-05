@@ -29,7 +29,7 @@ from .internal import coerce_unicode, uid_gid, rationalize_file,\
 _STANDARD_KEYS = ('entropy', 'tries', 'pid', 'now', 'hostname',)
 
 # get the standard arguments that we always send
-def _std_args(entropy=0, tries=0, pid=os.getpid(), timefmt=FSQ_TIMEFMT,
+def _std_args(entropy=0, tries=0, pid=None, timefmt=FSQ_TIMEFMT,
                    now=None, hostname=socket.gethostname()):
     '''Provide the arguments which are always required by FSQ spec for
        uniqueness time-based ordering and environment, returns a list:
@@ -42,10 +42,11 @@ def _std_args(entropy=0, tries=0, pid=os.getpid(), timefmt=FSQ_TIMEFMT,
                tries,    # number of times this work has been attempted
            ]             # (default 0)
     '''
-    if now is None:
-        now = datetime.datetime.now()
+    now = datetime.datetime.now() if now is None else now
+    pid = os.getpid() if pid is None else pid
     try:
         fmt_time = now.strftime(timefmt)
+
     except AttributeError, e:
         raise TypeError(u'now must be a datetime, date, time, or other type'\
                         u'supporting strftime, not {0}'.format(
