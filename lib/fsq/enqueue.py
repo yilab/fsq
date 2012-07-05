@@ -83,6 +83,7 @@ def _mkitem(trg_path, args, user=FSQ_USER, group=FSQ_GROUP, mode=FSQ_MODE,
             name = construct((now, entropy, pid, host, tries, ) + tuple(args),
                              delimiter=delimiter, encodeseq=encodeseq)
             trg = os.path.join(trg_path, name)
+            # TODO: for dry run, a stat is more efficient than open
             trg_fd = os.open(trg, flags, mode)
         except (OSError, IOError, ), e:
             # if file already exists, retry or break
@@ -166,6 +167,7 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
         name, trg_file = _mkitem(tmp_path, args, user=user, group=group,
                                  mode=mode, delimiter=delimiter,
                                  encodeseq=encodeseq, **std_kwargs)
+        # tmp target file
         with closing(trg_file):
             try:
                 # i/o time ... assume line-buffered

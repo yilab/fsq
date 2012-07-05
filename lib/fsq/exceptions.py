@@ -46,3 +46,7 @@ class FSQCoerceError(FSQError):
 class FSQMaxEnqueueTriesError(FSQEnqueueError):
     '''Max attempts to enqueue exhausted'''
     pass
+
+class FSQConfigError(FSQError):
+    '''Error configuring a queue'''
+    pass

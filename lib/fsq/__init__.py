@@ -25,7 +25,8 @@
 from exceptions import FSQError, FSQInternalError, FSQEnvError,\
                        FSQEncodeError, FSQTimeFmtError,\
                        FSQMalformedEntryError, FSQCoerceError,\
-                       FSQEnqueueError, FSQMaxEnqueueTriesError
+                       FSQEnqueueError, FSQMaxEnqueueTriesError,\
+                       FSQConfigError
 # constants relies on: exceptions
 from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
                       FSQ_DONE,FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_ROOT,\
@@ -34,6 +35,9 @@ from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
 
 # the path module stays in it's own namespace
 import path
+
+# configure relies on exceptions, path, constants
+from configure import down, up
 
 # encode relies on: constants, exceptions
 from encode import encode, decode
@@ -50,4 +54,5 @@ __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
             'FSQ_ENQUEUE_TRIES', 'enqueue', 'senqueue', 'venqueue',
             'vsenqueue', 'FSQError', 'FSQInternalError', 'FSQEnvError',
             'FSQEncodeError', 'FSQTimeFmtError', 'FSQMalformedEntryError',
-            'FSQCoerceError', 'FSQEnqueueError', 'FSQMaxEnqueueTriesError' ]
+            'FSQCoerceError', 'FSQEnqueueError', 'FSQMaxEnqueueTriesError',
+            'FSQConfigError' ]
