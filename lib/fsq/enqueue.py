@@ -66,7 +66,11 @@ def _std_args(entropy=0, tries=0, pid=None, timefmt=FSQ_TIMEFMT,
 # make a queue item from args, return a file
 def _mkitem(trg_path, args, user=FSQ_USER, group=FSQ_GROUP, mode=FSQ_MODE,
             entropy=None, enqueue_tries=FSQ_ENQUEUE_TRIES,
-            delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE, **std_kwargs):
+            delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE, dry_run=False,
+            **std_kwargs):
+    flags = os.O_WRONLY
+    if not dry_run:
+        flags |= os.O_CREAT|os.O_EXCL
     trg_fd = trg = name = None
     tried = 0
     recv_entropy = True if std_kwargs.has_key('entropy') else False
@@ -79,23 +83,35 @@ def _mkitem(trg_path, args, user=FSQ_USER, group=FSQ_GROUP, mode=FSQ_MODE,
             name = construct((now, entropy, pid, host, tries, ) + tuple(args),
                              delimiter=delimiter, encodeseq=encodeseq)
             trg = os.path.join(trg_path, name)
-            trg_fd = os.open(trg, os.O_CREAT|os.O_EXCL|os.O_WRONLY, mode)
+            trg_fd = os.open(trg, flags, mode)
         except (OSError, IOError, ), e:
             # if file already exists, retry or break
-            if e.errno == errno.EEXIST:
+            if not dry_run and e.errno == errno.EEXIST:
                 if recv_entropy:
                     break
                 entropy = tried
                 continue
+            # ENOENT is success for dry-run
+            elif dry_run and e.errno == errno.ENOENT:
+                return trg, None
             raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
         try:
-            # set user/group ownership for file; man 2 fchown
-            os.fchown(trg_fd, *uid_gid(user, group))
-            # return something that is safe to close in scope
-            return trg, os.fdopen(os.dup(trg_fd), 'wb', 1)
-        except (OSError, IOError, ), e:
-            os.unlink(trg)
-            raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
+            # if we opened the file successfully on dry_run, we failed
+            if dry_run:
+                if recv_entropy:
+                    break
+                entropy = tried
+                continue
+            # if we've succeeded
+            else:
+                try:
+                    # set user/group ownership for file; man 2 fchown
+                    os.fchown(trg_fd, *uid_gid(user, group))
+                    # return something that is safe to close in scope
+                    return trg, os.fdopen(os.dup(trg_fd), 'wb', 1)
+                except (OSError, IOError, ), e:
+                    os.unlink(trg)
+                    raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
         # we return a file on a dup'ed fd, always close original fd
         finally:
             os.close(trg_fd)
@@ -152,26 +168,26 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
                                  encodeseq=encodeseq, **std_kwargs)
         with closing(trg_file):
             try:
-                # i/o time ...
+                # i/o time ... assume line-buffered
                 while True:
                     line = src_file.readline()
                     if not line:
                         break
                     trg_file.write(line)
 
-                # rename will overwrite trg, so open trg with O_EXCL first
-                commit_name, commit_file = _mkitem(queue_path, args,
-                                                   **std_kwargs)
-                with closing(commit_file):
-                    os.rename(name, commit_name)
+                # rename will overwrite trg, so test existence here
+                # there is a slight race-condition here ...
+                commit_name, discard = _mkitem(queue_path, args,
+                                               dry_run=True, **std_kwargs)
+                os.rename(name, commit_name)
             except Exception, e:
                 try:
                     os.unlink(name)
                 except OSError, e:
                     if e.errno != errno.ENOENT:
-                       raise FSQEnqueueException(e.errno, wrap_io_os_err(e))
+                       raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
                 if isinstance(e, OSError) or isinstance(e, IOError):
-                    raise FSQEnqueueException(e.errno, wrap_io_os_err(e))
+                    raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
                 raise e
             finally:
                 pass
