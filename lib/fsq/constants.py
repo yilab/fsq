@@ -31,12 +31,18 @@ FSQ_ROOT = coerce_unicode(os.environ.get("FSQ_ROOT", u''))
 # these 2 default to None, as gid/uid may change in due course
 # when using these 2, default to os.getgid(), os.getuid()
 # should be relatively few places
-FSQ_GROUP = coerce_unicode(os.environ.get("FSQ_GROUP", u'')) or None
-FSQ_USER = coerce_unicode(os.environ.get("FSQ_USER", u'')) or None
+FSQ_ITEM_GROUP = coerce_unicode(os.environ.get("FSQ_ITEM_GROUP", u'')) or None
+FSQ_ITEM_USER = coerce_unicode(os.environ.get("FSQ_ITEM_USER", u'')) or None
+FSQ_QUEUE_GROUP = \
+    coerce_unicode(os.environ.get("FSQ_QUEUE_GROUP", u'')) or None
+FSQ_QUEUE_USER = coerce_unicode(os.environ.get("FSQ_QUEUE_USER", u'')) or None
 
 try:
     # octal mode representation -- e.g. 700, 0700, etc.
-    FSQ_MODE = int(coerce_unicode(os.environ.get("FSQ_MODE", u'00640')), 8)
+    FSQ_ITEM_MODE = \
+        int(coerce_unicode(os.environ.get("FSQ_ITEM_MODE", u'00640')), 8)
+    FSQ_QUEUE_MODE = \
+        int(coerce_unicode(os.environ.get("FSQ_QUEUE_MODE", u'00770')), 8)
     # failure cases
     FSQ_FAIL_TMP = int(os.environ.get("FSQ_FAIL_TMP", 111))
     FSQ_FAIL_PERM = int(os.environ.get("FSQ_FAIL_PERM", 100))

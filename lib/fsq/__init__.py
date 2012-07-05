@@ -30,8 +30,9 @@ from exceptions import FSQError, FSQInternalError, FSQEnvError,\
 # constants relies on: exceptions
 from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
                       FSQ_DONE,FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_ROOT,\
-                      FSQ_USER, FSQ_GROUP, FSQ_MODE, FSQ_LOCK,\
-                      FSQ_ENQUEUE_TRIES
+                      FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
+                      FSQ_QUEUE_USER, FSQ_QUEUE_GROUP, FSQ_QUEUE_MODE,\
+                      FSQ_LOCK, FSQ_ENQUEUE_TRIES
 
 # the path module stays in it's own namespace
 import path
@@ -50,7 +51,8 @@ from enqueue import enqueue, senqueue, venqueue, vsenqueue
 
 __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
             'FSQ_DONE', 'FSQ_FAIL', 'FSQ_TMP', 'FSQ_DOWN', 'FSQ_ROOT',
-            'FSQ_USER', 'FSQ_GROUP', 'FSQ_MODE', 'FSQ_LOCK',
+            'FSQ_ITEM_USER', 'FSQ_ITEM_GROUP', 'FSQ_QUEUE_USER',
+            'FSQ_QUEUE_GROUP', 'FSQ_ITEM_MODE', 'FSQ_QUEUE_MODE', 'FSQ_LOCK',
             'FSQ_ENQUEUE_TRIES', 'enqueue', 'senqueue', 'venqueue',
             'vsenqueue', 'FSQError', 'FSQInternalError', 'FSQEnvError',
             'FSQEncodeError', 'FSQTimeFmtError', 'FSQMalformedEntryError',

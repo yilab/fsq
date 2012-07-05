@@ -10,12 +10,12 @@
 import os
 import errno
 
-from . import FSQ_ROOT, FSQ_DOWN, FSQ_USER, FSQ_GROUP, FSQ_MODE,\
+from . import FSQ_ROOT, FSQ_DOWN, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
               path as fsq_path, FSQConfigError
 from .internal import coerce_unicode, uid_gid
 
-def down(queue, root=FSQ_ROOT, down=FSQ_DOWN, user=FSQ_USER, group=FSQ_GROUP,
-         mode=FSQ_MODE):
+def down(queue, root=FSQ_ROOT, down=FSQ_DOWN, user=FSQ_ITEM_USER,
+         group=FSQ_ITEM_GROUP, mode=FSQ_ITEM_MODE):
     '''Down a queue, by creating a down file'''
     down_path = fsq_path.down(queue, root=root, down=down)
     fd = None

@@ -17,8 +17,8 @@ from contextlib import closing
 
 from . import FSQInternalError, FSQTimeFmtError, FSQEnqueueError,\
               FSQMaxEnqueueTriesError, FSQ_DELIMITER, FSQ_TIMEFMT, FSQ_QUEUE,\
-              FSQ_TMP, FSQ_ROOT, FSQ_ENCODE, FSQ_USER, FSQ_GROUP, FSQ_MODE,\
-              FSQ_ENQUEUE_TRIES, path as fsq_path, construct
+              FSQ_TMP, FSQ_ROOT, FSQ_ENCODE, FSQ_ITEM_USER, FSQ_ITEM_GROUP,\
+              FSQ_ITEM_MODE, FSQ_ENQUEUE_TRIES, path as fsq_path, construct
 from .internal import coerce_unicode, uid_gid, rationalize_file,\
                       wrap_io_os_err
 
@@ -64,8 +64,8 @@ def _std_args(entropy=0, tries=0, pid=None, timefmt=FSQ_TIMEFMT,
 # TODO: provide an internal/external streamable queue item object use that
 #       instead of this for the enqueue family of functions
 # make a queue item from args, return a file
-def _mkitem(trg_path, args, user=FSQ_USER, group=FSQ_GROUP, mode=FSQ_MODE,
-            entropy=None, enqueue_tries=FSQ_ENQUEUE_TRIES,
+def _mkitem(trg_path, args, user=FSQ_ITEM_USER, group=FSQ_ITEM_GROUP,
+            mode=FSQ_ITEM_MODE, entropy=None, enqueue_tries=FSQ_ENQUEUE_TRIES,
             delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE, dry_run=False,
             **std_kwargs):
     flags = os.O_WRONLY
@@ -138,8 +138,9 @@ def senqueue(trg_queue, item_s, *args, **kwargs):
 
 def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
              encodeseq=FSQ_ENCODE, timefmt=FSQ_TIMEFMT, queue=FSQ_QUEUE,
-             tmp=FSQ_TMP, root=FSQ_ROOT, user=FSQ_USER, group=FSQ_GROUP,
-             mode=FSQ_MODE, enqueue_tries=FSQ_ENQUEUE_TRIES, **kwargs):
+             tmp=FSQ_TMP, root=FSQ_ROOT, user=FSQ_ITEM_USER,
+             group=FSQ_ITEM_GROUP, mode=FSQ_ITEM_MODE,
+             enqueue_tries=FSQ_ENQUEUE_TRIES, **kwargs):
     '''Enqueue the contents of a file, or file-like object, file-descriptor or
        the contents of a file at an address (e.g. '/my/file') queue with
        an argument list, venqueue is to enqueue what vprintf is to printf
