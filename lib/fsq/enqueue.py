@@ -174,6 +174,9 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
                     if not line:
                         break
                     trg_file.write(line)
+                # flush buffers, and force write to disk pre mv.
+                trg_file.flush()
+                os.fsync(trg_file.fileno())
 
                 # rename will overwrite trg, so test existence here
                 # there is a slight race-condition here ...
