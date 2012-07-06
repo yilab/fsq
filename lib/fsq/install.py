@@ -16,8 +16,7 @@ from . import FSQ_TMP, FSQ_QUEUE, FSQ_DONE, FSQ_DOWN, FSQ_ROOT,\
               FSQ_QUEUE_USER, FSQ_QUEUE_GROUP, FSQ_QUEUE_MODE, FSQ_ITEM_USER,\
               FSQ_ITEM_GROUP, FSQ_ITEM_MODE, FSQ_UNINSTALL_WAIT, FSQ_LOCK,\
               path as fsq_path, FSQInstallError, down as fsq_down
-from .internal import coerce_unicode, uid_gid, wrap_io_os_err,\
-                      open_with_exlock
+from .internal import coerce_unicode, uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 def _cleanup(clean_dir):
@@ -88,34 +87,27 @@ def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
         uninstall(tmp_queue, root=root, done=done, tmp=tmp, queue=queue,
                   down=down, down_user=down_user, down_group=down_group,
                   down_mode=down_mode)
+        if e.errno == errno.ENOTEMPTY:
+            raise FSQInstallError(e.errno, u'queue exists: {0}'.format(
+                                  trg_queue))
         raise FSQInstallError(e.errno, wrap_io_os_err(e))
 
 def uninstall(trg_queue, root=FSQ_ROOT, done=FSQ_DONE, tmp=FSQ_TMP,
               queue=FSQ_QUEUE, down=FSQ_DOWN, down_user=FSQ_ITEM_USER,
               down_group=FSQ_ITEM_GROUP, down_mode=FSQ_ITEM_MODE,
-              lock=FSQ_LOCK, wait=FSQ_UNINSTALL_WAIT):
-    '''Idempotently uninstall a queue, respecting WIP Locks'''
+              lock=FSQ_LOCK):
+    '''Idempotently uninstall a queue'''
     # immediately down the queue
     fsq_down(trg_queue, root=root, down=down, user=down_user,
              group=down_group, mode=down_mode)
-    #TODO: replace with scan, when we have scan
-    if lock:
-        try:
-            queue_queue = fsq_path.queue(trg_queue, root=root, queue=queue)
-            for item in os.listdir(queue_queue):
-
-                # open just to get lock, then close immediately
-                f = open_with_exlock(os.path.join(queue_queue, item), wait)
-                f.close()
-        except (OSError, IOError, ), e:
-            raise FSQInstallError(e.errno, wrap_io_os_err(e))
-
     # atomically mv our queue to a reserved target so we can recursively
     # remove without prying eyes
-    tmp_full, tmp_queue = _tmp_trg(trg_queue, root)
     try:
         os.rename(fsq_path.base(trg_queue, root=root), tmp_full)
         # this makes me uneasy ... but here we go magick
         shutil.rmtree(tmp_full)
     except (OSError, IOError, ), e:
+        if e.errno == errno.ENOENT:
+            raise FSQInstallError(e.errno, u'no such queue:'\
+                                  ' {0}'.format(trg_queue))
         raise FSQInstallError(e.errno, wrap_io_os_err(e))

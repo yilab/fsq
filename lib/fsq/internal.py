@@ -80,7 +80,7 @@ def uid_gid(user, group):
 
     return user, group
 
-def rationalize_file(item_f):
+def rationalize_file(item_f, lock=False):
     '''FSQ attempts to treat all file-like things as line-buffered as an
        optimization to the average case.  rationalize_file will handle file
        objects, buffers, raw file-descriptors, sockets, and string
@@ -88,10 +88,22 @@ def rationalize_file(item_f):
        in FSQ scope without closing the file in the bounding caller.'''
     # file, TmpFile, socket, etc ...
     if hasattr(item_f, 'fileno'):
-        copy = os.fdopen(os.dup(item_f.fileno()))
-        # explicitely decriment ref count here
-        del item_f
-        return copy
+        n_fd = os.dup(item_f.fileno())
+        try:
+            # try to lock, if asked for
+            if lock:
+                try:
+                    fcntl.flock(n_fd, fcntl.LOCK_EX|fcntl.LOCK_NB)
+                except (OSError, IOError, ), err:
+                    if err.errno == errno.EAGAIN:
+                        raise FSQCannotLock(e.errno, u'cannot lock')
+                    raise err
+            # explicitily deriment file ref
+            del item_f
+            return os.fdopen(n_fd)
+        except Exception, e:
+            os.close(n_fd)
+            raise e
     # StringIO, cStringIO, etc ...
     elif hasattr(item_f, 'readline'):
         return item_f
@@ -112,29 +124,3 @@ def wrap_io_os_err(e):
     if e.filename:
         msg = ': '.join([msg, e.filename])
     return msg
-
-def open_with_exlock(f, wait=0):
-    '''Open a file with an exclusive lock'''
-    flags = fcntl.LOCK_EX
-    f = rationalize_file(f)
-    try:
-        if not hasattr(f, 'fileno'):
-            return f
-        if 0 < wait:
-            signal.signal(signal.SIGALRM, _raise_cannotlock)
-            signal.alarm(wait)
-        else:
-            flags |= fcntl.LOCK_NB
-        try:
-            fcntl.flock(f.fileno(), flags)
-            return f
-        except (OSError, IOError, ), e:
-            if e.errno == errno.EAGAIN:
-                _raise_cannotlock()
-            raise e
-    except Exception, e:
-        f.close()
-        raise e
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, signal.SIG_DFL)

@@ -10,8 +10,8 @@
 import os
 import errno
 
-from . import FSQ_ROOT, FSQ_DOWN, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
-              path as fsq_path, FSQConfigError
+from . import FSQ_ROOT, FSQ_DOWN, FSQ_ITEM_USER, FSQ_ITEM_GROUP,\
+              FSQ_ITEM_MODE, path as fsq_path, FSQConfigError
 from .internal import coerce_unicode, uid_gid, wrap_io_os_err
 
 def down(queue, root=FSQ_ROOT, down=FSQ_DOWN, user=FSQ_ITEM_USER,
@@ -28,6 +28,8 @@ def down(queue, root=FSQ_ROOT, down=FSQ_DOWN, user=FSQ_ITEM_USER,
         except (OSError, IOError, ), err:
             if err.errno != errno.ENOENT:
                 raise FSQConfigError(err.errno, wrap_io_os_err(err))
+        if e.errno == errno.ENOENT:
+            raise FSQConfigError(e.errno, u'no such queue: {0}'.format(queue))
         raise FSQConfigError(e.errno, wrap_io_os_err(e))
     finally:
         if fd is not None:
