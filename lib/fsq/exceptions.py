@@ -50,3 +50,15 @@ class FSQMaxEnqueueTriesError(FSQEnqueueError):
 class FSQConfigError(FSQError):
     '''Error configuring a queue'''
     pass
+
+class FSQPathError(FSQError):
+    '''Error constructing a path from componants'''
+    pass
+
+class FSQInstallError(FSQError):
+    '''Error installing a queue'''
+    pass
+
+class FSQCannotLock(FSQError):
+    '''Error locking queue item'''
+    pass

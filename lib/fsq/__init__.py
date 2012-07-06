@@ -26,19 +26,24 @@ from exceptions import FSQError, FSQInternalError, FSQEnvError,\
                        FSQEncodeError, FSQTimeFmtError,\
                        FSQMalformedEntryError, FSQCoerceError,\
                        FSQEnqueueError, FSQMaxEnqueueTriesError,\
-                       FSQConfigError
+                       FSQConfigError, FSQPathError, FSQInstallError,\
+                       FSQCannotLock
 # constants relies on: exceptions
 from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
-                      FSQ_DONE,FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_ROOT,\
+                      FSQ_DONE, FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_ROOT,\
                       FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
                       FSQ_QUEUE_USER, FSQ_QUEUE_GROUP, FSQ_QUEUE_MODE,\
-                      FSQ_LOCK, FSQ_ENQUEUE_TRIES
+                      FSQ_LOCK, FSQ_ENQUEUE_TRIES, FSQ_FAIL_TMP,\
+                      FSQ_FAIL_PERM, FSQ_SUCCESS, FSQ_UNINSTALL_WAIT
 
 # the path module stays in it's own namespace
 import path
 
 # configure relies on exceptions, path, constants
 from configure import down, up
+
+# install relies on exceptions, path, constants, configure
+from install import install, uninstall
 
 # encode relies on: constants, exceptions
 from encode import encode, decode
@@ -53,8 +58,8 @@ __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
             'FSQ_DONE', 'FSQ_FAIL', 'FSQ_TMP', 'FSQ_DOWN', 'FSQ_ROOT',
             'FSQ_ITEM_USER', 'FSQ_ITEM_GROUP', 'FSQ_QUEUE_USER',
             'FSQ_QUEUE_GROUP', 'FSQ_ITEM_MODE', 'FSQ_QUEUE_MODE', 'FSQ_LOCK',
-            'FSQ_ENQUEUE_TRIES', 'enqueue', 'senqueue', 'venqueue',
-            'vsenqueue', 'FSQError', 'FSQInternalError', 'FSQEnvError',
-            'FSQEncodeError', 'FSQTimeFmtError', 'FSQMalformedEntryError',
-            'FSQCoerceError', 'FSQEnqueueError', 'FSQMaxEnqueueTriesError',
-            'FSQConfigError' ]
+            'FSQ_ENQUEUE_TRIES', 'FSQ_UNINSTALL_WAIT', 'enqueue', 'senqueue',
+            'venqueue', 'vsenqueue', 'FSQError', 'FSQInternalError',
+            'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
+            'FSQMalformedEntryError', 'FSQCoerceError', 'FSQEnqueueError',
+            'FSQMaxEnqueueTriesError', 'FSQConfigError', 'FSQCannotLock' ]

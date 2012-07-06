@@ -6,16 +6,20 @@
 # This software is for POSIX compliant systems only.
 import os
 import errno
+import fcntl
+import signal
 import pwd
 import grp
 
-from . import FSQCoerceError, FSQEncodeError, FSQEnvError
+from . import FSQCoerceError, FSQEncodeError, FSQEnvError, FSQCannotLock
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 _COERCE_THESE_TOO = (int,float,)
+def _raise_cannotlock(*args):
+    raise FSQCannotLock(errno.EAGAIN, u'cannot lock')
 
 ####### EXPOSED METHODS #######
-def coerce_unicode(s, encoding='utf8'):
+def coerce_unicode(s, encoding=u'utf8'):
     if isinstance(s, unicode):
         return s
     try:
@@ -108,3 +112,29 @@ def wrap_io_os_err(e):
     if e.filename:
         msg = ': '.join([msg, e.filename])
     return msg
+
+def open_with_exlock(f, wait=0):
+    '''Open a file with an exclusive lock'''
+    flags = fcntl.LOCK_EX
+    f = rationalize_file(f)
+    try:
+        if not hasattr(f, 'fileno'):
+            return f
+        if 0 < wait:
+            signal.signal(signal.SIGALRM, _raise_cannotlock)
+            signal.alarm(wait)
+        else:
+            flags |= fcntl.LOCK_NB
+        try:
+            fcntl.flock(f.fileno(), flags)
+            return f
+        except (OSError, IOError, ), e:
+            if e.errno == errno.EAGAIN:
+                _raise_cannotlock()
+            raise e
+    except Exception, e:
+        f.close()
+        raise e
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, signal.SIG_DFL)

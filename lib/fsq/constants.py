@@ -47,9 +47,11 @@ try:
     FSQ_FAIL_TMP = int(os.environ.get("FSQ_FAIL_TMP", 111))
     FSQ_FAIL_PERM = int(os.environ.get("FSQ_FAIL_PERM", 100))
     # success
-    FSQ_DONE = int(os.environ.get("FSQ_DONE", 0))
+    FSQ_SUCCESS = int(os.environ.get("FSQ_SUCCESS", 0))
     # get/respect exclusive locks on queue items
     FSQ_LOCK = int(os.environ.get("FSQ_LOCK", 1))
     FSQ_ENQUEUE_TRIES = int(os.environ.get("FSQ_ENQUEUE_TRIES", 10))
+    # how long to wait for acquire lock on uninstall
+    FSQ_UNINSTALL_WAIT = int(os.environ.get("FSQ_UNINSTALL_WAIT", 0))
 except ValueError, e:
     raise FSQEnvError(errno.EINVAL, e.message)

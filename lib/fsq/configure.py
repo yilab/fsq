@@ -12,7 +12,7 @@ import errno
 
 from . import FSQ_ROOT, FSQ_DOWN, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
               path as fsq_path, FSQConfigError
-from .internal import coerce_unicode, uid_gid
+from .internal import coerce_unicode, uid_gid, wrap_io_os_err
 
 def down(queue, root=FSQ_ROOT, down=FSQ_DOWN, user=FSQ_ITEM_USER,
          group=FSQ_ITEM_GROUP, mode=FSQ_ITEM_MODE):
@@ -24,7 +24,7 @@ def down(queue, root=FSQ_ROOT, down=FSQ_DOWN, user=FSQ_ITEM_USER,
         os.fchown(fd, *uid_gid(user, group))
     except (OSError, IOError, ), e:
         try:
-            os.unlink(trg)
+            os.unlink(down_path)
         except (OSError, IOError, ), err:
             if err.errno != errno.ENOENT:
                 raise FSQConfigError(err.errno, wrap_io_os_err(err))

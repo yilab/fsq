@@ -9,16 +9,29 @@
 #
 # This software is for POSIX compliant systems only.
 import os
+import errno
 
 from .internal import coerce_unicode
-from . import FSQ_QUEUE, FSQ_TMP, FSQ_ROOT, FSQ_DONE, FSQ_DOWN
+from . import FSQ_QUEUE, FSQ_TMP, FSQ_ROOT, FSQ_DONE, FSQ_DOWN, FSQPathError
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
+_ILLEGAL_NAMES=('.', '..', )
+
 def _path(queue, root, extra):
-    return os.path.join(coerce_unicode(root), coerce_unicode(queue),
-                          coerce_unicode(extra))
+    return os.path.join(coerce_unicode(root), valid_name(queue),
+                        valid_name(extra))
 
 ####### EXPOSED METHODS #######
+def valid_name(name):
+    name = coerce_unicode(name)
+    if name in _ILLEGAL_NAMES or 0 <= name.find(os.path.sep):
+        raise FSQPathError(errno.EINVAL, u'illegal path name:'\
+                                  u' {0}'.format(name))
+    return name
+
+def base(p_queue, root=FSQ_ROOT):
+    return _path(p_queue, root, u'')
+
 def tmp(p_queue, root=FSQ_ROOT, tmp=FSQ_TMP):
     '''Construct a path to the tmp dir for a queue'''
     return _path(p_queue, root, tmp)
