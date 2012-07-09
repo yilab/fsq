@@ -106,8 +106,9 @@ def _mkitem(trg_path, args, user=FSQ_ITEM_USER, group=FSQ_ITEM_GROUP,
             # if we've succeeded
             else:
                 try:
-                    # set user/group ownership for file; man 2 fchown
-                    os.fchown(trg_fd, *uid_gid(user, group))
+                    if user is not None or group is not None:
+                        # set user/group ownership for file; man 2 fchown
+                        os.fchown(trg_fd, *uid_gid(user, group, fd=trg_fd))
                     # return something that is safe to close in scope
                     return trg, os.fdopen(os.dup(trg_fd), 'wb', 1)
                 except (OSError, IOError, ), e:

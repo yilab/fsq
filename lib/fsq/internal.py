@@ -60,15 +60,22 @@ def delimiter_encodeseq(delimiter, encodeseq):
                              u' be the same: both: {0}'.format(encodeseq))
     return delimiter, encodeseq
 
-def uid_gid(user, group):
+def uid_gid(user, group, fd=None):
     '''Get uid and gid from either uid/gid, user name/group name, or from the
-       environment of the callig process'''
+       environment of the callig process, or optionally from an fd'''
     type_msg = u'{0} must be a string or integer, not: {1}'
     nosuch_msg = u'no such {0}: {1}'
+    st = None if fd is None else os.fstat(fd)
     if user is None:
-        user = os.getuid()
+        if st:
+            user = st.st_uid
+        else:
+            user = os.getuid()
     if group is None:
-        group = os.getgid()
+        if st:
+            group = st.st_gid
+        else:
+            group = os.getgid()
     try:
         user = int(user)
     except ValueError, e:

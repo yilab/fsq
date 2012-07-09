@@ -26,13 +26,14 @@ def _cleanup(clean_dir):
         if e.errno != errno.ENOENT:
             raise FSQInstallError(e.errno, wrap_io_os_err(e))
 
-def _instdir(trg_dir, mode, uid, gid):
+def _instdir(trg_dir, mode, user, group):
     try:
         os.mkdir(trg_dir, mode)
         # os.chown is non-atomic, prefer open/fchown as a best practice
         fd = os.open(trg_dir, os.O_RDONLY)
         try:
-            os.fchown(fd, uid, gid)
+            if user is not None or group is not None:
+                os.fchown(fd, *uid_gid(user, group, fd=fd))
         finally:
             os.close(fd)
     except (OSError, IOError, ), e:
@@ -58,29 +59,37 @@ def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
 
     # validate here, so that we don't throw an odd exception on the tmp name
     trg_queue = fsq_path.valid_name(trg_queue)
-    uid, gid = uid_gid(user, group)
     tmp_full, tmp_queue = _tmp_trg(trg_queue, root)
-
-    # bless our queue with its children
+    # only do a password lookup once
+    if user is not None or group is not None:
+        uid, gid = uid_gid(user, group)
+        if user is not None:
+            user = uid
+        if group is not None:
+            group = gid
     try:
-        _instdir(fsq_path.tmp(tmp_queue, root=root, tmp=tmp), mode, uid, gid)
-        _instdir(fsq_path.queue(tmp_queue, root=root, queue=queue), mode, uid,
-                                gid)
-        _instdir(fsq_path.done(tmp_queue, root=root, done=done), mode, uid,
-                               gid)
+        # open once to cut down on stat/open for chown/chmod combo
+        fd = os.open(tmp_full, os.O_RDONLY)
+        try:
+            os.fchmod(fd, mode)
+            # always chown here as mkdtemp plays differently than normal mkdir
+            os.fchown(fd, *uid_gid(user, group))
+        finally:
+            os.close(fd)
+
+        # bless our queue with its children
+        _instdir(fsq_path.tmp(tmp_queue, root=root, tmp=tmp), mode, user,
+                              group)
+        _instdir(fsq_path.queue(tmp_queue, root=root, queue=queue), mode,
+                                user, group)
+        _instdir(fsq_path.done(tmp_queue, root=root, done=done), mode, user,
+                               group)
 
         # down via configure.down if necessary
         if is_down:
             fsq_down(tmp_queue, root=root, down=down, user=down_user,
                      group=down_group, mode=down_mode)
 
-        # open once to cut down on stat/open for chown/chmod combo
-        fd = os.open(tmp_full, os.O_RDONLY)
-        try:
-            os.fchmod(fd, mode)
-            os.fchown(fd, uid, gid)
-        finally:
-            os.close(fd)
         # atomic commit -- by rename
         os.rename(tmp_full, fsq_path.base(trg_queue, root=root))
     except (OSError, IOError, ), e:

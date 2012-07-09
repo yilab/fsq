@@ -21,7 +21,8 @@ def down(queue, root=FSQ_ROOT, down=FSQ_DOWN, user=FSQ_ITEM_USER,
     fd = None
     try:
         fd = os.open(down_path, os.O_CREAT|os.O_WRONLY, mode)
-        os.fchown(fd, *uid_gid(user, group))
+        if user is not None or group is not None:
+            os.fchown(fd, *uid_gid(user, group, fd=fd))
     except (OSError, IOError, ), e:
         try:
             os.unlink(down_path)

@@ -42,7 +42,7 @@ try:
     FSQ_ITEM_MODE = \
         int(coerce_unicode(os.environ.get("FSQ_ITEM_MODE", u'00640')), 8)
     FSQ_QUEUE_MODE = \
-        int(coerce_unicode(os.environ.get("FSQ_QUEUE_MODE", u'00770')), 8)
+        int(coerce_unicode(os.environ.get("FSQ_QUEUE_MODE", u'02770')), 8)
     # failure cases
     FSQ_FAIL_TMP = int(os.environ.get("FSQ_FAIL_TMP", 111))
     FSQ_FAIL_PERM = int(os.environ.get("FSQ_FAIL_PERM", 100))
