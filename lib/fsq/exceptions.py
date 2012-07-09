@@ -43,7 +43,7 @@ class FSQCoerceError(FSQError):
     '''Everything is coerced to unicode'''
     pass
 
-class FSQMaxEnqueueTriesError(FSQEnqueueError):
+class FSQEnqueueMaxTriesError(FSQEnqueueError):
     '''Max attempts to enqueue exhausted'''
     pass
 
@@ -59,6 +59,21 @@ class FSQInstallError(FSQError):
     '''Error installing a queue'''
     pass
 
-class FSQCannotLock(FSQError):
+class FSQCannotLockError(FSQError):
     '''Error locking queue item'''
+    pass
+
+class FSQWorkItemError(FSQError):
+    '''An Error while trying to work on an item'''
+
+class FSQTTLExpiredError(FSQWorkItemError):
+    '''TTL has expired, item has failed permanantly'''
+    pass
+
+class FSQMaxTriesError(FSQWorkItemError):
+    '''Max Tries exhausted for a Work-Item, item has failed permanantly'''
+    pass
+
+class FSQScanError(FSQError):
+    '''An error occured while trying to scan a queue'''
     pass

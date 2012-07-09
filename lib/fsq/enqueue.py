@@ -16,9 +16,9 @@ from cStringIO import StringIO
 from contextlib import closing
 
 from . import FSQInternalError, FSQTimeFmtError, FSQEnqueueError,\
-              FSQMaxEnqueueTriesError, FSQ_DELIMITER, FSQ_TIMEFMT, FSQ_QUEUE,\
+              FSQEnqueueMaxTriesError, FSQ_DELIMITER, FSQ_TIMEFMT, FSQ_QUEUE,\
               FSQ_TMP, FSQ_ROOT, FSQ_ENCODE, FSQ_ITEM_USER, FSQ_ITEM_GROUP,\
-              FSQ_ITEM_MODE, FSQ_ENQUEUE_TRIES, path as fsq_path, construct
+              FSQ_ITEM_MODE, FSQ_ENQUEUE_MAX_TRIES, path as fsq_path, construct
 from .internal import coerce_unicode, uid_gid, rationalize_file,\
                       wrap_io_os_err
 
@@ -49,7 +49,7 @@ def _std_args(entropy=0, tries=0, pid=None, timefmt=FSQ_TIMEFMT,
 
     except AttributeError, e:
         raise TypeError(u'now must be a datetime, date, time, or other type'\
-                        u'supporting strftime, not {0}'.format(
+                        u' supporting strftime, not {0}'.format(
                         now.__class__.__name__))
     except TypeError, e:
         raise TypeError(u'timefmt must be a string or read-only buffer,'\
@@ -65,9 +65,9 @@ def _std_args(entropy=0, tries=0, pid=None, timefmt=FSQ_TIMEFMT,
 #       instead of this for the enqueue family of functions
 # make a queue item from args, return a file
 def _mkitem(trg_path, args, user=FSQ_ITEM_USER, group=FSQ_ITEM_GROUP,
-            mode=FSQ_ITEM_MODE, entropy=None, enqueue_tries=FSQ_ENQUEUE_TRIES,
-            delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE, dry_run=False,
-            **std_kwargs):
+            mode=FSQ_ITEM_MODE, entropy=None,
+            enqueue_max_tries=FSQ_ENQUEUE_MAX_TRIES, delimiter=FSQ_DELIMITER,
+            encodeseq=FSQ_ENCODE, dry_run=False, **std_kwargs):
     flags = os.O_WRONLY
     if not dry_run:
         flags |= os.O_CREAT|os.O_EXCL
@@ -76,7 +76,7 @@ def _mkitem(trg_path, args, user=FSQ_ITEM_USER, group=FSQ_ITEM_GROUP,
     recv_entropy = True if std_kwargs.has_key('entropy') else False
     now, entropy, pid, host, tries = _std_args(**std_kwargs)
     # try a few times
-    while 0 >= enqueue_tries or enqueue_tries > tried:
+    while 0 >= enqueue_max_tries or enqueue_max_tries > tried:
         tried += 1
         # get low, so we can use some handy options; man 2 open
         try:
@@ -118,7 +118,7 @@ def _mkitem(trg_path, args, user=FSQ_ITEM_USER, group=FSQ_ITEM_GROUP,
             os.close(trg_fd)
 
     # if we got nowhere ... raise
-    raise FSQMaxEnqueueTriesError(errno.EAGAIN, u'max tries exhausted for:'\
+    raise FSQEnqueueMaxTriesError(errno.EAGAIN, u'max tries exhausted for:'\
                                   u' {0}'.format(trg))
 
 ####### EXPOSED METHODS #######
@@ -140,7 +140,7 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
              encodeseq=FSQ_ENCODE, timefmt=FSQ_TIMEFMT, queue=FSQ_QUEUE,
              tmp=FSQ_TMP, root=FSQ_ROOT, user=FSQ_ITEM_USER,
              group=FSQ_ITEM_GROUP, mode=FSQ_ITEM_MODE,
-             enqueue_tries=FSQ_ENQUEUE_TRIES, **kwargs):
+             enqueue_max_tries=FSQ_ENQUEUE_MAX_TRIES, **kwargs):
     '''Enqueue the contents of a file, or file-like object, file-descriptor or
        the contents of a file at an address (e.g. '/my/file') queue with
        an argument list, venqueue is to enqueue what vprintf is to printf
@@ -186,6 +186,9 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
                 commit_name, discard = _mkitem(queue_path, args,
                                                dry_run=True, **std_kwargs)
                 os.rename(name, commit_name)
+
+                # return the queue item id (filename)
+                return os.path.basename(commit_name)
             except Exception, e:
                 try:
                     os.unlink(name)

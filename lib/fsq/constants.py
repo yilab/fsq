@@ -50,8 +50,13 @@ try:
     FSQ_SUCCESS = int(os.environ.get("FSQ_SUCCESS", 0))
     # get/respect exclusive locks on queue items
     FSQ_LOCK = int(os.environ.get("FSQ_LOCK", 1))
-    FSQ_ENQUEUE_TRIES = int(os.environ.get("FSQ_ENQUEUE_TRIES", 10))
-    # how long to wait for acquire lock on uninstall
+    # max tries to enqueue before FSQ gives up trying
+    FSQ_ENQUEUE_MAX_TRIES = int(os.environ.get("FSQ_ENQUEUE_MAX_TRIES", 10))
+    # max tries before tmp fails become permanant -- 0 is infinite
+    FSQ_MAX_TRIES = int(os.environ.get("FSQ_MAX_TRIES", 1))
+    # time-to-live (in seconds) for any queue item -- 0 is infinite
+    FSQ_TTL = int(os.environ.get("FSQ_TTL", 0))
+    # how long to wait for acquire lock on uninstall -- NOT USED
     FSQ_UNINSTALL_WAIT = int(os.environ.get("FSQ_UNINSTALL_WAIT", 0))
 except ValueError, e:
     raise FSQEnvError(errno.EINVAL, e.message)

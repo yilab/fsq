@@ -11,12 +11,24 @@ import signal
 import pwd
 import grp
 
-from . import FSQCoerceError, FSQEncodeError, FSQEnvError, FSQCannotLock
+from . import FSQCoerceError, FSQEncodeError, FSQEnvError, FSQCannotLockError
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
+# additional types to coerce to unicode, beyond decodable types
 _COERCE_THESE_TOO = (int,float,)
-def _raise_cannotlock(*args):
-    raise FSQCannotLock(errno.EAGAIN, u'cannot lock')
+
+# locking convenience wrapper
+def _lock(fd, lock=False):
+    if not lock:
+        return fd
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX|fcntl.LOCK_NB)
+        return fd
+    except (OSError, IOError, ), e:
+        if e.errno == errno.EAGAIN:
+            raise FSQCannotLockError(e.errno, u'cannot lock')
+        raise e
+
 
 ####### EXPOSED METHODS #######
 def coerce_unicode(s, encoding=u'utf8'):
@@ -80,7 +92,7 @@ def uid_gid(user, group):
 
     return user, group
 
-def rationalize_file(item_f, lock=False):
+def rationalize_file(item_f, mode='rb', lock=False):
     '''FSQ attempts to treat all file-like things as line-buffered as an
        optimization to the average case.  rationalize_file will handle file
        objects, buffers, raw file-descriptors, sockets, and string
@@ -90,14 +102,7 @@ def rationalize_file(item_f, lock=False):
     if hasattr(item_f, 'fileno'):
         n_fd = os.dup(item_f.fileno())
         try:
-            # try to lock, if asked for
-            if lock:
-                try:
-                    fcntl.flock(n_fd, fcntl.LOCK_EX|fcntl.LOCK_NB)
-                except (OSError, IOError, ), err:
-                    if err.errno == errno.EAGAIN:
-                        raise FSQCannotLock(e.errno, u'cannot lock')
-                    raise err
+            _lock(n_fd, lock)
             # explicitily deriment file ref
             del item_f
             return os.fdopen(n_fd)
@@ -112,7 +117,13 @@ def rationalize_file(item_f, lock=False):
         return os.fdopen(os.dup(item_f))
 
     # try to open, read+binary, line-buffered
-    return open(coerce_unicode(item_f), 'rb', 1)
+    f = open(coerce_unicode(item_f), mode, 1)
+    try:
+        _lock(f.fileno(), lock)
+        return f
+    except Exception, e:
+        f.close()
+        raise e
 
 def wrap_io_os_err(e):
     '''Formats IO and OS error messages for wrapping in FSQExceptions'''
