@@ -16,10 +16,11 @@
 import os
 import errno
 
-from . import FSQ_ROOT, FSQ_LOCK, FSQ_QUEUE, FSQ_DONE, FSQ_FAIL, FSQ_SUCCESS,\
-              FSQ_FAIL_TMP, FSQ_FAIL_PERM, FSQ_TTL, FSQ_MAX_TRIES,\
-              FSQ_TIMEFMT, FSQ_ENCODE, FSQWorkItem, path as fsq_path,\
-              FSQScanError, FSQCannotLockError, FSQWorkItemError
+from . import FSQ_ROOT, FSQ_LOCK, FSQ_QUEUE, FSQ_DONE, FSQ_FAIL, FSQ_DOWN,\
+              FSQ_SUCCESS, FSQ_FAIL_TMP, FSQ_FAIL_PERM, FSQ_TTL,\
+              FSQ_MAX_TRIES, FSQ_TIMEFMT, FSQ_ENCODE, FSQWorkItem,\
+              path as fsq_path, FSQScanError, FSQCannotLockError,\
+              FSQWorkItemError, FSQDownError, is_down
 from .internal import wrap_io_os_err
 
 ####### EXPOSED METHODS AND CLASSES #######
@@ -27,9 +28,22 @@ class FSQScanGenerator(object):
     '''FSQScanGenerator is a Generator object for yielding FSQWorkItems from a
        list of queue item ids, typcially passed in via the scan function.
 
+       Should a queue item be exclusively locked by another operation,
+       FSQScanGenerator will quietly skip the item; FSQScanGenerator will also
+       quietly skip items that no longer exist, assuming that these items have
+       been completed by other processes.
+
+       FSQScanGenerator will respect down-files, before each item is
+       dispatched, FSQScanGenerator will stat the down-file, to verify that
+       the queue has not gone down.  Should the queue be down,
+       FSQScanGenerator will raise FSQDownError. Should you want to ignore
+       down-files, pass in None or an empty string as the kwarg ``down'', this
+       functionality is useful for introspecting down'ed queues.
+
        FSQScanGenerator is intended to be a minimalist object, capable of
        reverse engineering to a C-struct.  The C-struct will be similar to FTS
        (man 3 fts).
+
        BEWARE: If you choose not to lock, the item you are working on may be
        worked on by others, and may be moved (on failure or success) out from
        underneath you.  Should you send lock=False, it is assumed you are
@@ -37,7 +51,7 @@ class FSQScanGenerator(object):
        mechanism.'''
     ####### MAGICAL METHODS AND ATTRS #######
     def __init__(self, trg_queue, item_ids, root=FSQ_ROOT, lock=FSQ_LOCK,
-                 queue=FSQ_QUEUE, done=FSQ_DONE, fail=FSQ_FAIL,
+                 queue=FSQ_QUEUE, done=FSQ_DONE, fail=FSQ_FAIL, down=FSQ_DOWN,
                  success=FSQ_SUCCESS, fail_tmp=FSQ_FAIL_TMP,
                  fail_perm=FSQ_FAIL_PERM, ttl=FSQ_TTL,
                  max_tries=FSQ_MAX_TRIES, timefmt=FSQ_TIMEFMT,
@@ -54,6 +68,7 @@ class FSQScanGenerator(object):
         self.queue = trg_queue
         self.done_dir = done
         self.fail_dir = fail
+        self.down = down
         self.queue_dir = queue
         self.root = root
         self.lock = lock
@@ -78,6 +93,9 @@ class FSQScanGenerator(object):
             # always destroy self.item to close file if necessary
             if getattr(self, 'item', None) is not None:
                 del self.item
+            if is_down(self.queue, root=self.root, down=self.down):
+                raise FSQDownError(errno.EAGAIN, u'queue {0}: is'\
+                                   u' down'.format(self.queue))
             try:
                 self.item = FSQWorkItem(self.queue,
                                         self.item_ids[self._index],
@@ -108,9 +126,10 @@ class FSQScanGenerator(object):
         raise StopIteration()
 
 def scan(trg_queue, generator=FSQScanGenerator, root=FSQ_ROOT, lock=FSQ_LOCK,
-         queue=FSQ_QUEUE, done=FSQ_DONE, fail=FSQ_FAIL, success=FSQ_SUCCESS,
-         fail_tmp=FSQ_FAIL_TMP, fail_perm=FSQ_FAIL_PERM, ttl=FSQ_TTL,
-         max_tries=FSQ_MAX_TRIES, timefmt=FSQ_TIMEFMT, encodeseq=FSQ_ENCODE):
+         queue=FSQ_QUEUE, done=FSQ_DONE, fail=FSQ_FAIL, down=FSQ_DOWN,
+         success=FSQ_SUCCESS, fail_tmp=FSQ_FAIL_TMP, fail_perm=FSQ_FAIL_PERM,
+         ttl=FSQ_TTL, max_tries=FSQ_MAX_TRIES, timefmt=FSQ_TIMEFMT,
+         encodeseq=FSQ_ENCODE):
     '''Given a queue, generate a list of files in that queue, and pass it to
        FSQScanGenerator for iteration.  The generator kwarg is provided here
        as a means of implementing a custom generator, use with caution.'''
@@ -125,9 +144,8 @@ def scan(trg_queue, generator=FSQScanGenerator, root=FSQ_ROOT, lock=FSQ_LOCK,
 
     # sort here should yield time then entropy sorted
     item_ids.sort()
-    return generator(trg_queue, item_ids, root=FSQ_ROOT, lock=FSQ_LOCK,
-                     queue=FSQ_QUEUE, done=FSQ_DONE, fail=FSQ_FAIL,
-                     success=FSQ_SUCCESS, fail_tmp=FSQ_FAIL_TMP,
-                     fail_perm=FSQ_FAIL_PERM, ttl=FSQ_TTL,
-                     max_tries=FSQ_MAX_TRIES, timefmt=FSQ_TIMEFMT,
-                     encodeseq=FSQ_ENCODE)
+    return generator(trg_queue, item_ids, root=root, lock=lock, queue=queue,
+                     done=done, fail=fail, down=down, success=success,
+                     fail_tmp=fail_tmp, fail_perm=fail_perm, ttl=ttl,
+                     max_tries=max_tries, timefmt=timefmt,
+                     encodeseq=encodeseq)

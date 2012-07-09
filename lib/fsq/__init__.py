@@ -28,7 +28,8 @@ from exceptions import FSQError, FSQInternalError, FSQEnvError,\
                        FSQEnqueueError, FSQEnqueueMaxTriesError,\
                        FSQConfigError, FSQPathError, FSQInstallError,\
                        FSQCannotLockError, FSQWorkItemError,\
-                       FSQTTLExpiredError, FSQMaxTriesError, FSQScanError
+                       FSQTTLExpiredError, FSQMaxTriesError, FSQScanError,\
+                       FSQDownError
 # constants relies on: exceptions
 from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
                       FSQ_DONE, FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_ROOT,\
@@ -42,7 +43,7 @@ from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
 import path
 
 # configure relies on exceptions, path, constants
-from configure import down, up
+from configure import down, up, is_down
 
 # install relies on exceptions, path, constants, configure
 from install import install, uninstall
@@ -59,7 +60,7 @@ from enqueue import enqueue, senqueue, venqueue, vsenqueue
 # items module relies on: exceptions, constants, path, construct
 from items import FSQWorkItem
 
-# scan module relies on: exceptions, constants, path, items
+# scan module relies on: exceptions, constants, path, items, configure
 from scan import FSQScanGenerator, scan
 
 __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
@@ -67,10 +68,12 @@ __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
             'FSQ_ITEM_USER', 'FSQ_ITEM_GROUP', 'FSQ_QUEUE_USER',
             'FSQ_QUEUE_GROUP', 'FSQ_ITEM_MODE', 'FSQ_QUEUE_MODE', 'FSQ_LOCK',
             'FSQ_ENQUEUE_TRIES', 'FSQ_UNINSTALL_WAIT', 'FSQ_MAX_TRIES',
-            'FSQ_TTL', 'enqueue', 'senqueue', 'venqueue', 'vsenqueue',
-            'FSQError', 'FSQInternalError', 'FSQEnvError', 'FSQEncodeError',
+            'FSQ_TTL', 'path', 'down', 'up', 'is_down', 'install',
+            'uninstall', 'encode', 'decode', 'construct', 'deconstruct',
+            'enqueue', 'senqueue', 'venqueue', 'vsenqueue', 'FSQError',
+            'FSQInternalError', 'FSQEnvError', 'FSQEncodeError',
             'FSQTimeFmtError', 'FSQMalformedEntryError', 'FSQCoerceError',
             'FSQEnqueueError', 'FSQEnqueueMaxTriesError', 'FSQConfigError',
             'FSQCannotLock', 'FSQWorkItemError', 'FSQTTLExpiredError',
-            'FSQMaxTriesError', 'FSQScanError', 'FSQWorkItem',
+            'FSQMaxTriesError', 'FSQScanError', 'FSQDownError', 'FSQWorkItem',
             'FSQScanGenerator', 'scan' ]

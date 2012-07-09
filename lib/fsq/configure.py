@@ -45,3 +45,16 @@ def up(queue, root=FSQ_ROOT, down=FSQ_DOWN):
     except (OSError, IOError, ), e:
         if e.errno != errno.ENOENT:
             raise FSQConfigError(e.errno, wrap_io_os_err(e))
+
+def is_down(queue, root=FSQ_ROOT, down=FSQ_DOWN):
+    '''Returns True if queue is down, False if queue is up'''
+    if not down:
+        return False
+    down_path = fsq_path.down(queue, root=root, down=down)
+    try:
+        os.stat(down_path)
+    except (OSError, IOError, ), e:
+        if e.errno == errno.ENOENT:
+            return False
+        raise FSQConfigError(e.errno, wrap_io_os_err(e))
+    return True

@@ -77,3 +77,7 @@ class FSQMaxTriesError(FSQWorkItemError):
 class FSQScanError(FSQError):
     '''An error occured while trying to scan a queue'''
     pass
+
+class FSQDownError(FSQScanError):
+    '''Attempt to scan a down'ed queue'''
+    pass
