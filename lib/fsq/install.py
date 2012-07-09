@@ -12,7 +12,7 @@ import errno
 import tempfile
 import shutil
 
-from . import FSQ_TMP, FSQ_QUEUE, FSQ_DONE, FSQ_DOWN, FSQ_ROOT,\
+from . import FSQ_TMP, FSQ_QUEUE, FSQ_DONE, FSQ_FAIL, FSQ_DOWN, FSQ_ROOT,\
               FSQ_QUEUE_USER, FSQ_QUEUE_GROUP, FSQ_QUEUE_MODE, FSQ_ITEM_USER,\
               FSQ_ITEM_GROUP, FSQ_ITEM_MODE, FSQ_UNINSTALL_WAIT, FSQ_LOCK,\
               path as fsq_path, FSQInstallError, down as fsq_down
@@ -51,7 +51,7 @@ def _tmp_trg(trg_queue, root):
 
 ####### EXPOSED METHODS #######
 def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
-            tmp=FSQ_TMP, queue=FSQ_QUEUE, user=FSQ_QUEUE_USER,
+            tmp=FSQ_TMP, queue=FSQ_QUEUE, fail=FSQ_FAIL, user=FSQ_QUEUE_USER,
             group=FSQ_QUEUE_GROUP, mode=FSQ_QUEUE_MODE, down=FSQ_DOWN,
             down_user=FSQ_ITEM_USER, down_group=FSQ_ITEM_GROUP,
             down_mode=FSQ_ITEM_MODE):
@@ -84,6 +84,8 @@ def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
                                 user, group)
         _instdir(fsq_path.done(tmp_queue, root=root, done=done), mode, user,
                                group)
+        _instdir(fsq_path.fail(tmp_queue, root=root, fail=fail), mode, user,
+                               group)
 
         # down via configure.down if necessary
         if is_down:
@@ -111,6 +113,7 @@ def uninstall(trg_queue, root=FSQ_ROOT, done=FSQ_DONE, tmp=FSQ_TMP,
              group=down_group, mode=down_mode)
     # atomically mv our queue to a reserved target so we can recursively
     # remove without prying eyes
+    tmp_full, tmp_queue = _tmp_trg(trg_queue, root)
     try:
         os.rename(fsq_path.base(trg_queue, root=root), tmp_full)
         # this makes me uneasy ... but here we go magick
