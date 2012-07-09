@@ -12,7 +12,8 @@ import os
 import errno
 
 from .internal import coerce_unicode
-from . import FSQ_QUEUE, FSQ_TMP, FSQ_ROOT, FSQ_DONE, FSQ_DOWN, FSQPathError
+from . import FSQ_QUEUE, FSQ_TMP, FSQ_ROOT, FSQ_DONE, FSQ_FAIL, FSQ_DOWN,\
+              FSQPathError
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 _ILLEGAL_NAMES=('.', '..', )
@@ -39,6 +40,10 @@ def tmp(p_queue, root=FSQ_ROOT, tmp=FSQ_TMP):
 def queue(p_queue, root=FSQ_ROOT, queue=FSQ_QUEUE):
     '''Construct a path to the queue dir for a queue'''
     return _path(p_queue, root, queue)
+
+def fail(p_queue, root=FSQ_ROOT, fail=FSQ_FAIL):
+    '''Construct a path to the fail dir for a queue'''
+    return _path(p_queue, root, fail)
 
 def done(p_queue, root=FSQ_ROOT, done=FSQ_DONE):
     '''Construct a path to the done dir for a queue'''

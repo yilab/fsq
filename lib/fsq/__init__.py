@@ -30,7 +30,7 @@ from exceptions import FSQError, FSQInternalError, FSQEnvError,\
                        FSQCannotLockError, FSQWorkItemError,\
                        FSQTTLExpiredError, FSQMaxTriesError, FSQScanError,\
                        FSQDownError
-# constants relies on: exceptions
+# constants relies on: exceptions, internal
 from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
                       FSQ_DONE, FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_ROOT,\
                       FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
@@ -39,28 +39,31 @@ from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
                       FSQ_FAIL_PERM, FSQ_SUCCESS, FSQ_UNINSTALL_WAIT,\
                       FSQ_MAX_TRIES, FSQ_TTL
 
-# the path module stays in it's own namespace
+# path relies on: exceptions, constants, internal
 import path
 
-# configure relies on exceptions, path, constants
+# configure relies on: exceptions, path, constants, internal
 from configure import down, up, is_down
 
-# install relies on exceptions, path, constants, configure
+# install relies on exceptions, path, constants, configure, internal
 from install import install, uninstall
 
-# encode relies on: constants, exceptions
+# encode relies on: constants, exceptions, internal
 from encode import encode, decode
 
-# construct relies on: constants, exceptions, encode
+# construct relies on: constants, exceptions, encode, internal
 from construct import construct, deconstruct
 
-# enqueue module relies on: constants, exceptions, construct, path
+# mkitem relies on: constants, exceptions, construct
+from mkitem import mkitem
+
+# enqueue module relies on: constants, exceptions, path, internal, mkitem
 from enqueue import enqueue, senqueue, venqueue, vsenqueue
 
-# items module relies on: exceptions, constants, path, construct
+# items module relies on: exceptions, constants, path, construct, internal
 from items import FSQWorkItem
 
-# scan module relies on: exceptions, constants, path, items, configure
+# scan module relies on: exceptions, constants, path, items, configure, internal
 from scan import FSQScanGenerator, scan
 
 __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
