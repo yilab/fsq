@@ -19,11 +19,23 @@ from . import FSQ_ROOT, FSQ_LOCK, FSQ_QUEUE, FSQ_DONE, FSQ_FAIL, FSQ_SUCCESS,\
 from .internal import rationalize_file, wrap_io_os_err
 
 class FSQEnqueueItem(object):
+    '''Stub for Streamable Enqueue object, e.g.
+
+        foo = FSQEnqueueItem('foo', 'bar', 'baz', 'bang')
+        try:
+            for i in ['a', 'b', 'c']:
+                foo.item.write(i)
+            foo.commit()
+        except Exception, e:
+            foo.abort()
+        finally:
+            del foo
+    '''
     pass
 
 class FSQWorkItem(object):
-    '''An FSQWorkItem object.  FSQItem stores an open and potentially
-       exclusive-locked file to a work file as the attribute self.file, opened
+    '''An FSQWorkItem object.  FSQWorkItem stores an open and potentially
+       exclusive-locked file to a work file as the attribute self.item, opened
        in read-only mode.
 
        FSQWorkItem is intended to a minimalist object, capable of reverse
@@ -49,7 +61,7 @@ class FSQWorkItem(object):
            preference (taken from environment).'''
         # open file immediately
         try:
-            self.file = rationalize_file(fsq_path.item(trg_queue, item_id,
+            self.item = rationalize_file(fsq_path.item(trg_queue, item_id,
                                          root=root, queue=queue), lock=lock)
         except (OSError, IOError, ), e:
             if e.errno == errno.ENOENT:
@@ -64,8 +76,8 @@ class FSQWorkItem(object):
             self.id = item_id
             self.root = root
             self.lock = lock
-            self.fail_tmp = fail_tmp
-            self.fail_perm = fail_perm
+            self.fail_tmp_code = fail_tmp
+            self.fail_perm_code = fail_perm
             self.success = success
             self.ttl = ttl
             self.max_tries = max_tries
@@ -89,8 +101,11 @@ class FSQWorkItem(object):
                 raise FSQTimeFmtError(fail_perm, u'invalid date string for'\
                                       u' strptime fmt {0}:'\
                                       u' {1}'.format(timefmt, enqueued_at))
+            check_ttl_max_tries(self.tries, self.enqueued_at, self.max_tries,
+                                self.ttl, self.fail_perm)
         except Exception, e:
             try:
+                # unhandled exceptions are perm failures
                 fail_type = getattr(e, 'errno', fail_perm)
                 self.fail(fail_type)
             finally:
@@ -99,8 +114,8 @@ class FSQWorkItem(object):
 
     def __del__(self):
         '''Always close the file when the ref count drops to 0'''
-        if hasattr(self, 'file'):
-            self.file.close()
+        if hasattr(self, 'item'):
+            self.item.close()
 
     ####### EXPOSED METHODS AND ATTRS #######
     def done(self, done_type=None, max_tries=None, ttl=None):

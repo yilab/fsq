@@ -15,7 +15,7 @@ from . import FSQ_MAX_TRIES, FSQ_TTL, FSQ_ROOT, FSQ_DONE, FSQ_TMP, FSQ_QUEUE,\
               FSQ_FAIL, FSQ_FAIL_TMP, FSQ_SUCCESS, FSQ_FAIL_PERM,\
               FSQWorkItemError, FSQFailError, FSQEnqueueMaxTriesError,\
               FSQMaxTriesError, FSQTTLExpiredError, path as fsq_path, mkitem
-from .internal import wrap_io_os_err
+from .internal import wrap_io_os_err, check_ttl_max_tries
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 def _unlink(item_src, e_class=FSQFailError):
@@ -30,7 +30,7 @@ def _unlink(item_src, e_class=FSQFailError):
 
 # these functions are underscored to avoid name collisions with kwargs
 def _fail_tmp(item, queue=None, root=None, max_tries=None,
-              ttl=None):
+              ttl=None, fail_perm=None):
     '''Try to fail a work-item temporarily (up recount and keep in queue),
        if max tries or ttl is exhausted, escalate to permanant failure.'''
     try:
@@ -42,7 +42,8 @@ def _fail_tmp(item, queue=None, root=None, max_tries=None,
         tmp = item.tmp_dir
         tries = item.tries+1
         enqueued_at = item.enqueued_at
-        check_ttl_max_tries(tries, enqueued_at, max_tries.max_tries, ttl=ttl)
+        fail_perm = item.fail_perm_code if fail_perm is None else fail_perm
+        check_ttl_max_tries(tries, enqueued_at, max_tries, ttl, fail_perm)
         item_src = fsq_path.item(trg_queue, item.id, root=root, queue=queue)
         # mv to tmp, then mv back into queue
         trg_path, discard = mkitem(fsq_path.tmp(trg_queue, root=root,
@@ -110,19 +111,19 @@ def _done(item, done_type=None, success=None, fail_tmp=None, fail_perm=None,
        temporary failure'''
     success = item.success if success is None else success
     if done_type is None or done_type == success:
-        return _success(item, done=done, queue=queue, root=root)
+        return _success(item, done=done, queue=queue, root=root,
+                        fail_perm=fail_perm)
     return _fail(item, fail_type=fail_type, queue=queue, root=root, fail=fail,
                  fail_tmp=fail_tmp, fail_perm=fail_perm, max_tries=max_tries,
                  ttl=ttl)
 
-def _fail(item, fail_type=None, queue=FSQ_QUEUE, root=FSQ_ROOT, fail=FSQ_FAIL,
-          fail_tmp=FSQ_FAIL_TMP, fail_perm=FSQ_FAIL_PERM, max_tries=None,
-          ttl=None):
+def _fail(item, fail_type=None, queue=None, root=None, fail=None,
+          fail_tmp=None, fail_perm=None, max_tries=None, ttl=None):
     '''Fail a work item, either temporarily or permanantly'''
     # default to fail_perm
-    fail_type = fail_perm if fail_type is None else fail_type
-    if fail_type == fail_tmp:
-        return _fail_tmp(item, max_tries=max_tries, ttl=ttl)
+    if fail_type is not None and fail_type == fail_tmp:
+        return _fail_tmp(item, max_tries=max_tries, ttl=ttl,
+                         fail_perm=fail_perm)
     return _fail_perm(item, queue=queue, root=root, fail=fail)
 
 def _success(item, done=None, queue=None, root=None):
@@ -154,18 +155,6 @@ def _success(item, done=None, queue=None, root=None):
         raise e
 
 ####### EXPOSED METHODS #######
-def check_ttl_max_tries(tries, enqueued_at, max_tries=FSQ_MAX_TRIES,
-                        ttl=FSQ_TTL):
-    '''Check that the ttl for an item has not expired, and that the item has
-       not exceeded it's maximum allotted tries'''
-    if max_tries > 0 and tries >= max_tries:
-        raise FSQMaxTriesError(errno.ELOOP, u'Max tries exceded:'\
-                               u' {0}'.format(max_tries))
-    if ttl > 0 and datetime.datetime.now() < enqueued_at + datetime.timedelta(
-            seconds=ttl):
-        raise FSQTTLExpiredError(errno.ETIMEDOUT, u'TTL Expired:'\
-                                 u' {0}'.format(ttl))
-
 def retry(*args, **kwargs):
     '''Retry is a convenience alias for fail_tmp'''
     return _fail_tmp(*args, **kwargs)
