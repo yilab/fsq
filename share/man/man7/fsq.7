@@ -1,0 +1,492 @@
+.TH fsq 7 "2012-07-12" "AxialMarket" "AxialMarket System Commands Manual"
+.SH NAME
+fsq -
+.BR f ile
+.BR s ystem
+.BR q ueue
+.SH SYNOPSIS
+.B import
+.I fsq
+.SH DESCRIPTION
+.B fsq
+is a standard for implementing queueing structures in
+.I POSIX
+file-systems.
+.B fsq
+provides a standard for both directory layouts and queue-item naming, which
+allow for idempotent queue-item construction, atomic enqueueing, atomic
+failure, and atomic completion.
+
+Each
+.B fsq
+queue conforms to the following directory structure:
+.TP
+.I /var/fsq/a_queue/
+The queue
+.I a_queue
+is installed to the
+.B FSQ_ROOT
+.I /var/fsq/
+(default).  To enqueue a file to this queue, use the enqueue function:
+\n
+\n
+.BR "" fsq. enqueue ('a_queue',
+\'/path/to/file', 'args', 'to', 'enqueue')
+\n
+\n
+or to enqueue a string, use the senqueue function:
+\n
+\n
+.BR "" fsq. senqueue ('a_queue',
+\'a string body for my queue item', 'args', 'to', 'enqueue')
+.TP
+.I /var/fsq/a_queue/queue
+The
+.I queue
+directory within
+.I a_queue
+is the location where items are queued to. Following the above
+.B enqueue
+or
+.B senqueue
+function calls, you should be able to see 2 files in the
+.I q_queue/queue
+directory:
+\n
+\n
+_20120710213904_0_13044_mss_0_args_to_enqueue
+.br
+_20120710213904_1_13044_mss_0_args_to_enqueue
+.br
++|-----+------| + |-+-| |+| + |------+------|
+.br
+|      |        |   |    |  |        |
+.br
+|      |        |   |    |  |        +->
+.BR FSQ_DELIMITER
+seperated
+.br
+|      |        |   |    |  |            arguments
+.br
+|      |        |   |    |  +->
+.BR tries :
+number of failed attempts
+.br
+|      |        |   |    |      to process
+.br
+|      |        |   |    +->
+.BR hostname :
+the name of the host on
+.br
+|      |        |   |        which the item was enqueued.
+.br
+|      |        |   +->
+.B pid
+of the process which enqueued the
+.br
+|      |        |       item
+.br
+|      |        +->
+.BR entropy :
+should a work item be generated
+.br
+|      |            with the same arguments,
+.BR pid ,
+.BR hostname
+.br
+|      |            and
+.BR timestamp ,
+.B entropy
+is incremented to
+.br
+|      |            generate uniqueness.
+.br
+|      +->
+.B timestamp
+in
+.B FSQ_TIMEFMT
+format (default:
+.br
+|          `YYYYMMDDHHMMSS').
+.br
++->
+.B FSQ_DELIMITER
+(default: `_')
+\n
+\n
+.TP
+.I /var/fsq/a_queue/tmp
+The
+.I tmp
+directory within
+.I a_queue
+is a location for constructing queue items prior to enqueueing them to the
+.I queue
+directory.  In the above
+.B enqueue
+and
+.B senqueue
+calls, the queue item files were initially constructed in
+.IR tmp ,
+then linked into
+.I queue
+and the
+.I tmp
+entry was removed.
+.TP
+.I /var/fsq/a_queue/done
+The
+.I done
+directory within
+.I a_queue
+is a location for storing successfully completed queue items following work.
+Items may be marked as done, by using the
+.B done
+function (typically done during a
+.BR scan ):
+\n
+\n
+for i in
+.BR "" fsq. scan ('a_queue'):
+.BR "" fsq. done (i)
+\n
+\n
+The function
+.B success
+may also be used:
+\n
+\n
+for i in
+.BR "" fsq. scan ('a_queue'):
+.BR "" fsq. success (i)
+\n
+\n
+The
+.I done
+directory serves as a sort of book-keeping, but it should routinely be pruned,
+via cron or some such.
+.TP
+.I /var/fsq/a_queue/fail
+The
+.I fail
+directory within
+.I a_queue
+is a location for storing failed queue items following work.  Items may be
+marked as failed, by using the
+.B fail
+function:
+\n
+\n
+for i in
+.BR "" fsq. scan ('a_queue'):
+.br
+.BR ""	fsq. fail (i)
+\n
+\n
+The fail_perm function may also be used:
+\n
+\n
+for i in
+.BR "" fsq. scan ('a_queue'):
+.br
+	try:
+.br
+		raise Exception
+.br
+	except:
+.br
+.BR ""		fsq. fail_perm (i)
+\n
+\n
+Permanant failure may also result if an item is older than,
+.B FSQ_TTL
+or if the item has been retries more than
+.B FSQ_MAX_TRIES
+by way of
+.I fail_tmp:
+\n
+\n
+for i in
+.BR "" fsq. scan ('a_queue'):
+.br
+	try:
+.br
+		raise Exception
+.br
+	except:
+.br
+.BR ""		fsq. fail_tmp (i)
+\n
+\n
+Alternatively,
+.I retry
+may be used:
+for i in
+.BR "" fsq. scan ('a_queue'):
+.br
+	try:
+.br
+		raise Exception
+.br
+	except:
+.br
+.BR ""		fsq. retry (i)
+\n
+\n
+.TP
+.I /var/fsq/a_queue/down
+The
+.I down
+file within
+.I a_queue
+is a file controlling wether or not a queue is available to be scanned.  If
+.I down
+exists, the queue will not be scanned.
+.I down
+may be created by using the
+.B down
+function:
+\n
+\n
+.BR "" fsq. down ('a_queue')
+\n
+\n
+.I down
+may be removed by using the
+.B up
+function:
+\n
+\n
+.BR "" fsq. up('a_queue')
+\n
+\n
+Queues with
+.I down
+may be scanned, by passing
+.BR None " or " False
+to
+.BR scan :
+\n
+\n
+fsq.scan('a_queue',
+.BR down=None )
+\n
+\n
+.SH ENVIRONMENT
+The
+.B fsq
+suite and python library makes use of a number of
+.BR FSQ_ PREFIXED
+environment variables, which modify its behavior.
+.TP
+.B FSQ_DELIMITER
+.br
+.B fsq
+stores arguments in file-names, delimited by
+.BR FSQ_DELIMITER .
+(default: `_')
+.TP
+.B FSQ_ENCODE
+.br
+.B fsq
+encodes non-filesystem safe characters as well as literal delimiters in
+arguments as
+.B FSQ_ENCODE
+prefixed hexidecimal representations of the character's ordinal value; ex:
+.BR %5F .
+(default `%')
+.TP
+.B FSQ_TIMEFMT
+.br
+.BR strftime (3)
+format to use for item timestamp conversion. (default: `%Y%m%d%H%M%S')
+.TP
+.B FSQ_QUEUE
+.br
+Name of the
+.I queue
+directory.
+.B FSQ_QUEUE
+may not contain `/' or be `.' or `..'. (default: `queue')
+.TP
+.B FSQ_DONE
+.br
+Name of the
+.I done
+directory.
+.B FSQ_DONE
+may not contain `/' or be `.' or `..'. (default: `done')
+.TP
+.B FSQ_FAIL
+.br
+Name of the
+.I fail
+directory.
+.B FSQ_FAIL
+may not contain `/' or be `.' or `..'. (default: `fail')
+.TP
+.B FSQ_TMP
+.br
+Name of the
+.I tmp
+directory.
+.B FSQ_TMP
+may not contain `/' or be `.' or `..'. (default: `tmp')
+.TP
+.B FSQ_DOWN
+.br
+Name of the
+.I down
+file.
+.B FSQ_DOWN
+may not contain `/' or be `.' or `..'. (default: `down')
+.TP
+.B FSQ_ROOT
+.br
+Path to parent directory for queues. (default: `/var/fsq').
+.TP
+.B FSQ_ITEM_GROUP
+.br
+Name or gid of group owner for queue items.  If
+.B FSQ_ITEM_GROUP
+is a name,
+.B fsq
+uses
+.BR getgrent (3)
+to determine gid.  If
+.B FSQ_ITEM_GROUP
+is unset, group ownership is preserved based on the normal rules for
+.BR open (2)
+with
+.BR O_CREAT .
+.TP
+.B FSQ_ITEM_USER
+.br
+Name or uid of user owner for queue items.  If
+.B FSQ_ITEM_USER
+is a name,
+.B fsq
+uses
+.BR getpwent (3)
+to determine uid.  If
+.B FSQ_ITEM_USER
+is unset, user ownership is preserved based on the normal rules for
+.BR open (2)
+with
+.BR O_CREAT .
+.TP
+.B FSQ_QUEUE_GROUP
+.br
+Name or gid of group owner for
+.I queue
+directories and subdirectories (e.g.
+.IR fail ).
+If
+.B FSQ_QUEUE_GROUP
+is a name,
+.B fsq
+uses
+.BR getgrent (3)
+to determine gid.  If
+.B FSQ_QUEUE_GROUP
+is unset, group ownership is set to the gid of the parent process via
+.BR getgid (2).
+.TP
+.B FSQ_QUEUE_USER
+.br
+Name or uid of user owner for
+.I queue
+directories and subdirectories (e.g.
+.IR fail ).
+If
+.B FSQ_QUEUE_USER
+is a name,
+.B fsq
+uses
+.BR getpwent (3)
+to determine uid.  If
+.B FSQ_QUEUE_USER
+is unset, user ownership is set to the uid of the parent process via
+.BR getuid (2).
+.TP
+.B FSQ_ITEM_MODE
+.br
+Octal mode for queue items. (default `00640')
+.TP
+.B FSQ_QUEUE_MODE
+.br
+Octal mode for queue directories. (default `02770')
+.TP
+.B FSQ_FAIL_TMP
+.br
+Integer code for temporary failure.
+.B FSQ_FAIL_TMP
+is used by
+.B fsq
+utilities as a temporary failure exit code and by the python
+.B fsq
+library to determine temporary failure by the
+.BR done " and " fail
+functions. (default: 111)
+.TP
+.B FSQ_FAIL_PERM
+.br
+Integer code for permanant failure.
+.B FSQ_FAIL_PERM
+is used by
+.B fsq
+utilities as a permanant failure exit code and by the python
+.B fsq
+library to determine permanant failure by the
+.BR done " and " fail
+functions. (default: 100)
+.TP
+.B FSQ_SUCCESS
+.br
+Integer code for success.
+.B FSQ_FAIL_SUCCESS
+is used by
+.B fsq
+utilities as a successful exit code and by the python
+.B fsq
+library to determine successful completion by the
+.BR done
+function. (default: 0)
+.TP
+.B FSQ_LOCK
+.br
+Boolean flag to cause
+.B scan
+to lock or not lock.  Setting
+.B FSQ_LOCK
+should only be done if you do not intend on processing work (e.g. you are
+introspecting). (default: 1)
+.TP
+.B FSQ_ENQUEUE_MAX_TRIES
+.br
+Maximum number of attempts for
+.B enqueue
+(while incrementing item
+.IR entropy )
+prior to giving up.
+.TP
+.B FSQ_MAX_TRIES
+.br
+Maximum number of temporary failures (or retries) before a work-item is failed
+permanantly. A value of 0 for
+.B FSQ_MAX_TRIES
+will cause
+.B fsq
+to retry indefinitely. (default: 1)
+.TP
+.B FSQ_TTL
+Time-to-live in seconds for a queue item.  Queue items will be failed
+permanantly if their
+.I timestamp
+is greater-than
+.B FSQ_TTL
+seconds prior to now.  A value of 0 for
+.B FSQ_TTL
+will cause
+.B fsq
+to never timeout queue items. (default: 0)
