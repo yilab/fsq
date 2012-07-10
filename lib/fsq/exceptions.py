@@ -81,3 +81,7 @@ class FSQScanError(FSQError):
 class FSQDownError(FSQScanError):
     '''Attempt to scan a down'ed queue'''
     pass
+
+class FSQFailError(FSQError):
+    '''Attempt to fail an item failed'''
+    pass

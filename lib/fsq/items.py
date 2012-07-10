@@ -26,7 +26,7 @@ class FSQWorkItem(object):
        in read-only mode.
 
        FSQWorkItem is intended to a minimalist object, capable of reverse
-       engineering to a C-struct.  The C-struct will support all attributes,
+       engineering to a C struct.  The C struct will support all attributes,
        but the methods will not be available, they will be available as
        include level functions taking a *WorkItem struct as their first
        argument.

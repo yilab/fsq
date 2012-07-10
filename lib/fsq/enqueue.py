@@ -61,7 +61,9 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
         # yeild temporary queue item
         name, trg_file = mkitem(tmp_path, args, user=user, group=group,
                                 mode=mode, delimiter=delimiter,
-                                encodeseq=encodeseq, **kwargs)
+                                encodeseq=encodeseq,
+                                enqueue_max_tries=enqueue_max_tries,
+                                **kwargs)
         # tmp target file
         with closing(trg_file):
             try:
@@ -77,8 +79,10 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
 
                 # hard-link into queue, unlink tmp, failure case here leaves
                 # cruft in tmp, but no race condition into queue
-                commit_name, discard = mkitem(queue_path, args, link_src=name,
-                                              **kwargs)
+                commit_name, dis = mkitem(queue_path, args, link_src=name,
+                                         encodeseq=encodeseq,
+                                         enqueue_max_tries=enqueue_max_tries,
+                                         **kwargs)
                 os.unlink(name)
 
                 # return the queue item id (filename)

@@ -14,7 +14,8 @@ import socket
 import datetime
 
 from . import FSQ_TIMEFMT, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
-              FSQ_DELIMITER, FSQ_ENCODE, FSQ_ENQUEUE_MAX_TRIES, construct
+              FSQ_DELIMITER, FSQ_ENCODE, FSQ_ENQUEUE_MAX_TRIES, construct,\
+              FSQEnqueueError, FSQEnqueueMaxTriesError
 from .internal import coerce_unicode, uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
@@ -34,6 +35,7 @@ def _std_args(now, entropy, pid, host, tries, timefmt=FSQ_TIMEFMT):
     '''
     now = datetime.datetime.now() if now is None else now
     pid = os.getpid() if pid is None else pid
+    entropy = 0 if entropy is None else entropy
     try:
         fmt_time = now.strftime(timefmt)
 
@@ -53,7 +55,7 @@ def _std_args(now, entropy, pid, host, tries, timefmt=FSQ_TIMEFMT):
 
 ####### EXPOSED METHODS #######
 def mkitem(trg_path, args, user=FSQ_ITEM_USER, group=FSQ_ITEM_GROUP,
-           mode=FSQ_ITEM_MODE, entropy=0, tries=0, pid=None,
+           mode=FSQ_ITEM_MODE, entropy=None, tries=0, pid=None,
            timefmt=FSQ_TIMEFMT, now=None, host=_HOSTNAME,
            enqueue_max_tries=FSQ_ENQUEUE_MAX_TRIES, delimiter=FSQ_DELIMITER,
            encodeseq=FSQ_ENCODE, link_src=False):

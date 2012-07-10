@@ -29,7 +29,7 @@ from exceptions import FSQError, FSQInternalError, FSQEnvError,\
                        FSQConfigError, FSQPathError, FSQInstallError,\
                        FSQCannotLockError, FSQWorkItemError,\
                        FSQTTLExpiredError, FSQMaxTriesError, FSQScanError,\
-                       FSQDownError
+                       FSQDownError, FSQFailError
 # constants relies on: exceptions, internal
 from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
                       FSQ_DONE, FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_ROOT,\
@@ -60,6 +60,9 @@ from mkitem import mkitem
 # enqueue module relies on: constants, exceptions, path, internal, mkitem
 from enqueue import enqueue, senqueue, venqueue, vsenqueue
 
+# done module relies on: constants, exceptions, path, internal, mkitem
+from done import done, success, fail, fail_tmp, fail_perm
+
 # items module relies on: exceptions, constants, path, construct, internal
 from items import FSQWorkItem
 
@@ -78,5 +81,5 @@ __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
             'FSQTimeFmtError', 'FSQMalformedEntryError', 'FSQCoerceError',
             'FSQEnqueueError', 'FSQEnqueueMaxTriesError', 'FSQConfigError',
             'FSQCannotLock', 'FSQWorkItemError', 'FSQTTLExpiredError',
-            'FSQMaxTriesError', 'FSQScanError', 'FSQDownError', 'FSQWorkItem',
-            'FSQScanGenerator', 'scan' ]
+            'FSQMaxTriesError', 'FSQScanError', 'FSQDownError', 'FSQFailError',
+            'FSQWorkItem', 'FSQScanGenerator', 'scan' ]
