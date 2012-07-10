@@ -459,8 +459,19 @@ Boolean flag to cause
 .B scan
 to lock or not lock.  Setting
 .B FSQ_LOCK
-should only be done if you do not intend on processing work (e.g. you are
-introspecting). (default: 1)
+to 0 should only be done if you do not intend on processing work (e.g. you are
+introspecting). If
+.B FSQ_LOCK
+is 1
+.B scan
+will attempt to acquire an exclusive lock
+.BR "" ( LOCK_EX|LOCK_NB )
+using
+.BR flock (2)
+prior to yielding an item.  If
+.B scan
+cannot immediately acquire a lock, the locked item will not be yielded.
+(default: 1)
 .TP
 .B FSQ_ENQUEUE_MAX_TRIES
 .br
@@ -490,3 +501,14 @@ seconds prior to now.  A value of 0 for
 will cause
 .B fsq
 to never timeout queue items. (default: 0)
+.SH "SEE ALSO"
+.BR mkfsqueue (1),
+.BR fsq (1),
+.BR open (2),
+.BR getgid (2),
+.BR getuid (2),
+.BR fcntl (2),
+.BR flock (2),
+.BR getpwent (3),
+.BR getgrent (3),
+.BR fsq (l)
