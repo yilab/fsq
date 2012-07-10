@@ -13,8 +13,9 @@ import datetime
 from . import FSQ_ROOT, FSQ_LOCK, FSQ_QUEUE, FSQ_DONE, FSQ_FAIL, FSQ_SUCCESS,\
               FSQ_FAIL_TMP, FSQ_FAIL_PERM, FSQ_TTL, FSQ_MAX_TRIES,\
               FSQ_TIMEFMT, FSQ_ENCODE, path as fsq_path, deconstruct,\
-              FSQMalformedEntryError, FSQTimeFmtError, FSQWorkItemError#,\
-              #fail as fsq_fail, success as fsq_success
+              FSQMalformedEntryError, FSQTimeFmtError, FSQWorkItemError,\
+              fail as fsq_fail, success as fsq_success, done as fsq_done,\
+              fail_tmp as fsq_fail_tmp, fail_perm as fsq_fail_perm
 from .internal import rationalize_file, wrap_io_os_err
 
 class FSQEnqueueItem(object):
@@ -91,7 +92,7 @@ class FSQWorkItem(object):
         except Exception, e:
             try:
                 fail_type = getattr(e, 'errno', fail_perm)
-                #self.fail(fail_type)
+                self.fail(fail_type)
             finally:
                 self.file.close()
             raise e
@@ -102,16 +103,21 @@ class FSQWorkItem(object):
             self.file.close()
 
     ####### EXPOSED METHODS AND ATTRS #######
-    #def fail(self, fail_type=None):
-    #    '''Fail this item either temporarily or permanantly.  This function
-    #       may be called mid setup, so it takes pain to ensure that we always
-    #       have values to send to the fail function, even if those values have
-    #       not been initialized on self.'''
-    #    if fail_type is None:
-    #        fail_type = getattr(self, 'fail_type', FSQ_FAIL_PERM)
-    #    fsq_fail(self, fail_type=fail_type,
-    #             fail=getattr(self, 'fail_dir', FSQ_FAIL),
-    #             fail_tmp=getattr(self, 'fail_tmp', FSQ_FAIL_TMP),
-    #             fail_perm=getattr(self, 'fail_perm', FSQ_FAIL_PERM),
-    #             max_tries=getattr(self, 'max_tries', FSQ_MAX_TRIES),
-    #             ttl=getattr(self, 'ttl', FSQ_TTL))
+    def done(self, done_type=None, max_tries=None, ttl=None):
+        '''Complete an item, either successfully or with failure'''
+        return fsq_done(self, done_type, max_tries=max_tries, ttl=ttl)
+
+    def success(self):
+        '''Complete an item successfully'''
+        return fsq_success(self)
+
+    def fail(self, fail_type=None, max_tries=None, ttl=None):
+        '''Fail this item either temporarily or permanantly.'''
+        return fsq_fail(self, fail_type, max_tries=max_tries, ttl=ttl)
+
+    def fail_tmp(self, max_tries=None, ttl=None):
+        '''Fail an item temporarily (either retry, or escalate to perm)'''
+        return fsq_fail_tmp(self, max_tries=max_tries, ttl=ttl)
+
+    def fail_perm(self):
+        return fsq_fail_perm(self)
