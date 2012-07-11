@@ -26,7 +26,7 @@ FSQ_DONE = coerce_unicode(os.environ.get("FSQ_DONE", u'done'))
 FSQ_FAIL = coerce_unicode(os.environ.get("FSQ_FAIL", u'fail'))
 FSQ_TMP = coerce_unicode(os.environ.get("FSQ_TMP", u'tmp'))
 FSQ_DOWN = coerce_unicode(os.environ.get("FSQ_DOWN", u'down'))
-FSQ_ROOT = coerce_unicode(os.environ.get("FSQ_ROOT", u''))
+FSQ_ROOT = coerce_unicode(os.environ.get("FSQ_ROOT", u'/var/fsq'))
 
 # these 2 default to None, as gid/uid may change in due course
 # when using these 2, default to os.getgid(), os.getuid()

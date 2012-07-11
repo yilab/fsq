@@ -30,14 +30,14 @@ is installed to the
 (default).  To enqueue a file to this queue, use the enqueue function:
 \n
 \n
-.BR "" fsq. enqueue ('a_queue',
+.BR ""	 fsq. enqueue ('a_queue',
 \'/path/to/file', 'args', 'to', 'enqueue')
 \n
 \n
 or to enqueue a string, use the senqueue function:
 \n
 \n
-.BR "" fsq. senqueue ('a_queue',
+.BR ""	 fsq. senqueue ('a_queue',
 \'a string body for my queue item', 'args', 'to', 'enqueue')
 .TP
 .I /var/fsq/a_queue/queue
@@ -146,7 +146,7 @@ function (typically done during a
 .BR scan ):
 \n
 \n
-for i in
+	for i in
 .BR "" fsq. scan ('a_queue'):
 .BR "" fsq. done (i)
 \n
@@ -156,7 +156,7 @@ The function
 may also be used:
 \n
 \n
-for i in
+	for i in
 .BR "" fsq. scan ('a_queue'):
 .BR "" fsq. success (i)
 \n
@@ -177,25 +177,25 @@ marked as failed, by using the
 function:
 \n
 \n
-for i in
+	for i in
 .BR "" fsq. scan ('a_queue'):
 .br
-.BR ""	fsq. fail (i)
+.BR ""		fsq. fail (i)
 \n
 \n
 The fail_perm function may also be used:
 \n
 \n
-for i in
+	for i in
 .BR "" fsq. scan ('a_queue'):
 .br
-	try:
+		try:
 .br
-		raise Exception
+			raise Exception
 .br
-	except:
+		except:
 .br
-.BR ""		fsq. fail_perm (i)
+.BR ""			fsq. fail_perm (i)
 \n
 \n
 Permanant failure may also result if an item is older than,
@@ -206,31 +206,33 @@ by way of
 .I fail_tmp:
 \n
 \n
-for i in
+	for i in
 .BR "" fsq. scan ('a_queue'):
 .br
-	try:
+		try:
 .br
-		raise Exception
+			raise Exception
 .br
-	except:
+		except:
 .br
-.BR ""		fsq. fail_tmp (i)
+.BR ""			fsq. fail_tmp (i)
 \n
 \n
 Alternatively,
 .I retry
 may be used:
-for i in
+\n
+\n
+	for i in
 .BR "" fsq. scan ('a_queue'):
 .br
-	try:
+		try:
 .br
-		raise Exception
+			raise Exception
 .br
-	except:
+		except:
 .br
-.BR ""		fsq. retry (i)
+.BR ""			fsq. retry (i)
 \n
 \n
 .TP
@@ -248,7 +250,7 @@ may be created by using the
 function:
 \n
 \n
-.BR "" fsq. down ('a_queue')
+.BR ""	fsq. down ('a_queue')
 \n
 \n
 .I down
@@ -257,7 +259,7 @@ may be removed by using the
 function:
 \n
 \n
-.BR "" fsq. up('a_queue')
+.BR "" 	fsq. up ('a_queue')
 \n
 \n
 Queues with
@@ -268,7 +270,7 @@ to
 .BR scan :
 \n
 \n
-fsq.scan('a_queue',
+	fsq.scan('a_queue',
 .BR down=None )
 \n
 \n
