@@ -501,6 +501,29 @@ seconds prior to now.  A value of 0 for
 will cause
 .B fsq
 to never timeout queue items. (default: 0)
+.SH BUGS
+If an item may be linked into
+.B FSQ_TMP
+or
+.B FSQ_FAIL
+using
+.BR link (2)
+but not unlinked from
+.B FSQ_QUEUE
+the item may exist in both directories simultaneously.
+\n
+The
+.B mkitem
+function, and all functions that make use of
+.B mkitem
+will fail with
+.BR EXDEV .
+As such,
+.B fsq
+.I queue
+directories and subdirectories (e.g
+.BR FSQ_FAIL )
+may not be installed to seperate file-systems.
 .SH "SEE ALSO"
 .BR mkfsqueue (1),
 .BR fsq (1),
