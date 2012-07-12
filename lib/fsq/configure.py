@@ -51,6 +51,9 @@ def is_down(queue, root=FSQ_ROOT, down=FSQ_DOWN):
     if not down:
         return False
     down_path = fsq_path.down(queue, root=root, down=down)
+    # use stat instead of os.path.exists because non-ENOENT errors are a
+    # configuration issue, and should raise exeptions (e.g. if you can't
+    # access due to permissions, we want to raise EPERM, not return False)
     try:
         os.stat(down_path)
     except (OSError, IOError, ), e:
