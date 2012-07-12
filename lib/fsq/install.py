@@ -23,6 +23,8 @@ def _cleanup(clean_dir):
     try:
         os.rmdir(clean_dir)
     except (OSError, IOError, ), e:
+        # suppress ENOENT, as we don't care if we can't remove something that
+        # wasn't there, we only care that it isn't there.
         if e.errno != errno.ENOENT:
             raise FSQInstallError(e.errno, wrap_io_os_err(e))
 
@@ -46,8 +48,10 @@ def _tmp_trg(trg_queue, root):
         tmp_queue = tempfile.mkdtemp(u'', u''.join([u'.', trg_queue]), root)
         return tmp_queue, os.path.basename(tmp_queue)
     except (OSError, IOError, ), e:
-        if e.errno != EEXIST:
+        if e.errno != errno.EEXIST:
             _cleanup(tmp_queue)
+        raise FSQInstallError(e.errno, u': '.join([u'cannot mkdtemp: {0}',
+                                                  wrap_io_os_err(e)])
 
 ####### EXPOSED METHODS #######
 def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
@@ -60,13 +64,13 @@ def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
     # validate here, so that we don't throw an odd exception on the tmp name
     trg_queue = fsq_path.valid_name(trg_queue)
     tmp_full, tmp_queue = _tmp_trg(trg_queue, root)
-    # only do a password lookup once
+    # uid_gid makes calls to the pw db and|or gr db, in addition to
+    # potentially stat'ing, as such, we want to avoid calling it unless we
+    # have to
     if user is not None or group is not None:
         uid, gid = uid_gid(user, group)
-        if user is not None:
-            user = uid
-        if group is not None:
-            group = gid
+        user = uid if user is None else user
+        group = gid if group is None else group
     try:
         # open once to cut down on stat/open for chown/chmod combo
         fd = os.open(tmp_full, os.O_RDONLY)
