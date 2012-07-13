@@ -76,7 +76,7 @@ def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
         fd = os.open(tmp_full, os.O_RDONLY)
         try:
             os.fchmod(fd, mode)
-            # always chown here as mkdtemp plays differently than normal mkdir
+            # always fchown here as mkdtemp is different than normal mkdir
             os.fchown(fd, *uid_gid(user, group))
         finally:
             os.close(fd)

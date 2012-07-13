@@ -10,13 +10,14 @@ import fcntl
 import signal
 import pwd
 import grp
+import numbers
 
 from . import FSQCoerceError, FSQEncodeError, FSQEnvError,\
               FSQCannotLockError, FSQMaxTriesError, FSQTTLExpiredError
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 # additional types to coerce to unicode, beyond decodable types
-_COERCE_THESE_TOO = (int,float,)
+_COERCE_THESE_TOO = (numbers.Real,)
 
 # locking convenience wrapper
 def _lock(fd, lock=False):
@@ -40,7 +41,7 @@ def coerce_unicode(s, encoding=u'utf8'):
     except (UnicodeEncodeError, UnicodeDecodeError, ), e:
         raise FSQCoerceError(errno.EINVAL, e.message)
     except TypeError, e:
-        if s.__class__ in _COERCE_THESE_TOO:
+        if isinstance(s, _COERCE_THESE_TOO):
             try:
                 return unicode(s)
             except Exception, e:
@@ -49,7 +50,7 @@ def coerce_unicode(s, encoding=u'utf8'):
         raise FSQCoerceError(errno.EINVAL, e.message)
 
 def delimiter_encodeseq(delimiter, encodeseq):
-    '''Coerce dlimiter and encodeseq to unicode and verify that they are not
+    '''Coerce delimiter and encodeseq to unicode and verify that they are not
        the same'''
     delimiter = coerce_unicode(delimiter)
     encodeseq = coerce_unicode(encodeseq)
@@ -63,7 +64,7 @@ def delimiter_encodeseq(delimiter, encodeseq):
 
 def uid_gid(user, group, fd=None):
     '''Get uid and gid from either uid/gid, user name/group name, or from the
-       environment of the callig process, or optionally from an fd'''
+       environment of the calling process, or optionally from an fd'''
     type_msg = u'{0} must be a string or integer, not: {1}'
     nosuch_msg = u'no such {0}: {1}'
     st = None if fd is None else os.fstat(fd)
@@ -111,7 +112,7 @@ def rationalize_file(item_f, mode='rb', lock=False):
         n_fd = os.dup(item_f.fileno())
         try:
             _lock(n_fd, lock)
-            # explicitily deriment file ref
+            # explicitily decrement file ref
             del item_f
             return os.fdopen(n_fd)
         except Exception, e:
@@ -121,7 +122,7 @@ def rationalize_file(item_f, mode='rb', lock=False):
     elif hasattr(item_f, 'readline'):
         return item_f
     # raw file descriptor -- e.g. output of pipe
-    elif isinstance(item_f, int):
+    elif isinstance(item_f, numbers.Integral):
         return os.fdopen(os.dup(item_f))
 
     # try to open, read+binary, line-buffered
