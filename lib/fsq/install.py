@@ -58,8 +58,9 @@ def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
             tmp=FSQ_TMP, queue=FSQ_QUEUE, fail=FSQ_FAIL, user=FSQ_QUEUE_USER,
             group=FSQ_QUEUE_GROUP, mode=FSQ_QUEUE_MODE, down=FSQ_DOWN,
             down_user=FSQ_ITEM_USER, down_group=FSQ_ITEM_GROUP,
-            down_mode=FSQ_ITEM_MODE):
-    '''Atomically install a queue'''
+            down_mode=FSQ_ITEM_MODE, extra_operations=None):
+    '''Atomically install a queue, extra_operations takes a function which
+	   expects as it's first argument the path to temporary directory'''
 
     # validate here, so that we don't throw an odd exception on the tmp name
     trg_queue = fsq_path.valid_name(trg_queue)
@@ -95,6 +96,8 @@ def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
         if is_down:
             fsq_down(tmp_queue, root=root, down=down, user=down_user,
                      group=down_group, mode=down_mode)
+		if extra_operations is not None:
+			extra_operations(root, tmp_queue)
 
         # atomic commit -- by rename
         os.rename(tmp_full, fsq_path.base(trg_queue, root=root))
