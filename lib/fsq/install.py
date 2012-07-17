@@ -12,11 +12,10 @@ import errno
 import tempfile
 import shutil
 
-from . import FSQ_TMP, FSQ_QUEUE, FSQ_DONE, FSQ_FAIL, FSQ_DOWN, FSQ_ROOT,\
-              FSQ_QUEUE_USER, FSQ_QUEUE_GROUP, FSQ_QUEUE_MODE, FSQ_ITEM_USER,\
-              FSQ_ITEM_GROUP, FSQ_ITEM_MODE, FSQ_UNINSTALL_WAIT, FSQ_LOCK,\
-              path as fsq_path, FSQInstallError, down as fsq_down
-from .internal import coerce_unicode, uid_gid, wrap_io_os_err
+from . import FSQ_ROOT, FSQ_QUEUE_USER, FSQ_QUEUE_GROUP, FSQ_QUEUE_MODE,\
+              FSQ_ITEM_USER, FSQ_USE_TRIGGER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
+              path as fsq_path, FSQInstallError, down, trigger
+from .internal import uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 def _cleanup(clean_dir):
@@ -51,27 +50,31 @@ def _tmp_trg(trg_queue, root):
         if e.errno != errno.EEXIST:
             _cleanup(tmp_queue)
         raise FSQInstallError(e.errno, u': '.join([u'cannot mkdtemp: {0}',
-                                                  wrap_io_os_err(e)])
+                                                  wrap_io_os_err(e)]))
 
 ####### EXPOSED METHODS #######
-def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
-            tmp=FSQ_TMP, queue=FSQ_QUEUE, fail=FSQ_FAIL, user=FSQ_QUEUE_USER,
-            group=FSQ_QUEUE_GROUP, mode=FSQ_QUEUE_MODE, down=FSQ_DOWN,
-            down_user=FSQ_ITEM_USER, down_group=FSQ_ITEM_GROUP,
-            down_mode=FSQ_ITEM_MODE, extra_operations=None):
-    '''Atomically install a queue, extra_operations takes a function which
-	   expects as it's first argument the path to temporary directory'''
+def install(trg_queue, is_down=False, is_triggered=False, user=None,
+            group=None, mode=None, item_user=None, item_group=None,
+            item_mode=None):
+    '''Atomically install a queue'''
+    # setup default modes and users
+    mode = FSQ_QUEUE_MODE if mode is None else mode
+    user = FSQ_QUEUE_USER if user is None else user
+    group = FSQ_QUEUE_GROUP if group is None else group
+    item_user = FSQ_ITEM_USER if item_user is None else item_user
+    item_group = FSQ_ITEM_GROUP if item_group is None else item_group
+    item_mode = FSQ_ITEM_MODE if mode is None else item_mode
 
     # validate here, so that we don't throw an odd exception on the tmp name
     trg_queue = fsq_path.valid_name(trg_queue)
-    tmp_full, tmp_queue = _tmp_trg(trg_queue, root)
+    tmp_full, tmp_queue = _tmp_trg(trg_queue, FSQ_ROOT)
     # uid_gid makes calls to the pw db and|or gr db, in addition to
     # potentially stat'ing, as such, we want to avoid calling it unless we
-    # have to
+    # absoultely have to
     if user is not None or group is not None:
         uid, gid = uid_gid(user, group)
-        user = uid if user is None else user
-        group = gid if group is None else group
+        user = user if user is None else uid
+        group = group if group is None else gid
     try:
         # open once to cut down on stat/open for chown/chmod combo
         fd = os.open(tmp_full, os.O_RDONLY)
@@ -83,46 +86,39 @@ def install(trg_queue, is_down=False, root=FSQ_ROOT, done=FSQ_DONE,
             os.close(fd)
 
         # bless our queue with its children
-        _instdir(fsq_path.tmp(tmp_queue, root=root, tmp=tmp), mode, user,
-                              group)
-        _instdir(fsq_path.queue(tmp_queue, root=root, queue=queue), mode,
-                                user, group)
-        _instdir(fsq_path.done(tmp_queue, root=root, done=done), mode, user,
-                               group)
-        _instdir(fsq_path.fail(tmp_queue, root=root, fail=fail), mode, user,
-                               group)
+        _instdir(fsq_path.tmp(tmp_queue), mode, user, group)
+        _instdir(fsq_path.queue(tmp_queue), mode, user, group)
+        _instdir(fsq_path.done(tmp_queue), mode, user, group)
+        _instdir(fsq_path.fail(tmp_queue), mode, user, group)
 
         # down via configure.down if necessary
         if is_down:
-            fsq_down(tmp_queue, root=root, down=down, user=down_user,
-                     group=down_group, mode=down_mode)
-		if extra_operations is not None:
-			extra_operations(root, tmp_queue)
+            down(tmp_queue, user=item_user, group=item_group, mode=item_mode)
+        if is_triggered or FSQ_USE_TRIGGER:
+            trigger(tmp_queue, user=item_user, group=item_group,
+                    mode=item_mode)
 
         # atomic commit -- by rename
-        os.rename(tmp_full, fsq_path.base(trg_queue, root=root))
+        os.rename(tmp_full, fsq_path.base(trg_queue))
     except (OSError, IOError, ), e:
-        uninstall(tmp_queue, root=root, done=done, tmp=tmp, queue=queue,
-                  down=down, down_user=down_user, down_group=down_group,
-                  down_mode=down_mode)
+        uninstall(tmp_queue, item_user=item_user, item_group=item_group,
+                  item_mode=item_mode)
         if e.errno == errno.ENOTEMPTY:
             raise FSQInstallError(e.errno, u'queue exists: {0}'.format(
                                   trg_queue))
         raise FSQInstallError(e.errno, wrap_io_os_err(e))
 
-def uninstall(trg_queue, root=FSQ_ROOT, done=FSQ_DONE, tmp=FSQ_TMP,
-              queue=FSQ_QUEUE, down=FSQ_DOWN, down_user=FSQ_ITEM_USER,
-              down_group=FSQ_ITEM_GROUP, down_mode=FSQ_ITEM_MODE,
-              lock=FSQ_LOCK):
-    '''Idempotently uninstall a queue'''
+def uninstall(trg_queue, item_user=None, item_group=None, item_mode=None):
+    '''Idempotently uninstall a queue, should you want to subvert FSQ_ROOT
+       settings, merely pass in an abolute path'''
     # immediately down the queue
-    fsq_down(trg_queue, root=root, down=down, user=down_user,
-             group=down_group, mode=down_mode)
+    down(trg_queue, user=item_user, group=item_group,
+         mode=(FSQ_ITEM_MODE if item_mode is None else item_mode))
     # atomically mv our queue to a reserved target so we can recursively
     # remove without prying eyes
-    tmp_full, tmp_queue = _tmp_trg(trg_queue, root)
+    tmp_full, tmp_queue = _tmp_trg(trg_queue, FSQ_ROOT)
     try:
-        os.rename(fsq_path.base(trg_queue, root=root), tmp_full)
+        os.rename(fsq_path.base(trg_queue), tmp_full)
         # this makes me uneasy ... but here we go magick
         shutil.rmtree(tmp_full)
     except (OSError, IOError, ), e:

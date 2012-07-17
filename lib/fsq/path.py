@@ -13,7 +13,7 @@ import errno
 
 from .internal import coerce_unicode
 from . import FSQ_QUEUE, FSQ_TMP, FSQ_ROOT, FSQ_DONE, FSQ_FAIL, FSQ_DOWN,\
-              FSQPathError
+              FSQ_TRIGGER, FSQPathError
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 _ILLEGAL_NAMES=('.', '..', )
@@ -56,3 +56,7 @@ def down(p_queue, root=FSQ_ROOT, down=FSQ_DOWN):
 def item(p_queue, queue_id, root=FSQ_ROOT, queue=FSQ_QUEUE):
     '''Construct a path to a queued item'''
     return os.path.join(_path(p_queue, root, queue), queue_id)
+
+def trigger(p_queue):
+    '''Construct a path to a trigger (FIFO)'''
+    return _path(p_queue, FSQ_ROOT, FSQ_TRIGGER)

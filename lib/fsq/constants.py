@@ -26,6 +26,7 @@ FSQ_DONE = coerce_unicode(os.environ.get("FSQ_DONE", u'done'))
 FSQ_FAIL = coerce_unicode(os.environ.get("FSQ_FAIL", u'fail'))
 FSQ_TMP = coerce_unicode(os.environ.get("FSQ_TMP", u'tmp'))
 FSQ_DOWN = coerce_unicode(os.environ.get("FSQ_DOWN", u'down'))
+FSQ_TRIGGER = coerce_unicode(os.environ.get("FSQ_TRIGGER", u'trigger-s'))
 FSQ_ROOT = coerce_unicode(os.environ.get("FSQ_ROOT", u'/var/fsq'))
 
 # these 2 default to None, as gid/uid may change in due course
@@ -48,6 +49,8 @@ try:
     FSQ_FAIL_PERM = int(os.environ.get("FSQ_FAIL_PERM", 100))
     # success
     FSQ_SUCCESS = int(os.environ.get("FSQ_SUCCESS", 0))
+    # use triggers or not
+    FSQ_USE_TRIGGER = int(os.environ.get("FSQ_USE_TRIGGER", 0))
     # get/respect exclusive locks on queue items
     FSQ_LOCK = int(os.environ.get("FSQ_LOCK", 1))
     # max tries to enqueue before FSQ gives up trying
@@ -56,7 +59,5 @@ try:
     FSQ_MAX_TRIES = int(os.environ.get("FSQ_MAX_TRIES", 1))
     # time-to-live (in seconds) for any queue item -- 0 is infinite
     FSQ_TTL = int(os.environ.get("FSQ_TTL", 0))
-    # how long to wait for acquire lock on uninstall -- NOT USED
-    FSQ_UNINSTALL_WAIT = int(os.environ.get("FSQ_UNINSTALL_WAIT", 0))
 except ValueError, e:
     raise FSQEnvError(errno.EINVAL, e.message)

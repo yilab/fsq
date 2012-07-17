@@ -29,21 +29,21 @@ from exceptions import FSQError, FSQInternalError, FSQEnvError,\
                        FSQConfigError, FSQPathError, FSQInstallError,\
                        FSQCannotLockError, FSQWorkItemError,\
                        FSQTTLExpiredError, FSQMaxTriesError, FSQScanError,\
-                       FSQDownError, FSQFailError
+                       FSQDownError, FSQFailError, FSQTriggerPullError
 # constants relies on: exceptions, internal
 from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
-                      FSQ_DONE, FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_ROOT,\
-                      FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
+                      FSQ_DONE, FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_TRIGGER,\
+                      FSQ_ROOT, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
                       FSQ_QUEUE_USER, FSQ_QUEUE_GROUP, FSQ_QUEUE_MODE,\
                       FSQ_LOCK, FSQ_ENQUEUE_MAX_TRIES, FSQ_FAIL_TMP,\
-                      FSQ_FAIL_PERM, FSQ_SUCCESS, FSQ_UNINSTALL_WAIT,\
-                      FSQ_MAX_TRIES, FSQ_TTL
+                      FSQ_FAIL_PERM, FSQ_SUCCESS, FSQ_MAX_TRIES, FSQ_TTL,\
+                      FSQ_USE_TRIGGER
 
 # path relies on: exceptions, constants, internal
 import path
 
 # configure relies on: exceptions, path, constants, internal
-from configure import down, up, is_down
+from configure import down, up, is_down, trigger, untrigger, trigger_pull
 
 # install relies on exceptions, path, constants, configure, internal
 from install import install, uninstall
@@ -70,16 +70,17 @@ from items import FSQWorkItem
 from scan import FSQScanGenerator, scan
 
 __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
-            'FSQ_DONE', 'FSQ_FAIL', 'FSQ_TMP', 'FSQ_DOWN', 'FSQ_ROOT',
-            'FSQ_ITEM_USER', 'FSQ_ITEM_GROUP', 'FSQ_QUEUE_USER',
+            'FSQ_DONE', 'FSQ_FAIL', 'FSQ_TMP', 'FSQ_DOWN', 'FSQ_TRIGGER',
+            'FSQ_ROOT', 'FSQ_ITEM_USER', 'FSQ_ITEM_GROUP', 'FSQ_QUEUE_USER',
             'FSQ_QUEUE_GROUP', 'FSQ_ITEM_MODE', 'FSQ_QUEUE_MODE', 'FSQ_LOCK',
-            'FSQ_ENQUEUE_TRIES', 'FSQ_UNINSTALL_WAIT', 'FSQ_MAX_TRIES',
-            'FSQ_TTL', 'path', 'down', 'up', 'is_down', 'install',
-            'uninstall', 'encode', 'decode', 'construct', 'deconstruct',
-            'enqueue', 'senqueue', 'venqueue', 'vsenqueue', 'FSQError',
-            'FSQInternalError', 'FSQEnvError', 'FSQEncodeError',
-            'FSQTimeFmtError', 'FSQMalformedEntryError', 'FSQCoerceError',
-            'FSQEnqueueError', 'FSQEnqueueMaxTriesError', 'FSQConfigError',
-            'FSQCannotLock', 'FSQWorkItemError', 'FSQTTLExpiredError',
-            'FSQMaxTriesError', 'FSQScanError', 'FSQDownError', 'FSQFailError',
-            'FSQWorkItem', 'FSQScanGenerator', 'scan' ]
+            'FSQ_ENQUEUE_TRIES', 'FSQ_MAX_TRIES', 'FSQ_TTL',
+            'FSQ_USE_TRIGGER', 'path', 'down', 'up', 'is_down', 'trigger',
+            'untrigger', 'install', 'uninstall', 'encode', 'decode',
+            'construct', 'deconstruct', 'enqueue', 'senqueue', 'venqueue',
+            'vsenqueue', 'FSQError', 'FSQInternalError', 'FSQEnvError',
+            'FSQEncodeError', 'FSQTimeFmtError', 'FSQMalformedEntryError',
+            'FSQCoerceError', 'FSQEnqueueError', 'FSQEnqueueMaxTriesError',
+            'FSQConfigError', 'FSQCannotLock', 'FSQWorkItemError',
+            'FSQTTLExpiredError', 'FSQMaxTriesError', 'FSQScanError',
+            'FSQDownError', 'FSQFailError', 'FSQWorkItem', 'FSQScanGenerator',
+            'scan' ]

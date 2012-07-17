@@ -85,3 +85,7 @@ class FSQDownError(FSQScanError):
 class FSQFailError(FSQError):
     '''Attempt to fail an item failed'''
     pass
+
+class FSQTriggerPullError(FSQError):
+    '''Error pulling a trigger (writing a byte O_NONBLOCK to a fifo)'''
+    pass
