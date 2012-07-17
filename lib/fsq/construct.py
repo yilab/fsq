@@ -18,8 +18,10 @@ from .internal import coerce_unicode, delimiter_encodeseq
 def construct(args, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE):
     '''Construct a queue-name from a set of arguments and a delimiter'''
     # make everything unicode
-    name = sep = u''
+    name = u''
     delimiter, encodeseq = delimiter_encodeseq(delimiter, encodeseq)
+    if len(args) == 0:
+        return delimiter
     for arg in args:
         name = delimiter.join([name, encode(coerce_unicode(arg),
                               encodeseq=encodeseq, delimiter=delimiter)])
