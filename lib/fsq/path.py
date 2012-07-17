@@ -49,9 +49,9 @@ def done(p_queue, root=FSQ_ROOT, done=FSQ_DONE):
     '''Construct a path to the done dir for a queue'''
     return _path(p_queue, root, done)
 
-def down(p_queue, root=FSQ_ROOT, down=FSQ_DOWN):
+def down(p_queue):
     '''Construct a path to the down file for a queue'''
-    return _path(p_queue, root, down)
+    return _path(p_queue, FSQ_ROOT, FSQ_DOWN)
 
 def item(p_queue, queue_id, root=FSQ_ROOT, queue=FSQ_QUEUE):
     '''Construct a path to a queued item'''

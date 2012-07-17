@@ -16,6 +16,7 @@ from . import FSQ_ROOT, FSQ_DOWN, FSQ_ITEM_USER, FSQ_ITEM_GROUP,\
 from .internal import uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
+# try to delete a file, and raise a wrapped error
 def _cleanup(path, e):
     try:
         os.unlink(path)
@@ -27,10 +28,15 @@ def _cleanup(path, e):
     raise FSQConfigError(e.errno, wrap_io_os_err(e))
 
 ####### EXPOSED METHODS #######
-def down(queue, root=FSQ_ROOT, down=FSQ_DOWN, user=FSQ_ITEM_USER,
-         group=FSQ_ITEM_GROUP, mode=FSQ_ITEM_MODE):
+def down(queue, user=None, group=None, mode=None):
     '''Down a queue, by creating a down file'''
-    down_path = fsq_path.down(queue, root=root, down=down)
+    # default our owners and mode
+    user = FSQ_ITEM_USER if user is None else user
+    group = FSQ_ITEM_GROUP if group is None else group
+    mode = FSQ_ITEM_MODE if mode is None else mode
+
+    # construct the down path, and install
+    down_path = fsq_path.down(queue)
     fd = None
     try:
         fd = os.open(down_path, os.O_CREAT|os.O_WRONLY, mode)
@@ -42,21 +48,21 @@ def down(queue, root=FSQ_ROOT, down=FSQ_DOWN, user=FSQ_ITEM_USER,
         if fd is not None:
             os.close(fd)
 
-def up(queue, root=FSQ_ROOT, down=FSQ_DOWN):
+def up(queue):
     '''Up a queue, by removing a down file -- if a queue has no down file,
        this function is a no-op.'''
-    down_path = fsq_path.down(queue, root=root, down=down)
+    down_path = fsq_path.down(queue)
     try:
         os.unlink(down_path)
     except (OSError, IOError, ), e:
         if e.errno != errno.ENOENT:
             raise FSQConfigError(e.errno, wrap_io_os_err(e))
 
-def is_down(queue, root=FSQ_ROOT, down=FSQ_DOWN):
+def is_down(queue):
     '''Returns True if queue is down, False if queue is up'''
     if not down:
         return False
-    down_path = fsq_path.down(queue, root=root, down=down)
+    down_path = fsq_path.down(queue)
     # use stat instead of os.path.exists because non-ENOENT errors are a
     # configuration issue, and should raise exeptions (e.g. if you can't
     # access due to permissions, we want to raise EPERM, not return False)
