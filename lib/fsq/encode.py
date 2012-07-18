@@ -18,12 +18,13 @@ _ENCODED = (os.path.sep,)
 
 ####### EXPOSED METHODS #######
 # we use a very lightweight ``percent'' encoding
-def encode(arg, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE,
-           encoded=tuple()):
+def encode(arg, delimiter=None, encodeseq=None, encoded=tuple()):
     '''Encode a single argument for the file-system'''
     arg = coerce_unicode(arg)
     new_arg = sep = u''
-    delimiter, encodeseq = delimiter_encodeseq(delimiter, encodeseq)
+    delimiter, encodeseq = delimiter_encodeseq(
+        FSQ_DELIMITER if delimiter is None else delimiter,
+        FSQ_ENCODE if encodeseq is None else encodeseq)
 
     # char-wise encode walk
     for seq in arg:
@@ -41,11 +42,13 @@ def encode(arg, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE,
 
     return new_arg
 
-def decode(arg, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE):
+def decode(arg, delimiter=None, encodeseq=None):
     '''Decode a single argument from the file-system'''
     arg = coerce_unicode(arg)
     new_arg = sep = u''
-    delimiter, encodeseq = delimiter_encodeseq(delimiter, encodeseq)
+    delimiter, encodeseq = delimiter_encodeseq(
+        FSQ_DELIMITER if delimiter is None else delimiter,
+        FSQ_ENCODE if encodeseq is None else encodeseq)
 
     # char-wise decode walk -- minimally stateful
     encoding_trg = sep
@@ -56,7 +59,7 @@ def decode(arg, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE):
                 continue
             try:
                 c = chr(int(encoding_trg, 16))
-            except ValueError, e:
+            except ValueError:
                 raise FSQEncodeError(errno.EINVAL, u'invalid decode'\
                                      u' target: {0}'.format(encoding_trg))
             c = coerce_unicode(c)

@@ -41,11 +41,9 @@ def senqueue(trg_queue, item_s, *args, **kwargs):
     '''
     return vsenqueue(trg_queue, item_s, args, **kwargs)
 
-def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
-             encodeseq=FSQ_ENCODE, timefmt=FSQ_TIMEFMT, queue=FSQ_QUEUE,
-             tmp=FSQ_TMP, root=FSQ_ROOT, user=FSQ_ITEM_USER,
-             group=FSQ_ITEM_GROUP, mode=FSQ_ITEM_MODE,
-             enqueue_max_tries=FSQ_ENQUEUE_MAX_TRIES, **kwargs):
+def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None,
+             tries=None, pid=None, now=None, host=None,
+             enqueue_max_tries=None):
     '''Enqueue the contents of a file, or file-like object, file-descriptor or
        the contents of a file at an address (e.g. '/my/file') queue with
        an argument list, venqueue is to enqueue what vprintf is to printf
@@ -54,16 +52,21 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
        if entropy is not passed in, venqueue will increment entropy until it
        can create the queue item.
     '''
+    # setup defaults
+    user = FSQ_ITEM_USER if user is None else user
+    group = FSQ_ITEM_GROUP if group is None else group
+    mode = FSQ_ITEM_MODE if mode is None else mode
+    if enqueue_max_tries is None:
+        enqueue_max_tries = FSQ_ENQUEUE_MAX_TRIES
+
     # open source file
     with closing(rationalize_file(item_f)) as src_file:
-        tmp_path = fsq_path.tmp(trg_queue, root=root, tmp=tmp)
-        queue_path = fsq_path.queue(trg_queue, root=root, queue=queue)
+        tmp_path = fsq_path.tmp(trg_queue)
+        queue_path = fsq_path.queue(trg_queue)
         # yeild temporary queue item
         name, trg_file = mkitem(tmp_path, args, user=user, group=group,
-                                mode=mode, delimiter=delimiter,
-                                encodeseq=encodeseq,
-                                enqueue_max_tries=enqueue_max_tries,
-                                **kwargs)
+                                mode=mode, tries=tries, pid=pid, now=now,
+                                host=host, enqueue_max_tries=enqueue_max_tries)
         # tmp target file
         with closing(trg_file):
             try:
@@ -79,10 +82,11 @@ def venqueue(trg_queue, item_f, args, delimiter=FSQ_DELIMITER,
 
                 # hard-link into queue, unlink tmp, failure case here leaves
                 # cruft in tmp, but no race condition into queue
-                commit_name, dis = mkitem(queue_path, args, link_src=name,
-                                         encodeseq=encodeseq,
-                                         enqueue_max_tries=enqueue_max_tries,
-                                         **kwargs)
+                commit_name, dis = mkitem(queue_path, args, user=user,
+                                          group=group, mode=mode, tries=tries,
+                                          pid=pid, now=now, host=host,
+                                          enqueue_max_tries=enqueue_max_tries,
+                                          link_src=name)
                 os.unlink(name)
 
                 # return the queue item id (filename)

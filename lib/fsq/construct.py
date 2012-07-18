@@ -15,20 +15,21 @@ from . import FSQMalformedEntryError, FSQ_DELIMITER, FSQ_ENCODE, encode,\
 from .internal import coerce_unicode, delimiter_encodeseq
 
 ####### EXPOSED METHODS #######
-def construct(args, delimiter=FSQ_DELIMITER, encodeseq=FSQ_ENCODE):
+def construct(args):
     '''Construct a queue-name from a set of arguments and a delimiter'''
     # make everything unicode
     name = u''
-    delimiter, encodeseq = delimiter_encodeseq(delimiter, encodeseq)
+    delimiter, encodeseq = delimiter_encodeseq(FSQ_DELIMITER, FSQ_ENCODE)
     if len(args) == 0:
         return delimiter
     for arg in args:
         name = delimiter.join([name, encode(coerce_unicode(arg),
-                              encodeseq=encodeseq, delimiter=delimiter)])
+                                            delimiter=delimiter,
+                                            encodeseq=encodeseq)])
 
     return name
 
-def deconstruct(name, encodeseq=FSQ_ENCODE):
+def deconstruct(name):
     '''Deconstruct a queue-name to a set of arguments'''
     name = coerce_unicode(name)
     new_arg = sep = u''
@@ -44,7 +45,7 @@ def deconstruct(name, encodeseq=FSQ_ENCODE):
         return delimiter, args
 
     # normal case
-    delimiter, encodeseq = delimiter_encodeseq(delimiter, encodeseq)
+    delimiter, encodeseq = delimiter_encodeseq(delimiter, FSQ_ENCODE)
     encoding_trg = sep
     for c in name[1:]:
         if 3 == len(encoding_trg):
