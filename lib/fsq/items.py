@@ -97,7 +97,7 @@ class FSQWorkItem(object):
                 fail_type = getattr(e, 'errno', FSQ_FAIL_PERM)
                 self.fail(fail_type)
             finally:
-                self.file.close()
+                self.item.close()
             raise e
 
     def __del__(self):
