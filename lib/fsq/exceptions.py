@@ -13,11 +13,6 @@ class FSQError(OSError):
     '''root for FSQErrors, only used to except any FSQ error, never raised'''
     pass
 
-class FSQInternalError(FSQError):
-    '''Internal error for internal package use, if this is raised to caller
-       something inside the package is not excpeting properly.'''
-    pass
-
 class FSQEnvError(FSQError):
     '''An error if something cannot be loaded from env, or env has an invalid
        value'''

@@ -10,10 +10,10 @@
 import errno
 import datetime
 
-from . import FSQ_LOCK, FSQ_FAIL_PERM, FSQ_TTL, FSQ_MAX_TRIES,\
-              FSQ_TIMEFMT, path as fsq_path, deconstruct,\
-              FSQMalformedEntryError, FSQTimeFmtError, FSQWorkItemError,\
-              fail, success, done, fail_tmp, fail_perm
+from . import FSQ_LOCK, FSQ_FAIL_PERM, FSQ_TTL, FSQ_MAX_TRIES, FSQ_TIMEFMT,\
+              path as fsq_path, deconstruct, FSQMalformedEntryError,\
+              FSQTimeFmtError, FSQWorkItemError, fail, success, done,\
+              fail_tmp, fail_perm
 from .internal import rationalize_file, wrap_io_os_err, check_ttl_max_tries
 
 class FSQEnqueueItem(object):

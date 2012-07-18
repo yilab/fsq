@@ -22,12 +22,11 @@
 
 
 # ORDER MATTERS HERE -- SOME MODULES ARE DEPENDANT ON OTHERS
-from exceptions import FSQError, FSQInternalError, FSQEnvError,\
-                       FSQEncodeError, FSQTimeFmtError,\
-                       FSQMalformedEntryError, FSQCoerceError,\
-                       FSQEnqueueError, FSQEnqueueMaxTriesError,\
-                       FSQConfigError, FSQPathError, FSQInstallError,\
-                       FSQCannotLockError, FSQWorkItemError,\
+from exceptions import FSQError, FSQEnvError, FSQEncodeError,\
+                       FSQTimeFmtError, FSQMalformedEntryError,\
+                       FSQCoerceError, FSQEnqueueError,\
+                       FSQEnqueueMaxTriesError, FSQConfigError, FSQPathError,\
+                       FSQInstallError, FSQCannotLockError, FSQWorkItemError,\
                        FSQTTLExpiredError, FSQMaxTriesError, FSQScanError,\
                        FSQDownError, FSQFailError, FSQTriggerPullError
 # constants relies on: exceptions, internal
@@ -57,30 +56,32 @@ from construct import construct, deconstruct
 # mkitem relies on: constants, exceptions, construct
 from mkitem import mkitem
 
-# enqueue module relies on: constants, exceptions, path, internal, mkitem
+# enqueue relies on: constants, exceptions, path, internal, mkitem
 from enqueue import enqueue, senqueue, venqueue, vsenqueue
 
-# done module relies on: constants, exceptions, path, internal, mkitem
+# done relies on: constants, exceptions, path, internal, mkitem
 from done import done, success, fail, fail_tmp, fail_perm
 
-# items module relies on: exceptions, constants, path, construct, internal
+# items relies on: exceptions, constants, path, construct, internal
 from items import FSQWorkItem
 
-# scan module relies on: exceptions, constants, path, items, configure, internal
+# scan relies on: exceptions, constants, path, items, configure, internal
 from scan import FSQScanGenerator, scan
 
 __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
             'FSQ_DONE', 'FSQ_FAIL', 'FSQ_TMP', 'FSQ_DOWN', 'FSQ_TRIGGER',
             'FSQ_ROOT', 'FSQ_ITEM_USER', 'FSQ_ITEM_GROUP', 'FSQ_QUEUE_USER',
             'FSQ_QUEUE_GROUP', 'FSQ_ITEM_MODE', 'FSQ_QUEUE_MODE', 'FSQ_LOCK',
-            'FSQ_ENQUEUE_TRIES', 'FSQ_MAX_TRIES', 'FSQ_TTL',
-            'FSQ_USE_TRIGGER', 'path', 'down', 'up', 'is_down', 'trigger',
-            'untrigger', 'install', 'uninstall', 'encode', 'decode',
-            'construct', 'deconstruct', 'enqueue', 'senqueue', 'venqueue',
-            'vsenqueue', 'FSQError', 'FSQInternalError', 'FSQEnvError',
-            'FSQEncodeError', 'FSQTimeFmtError', 'FSQMalformedEntryError',
-            'FSQCoerceError', 'FSQEnqueueError', 'FSQEnqueueMaxTriesError',
-            'FSQConfigError', 'FSQCannotLock', 'FSQWorkItemError',
-            'FSQTTLExpiredError', 'FSQMaxTriesError', 'FSQScanError',
-            'FSQDownError', 'FSQFailError', 'FSQWorkItem', 'FSQScanGenerator',
-            'scan' ]
+            'FSQ_ENQUEUE_MAX_TRIES', 'FSQ_MAX_TRIES', 'FSQ_TTL',
+            'FSQ_USE_TRIGGER', 'FSQ_SUCCESS', 'FSQ_FAIL_PERM', 'FSQ_FAIL_TMP',
+            'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
+            'FSQMalformedEntryError', 'FSQCoerceError', 'FSQEnqueueError',
+            'FSQEnqueueMaxTriesError', 'FSQConfigError', 'FSQCannotLock',
+            'FSQWorkItemError', 'FSQTTLExpiredError', 'FSQMaxTriesError',
+            'FSQScanError', 'FSQDownError', 'FSQFailError', 'FSQInstallError',
+            'FSQTriggerPullError', 'FSQCannotLockError', 'FSQPathError',
+            'path', 'down', 'up', 'is_down', 'trigger', 'untrigger',
+            'trigger_pull', 'install', 'uninstall', 'encode', 'decode',
+            'construct', 'deconstruct', 'mkitem', 'enqueue', 'senqueue',
+            'venqueue', 'vsenqueue', 'success', 'fail', 'done', 'fail_tmp',
+            'fail_perm', 'FSQWorkItem', 'FSQScanGenerator', 'scan', ]

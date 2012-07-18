@@ -14,6 +14,8 @@
 # TODO: make the defaults build-time configurable
 # This software is for POSIX compliant systems only.
 import os
+import errno
+
 from . import FSQEnvError
 from .internal import coerce_unicode
 

@@ -18,8 +18,8 @@ from . import FSQ_QUEUE, FSQ_TMP, FSQ_ROOT, FSQ_DONE, FSQ_FAIL, FSQ_DOWN,\
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 _ILLEGAL_NAMES=('.', '..', )
 
-def _path(queue, root, extra):
-    return os.path.join(coerce_unicode(root), valid_name(queue),
+def _path(queue, extra):
+    return os.path.join(coerce_unicode(FSQ_ROOT), valid_name(queue),
                         valid_name(extra))
 
 ####### EXPOSED METHODS #######
@@ -30,33 +30,33 @@ def valid_name(name):
                                   u' {0}'.format(name))
     return name
 
-def base(p_queue, root=FSQ_ROOT):
-    return _path(p_queue, root, u'')
+def base(p_queue):
+    return _path(p_queue, u'')
 
-def tmp(p_queue, root=FSQ_ROOT, tmp=FSQ_TMP):
+def tmp(p_queue):
     '''Construct a path to the tmp dir for a queue'''
-    return _path(p_queue, root, tmp)
+    return _path(p_queue, FSQ_TMP)
 
-def queue(p_queue, root=FSQ_ROOT, queue=FSQ_QUEUE):
+def queue(p_queue):
     '''Construct a path to the queue dir for a queue'''
-    return _path(p_queue, root, queue)
+    return _path(p_queue, FSQ_QUEUE)
 
-def fail(p_queue, root=FSQ_ROOT, fail=FSQ_FAIL):
+def fail(p_queue):
     '''Construct a path to the fail dir for a queue'''
-    return _path(p_queue, root, fail)
+    return _path(p_queue, FSQ_FAIL)
 
-def done(p_queue, root=FSQ_ROOT, done=FSQ_DONE):
+def done(p_queue):
     '''Construct a path to the done dir for a queue'''
-    return _path(p_queue, root, done)
+    return _path(p_queue, FSQ_DONE)
 
 def down(p_queue):
     '''Construct a path to the down file for a queue'''
-    return _path(p_queue, FSQ_ROOT, FSQ_DOWN)
+    return _path(p_queue, FSQ_DOWN)
 
-def item(p_queue, queue_id, root=FSQ_ROOT, queue=FSQ_QUEUE):
+def item(p_queue, queue_id):
     '''Construct a path to a queued item'''
-    return os.path.join(_path(p_queue, root, queue), queue_id)
+    return os.path.join(_path(p_queue, FSQ_QUEUE), queue_id)
 
 def trigger(p_queue):
     '''Construct a path to a trigger (FIFO)'''
-    return _path(p_queue, FSQ_ROOT, FSQ_TRIGGER)
+    return _path(p_queue, FSQ_TRIGGER)

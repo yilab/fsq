@@ -10,9 +10,8 @@
 import os
 import errno
 
-from . import FSQ_ROOT, FSQ_DOWN, FSQ_ITEM_USER, FSQ_ITEM_GROUP,\
-              FSQ_ITEM_MODE, path as fsq_path, FSQConfigError,\
-              FSQTriggerPullError
+from . import FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE, path as fsq_path,\
+              FSQConfigError, FSQTriggerPullError
 from .internal import uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######

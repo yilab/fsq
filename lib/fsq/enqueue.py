@@ -10,17 +10,12 @@
 # This software is for POSIX compliant systems only.
 import errno
 import os
-import socket
-import datetime
 from cStringIO import StringIO
 from contextlib import closing
 
-from . import FSQInternalError, FSQTimeFmtError, FSQEnqueueError,\
-              FSQEnqueueMaxTriesError, FSQ_DELIMITER, FSQ_TIMEFMT, FSQ_QUEUE,\
-              FSQ_TMP, FSQ_ROOT, FSQ_ENCODE, FSQ_ITEM_USER, FSQ_ITEM_GROUP,\
-              FSQ_ITEM_MODE, FSQ_ENQUEUE_MAX_TRIES, path as fsq_path, mkitem
-from .internal import coerce_unicode, uid_gid, rationalize_file,\
-                      wrap_io_os_err
+from . import FSQEnqueueError, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
+              FSQ_ENQUEUE_MAX_TRIES, path as fsq_path, mkitem
+from .internal import rationalize_file, wrap_io_os_err
 
 # TODO: provide an internal/external streamable queue item object use that
 #       instead of this for the enqueue family of functions
@@ -66,7 +61,8 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None,
         # yeild temporary queue item
         name, trg_file = mkitem(tmp_path, args, user=user, group=group,
                                 mode=mode, tries=tries, pid=pid, now=now,
-                                host=host, enqueue_max_tries=enqueue_max_tries)
+                                host=host,
+                                enqueue_max_tries=enqueue_max_tries)
         # tmp target file
         with closing(trg_file):
             try:

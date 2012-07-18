@@ -7,9 +7,9 @@
 import os
 import errno
 import fcntl
-import signal
 import pwd
 import grp
+import datetime
 import numbers
 
 from . import FSQCoerceError, FSQEncodeError, FSQEnvError,\
@@ -80,22 +80,22 @@ def uid_gid(user, group, fd=None):
             group = os.getgid()
     try:
         user = int(user)
-    except ValueError, e:
+    except ValueError:
         try:
             user = pwd.getpwnam(user).pw_uid
-        except TypeError, e:
+        except TypeError:
             raise TypeError(type_msg.format(u'user', user.__class__.__name__))
-        except KeyError, e:
+        except KeyError:
             raise FSQEnvError(errno.EINVAL, nosuch_msg.format(u'user', user))
     try:
-        gid = int(group)
-    except ValueError, e:
+        group = int(group)
+    except ValueError:
         try:
             group = grp.getgrnam(group).gr_gid
-        except TypeError, e:
+        except TypeError:
             raise TypeError(type_msg.format(u'group',
                             group.__class__.__name__))
-        except KeyError, e:
+        except KeyError:
             raise FSQEnvError(errno.EINVAL, nosuch_msg.format(u'group',
                               group))
 
