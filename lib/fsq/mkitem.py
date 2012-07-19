@@ -14,36 +14,46 @@ import socket
 import datetime
 
 from . import FSQ_TIMEFMT, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
-              FSQ_ENQUEUE_MAX_TRIES, construct,\
-              FSQEnqueueError, FSQEnqueueMaxTriesError, FSQTimeFmtError
+              construct, FSQEnqueueError, FSQTimeFmtError
 from .internal import coerce_unicode, uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 _HOSTNAME = socket.gethostname()
+_ENTROPY_PID = None
+_ENTROPY_TIME = None
+_ENTROPY_HOST = None
+_ENTROPY = 0
+
+# sacrifice a lot of complexity for a little statefullness
+def _mkentropy(pid, now, host):
+    global _ENTROPY_PID, _ENTROPY_TIME, _ENTROPY_HOST, _ENTROPY
+    if _ENTROPY_PID == pid and _ENTROPY_TIME == now and _ENTROPY_HOST == host:
+        _ENTROPY += 1
+    else:
+        _ENTROPY_PID = pid
+        _ENTROPY_TIME = now
+        _ENTROPY_HOST = host
+        _ENTROPY = 0
+
+    return _ENTROPY
 
 ####### EXPOSED METHODS #######
 def mkitem(trg_path, args, user=None, group=None, mode=None, now=None,
-           pid=None, host=None, tries=None, enqueue_max_tries=None,
-           link_src=False):
+           pid=None, host=None, tries=None, rename_src=None, entropy=None):
     '''mkitem is the guts of how queue item filenames are reserved and
-       atomically created.  link_src exists to provide the ability to
-       hard-link a source file into trg_path with args, providing the facility
-       to atomically commit queue items to a directory without
-       race-conditions.  This means that each queue directory must exist
-       within the same partition.
-
-       The enqueue_max_tries kwarg controls how many collisions mkitem will
-       tolerate prior to giving up and failing loudly with an exception.'''
+       atomically created.  rename_src exists to provide the ability to
+       rename a source file into trg_path with args, providing the facility
+       to atomically finish/fail queue items.  rename_src is not used to
+       commit from tmp to queue, link/unlink is prefered to avoid any
+       possibility (should be none if everything is to spec) of collision
+       in queue. rename and link require all queue directories to exist
+       on the same partition.'''
     trg_fd = trg = name = None
-    tried = 0
-    entropy = 0
 
     # default user, group and mode
     user = FSQ_ITEM_USER if user is None else user
     group = FSQ_ITEM_GROUP if group is None else group
     mode = FSQ_ITEM_MODE if mode is None else mode
-    if enqueue_max_tries is None:
-        enqueue_max_tries = FSQ_ENQUEUE_MAX_TRIES
 
     # default now to now(), format to FSQ_TIMEFMT
     now = datetime.datetime.now() if now is None else now
@@ -65,41 +75,32 @@ def mkitem(trg_path, args, user=None, group=None, mode=None, now=None,
     host = coerce_unicode(_HOSTNAME if host is None else host)
     # default tries to 0
     tries = coerce_unicode(0 if tries is None else tries)
+    # default entropy ...
+    if entropy is None:
+        entropy = _mkentropy(pid, now, host)
+    entropy = coerce_unicode(entropy)
 
-    # try a few times
-    while 0 >= enqueue_max_tries or enqueue_max_tries > tried:
-        tried += 1
-        # get low, so we can use some handy options; man 2 open
-        try:
-            name = construct((now, entropy, pid, host, tries, ) + tuple(args))
-            trg = os.path.join(trg_path, name)
-            if link_src:
-                os.link(link_src, trg)
-            else:
-                trg_fd = os.open(trg, os.O_WRONLY|os.O_CREAT|os.O_EXCL, mode)
-        except (OSError, IOError, ), e:
-            # if file already exists, retry or break
-            if e.errno == errno.EEXIST:
-                entropy = tried
-                continue
-            raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
-        try:
-            # if we've succeeded
-            if link_src:
-                return trg, None
-            if user is not None or group is not None:
-                # set user/group ownership for file; man 2 fchown
-                os.fchown(trg_fd, *uid_gid(user, group, fd=trg_fd))
-            # return something that is safe to close in scope
-            return trg, os.fdopen(os.dup(trg_fd), 'wb', 1)
-        except (OSError, IOError, ), e:
-            os.unlink(trg)
-            raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
-        # we return a file on a dup'ed fd, always close original fd
-        finally:
-            if trg_fd is not None:
-                os.close(trg_fd)
-
-    # if we got nowhere ... raise
-    raise FSQEnqueueMaxTriesError(errno.EAGAIN, u'max tries exhausted for:'\
-                                  u' {0}'.format(trg))
+    # get low, so we can use some handy options; man 2 open
+    try:
+        name = construct((now, entropy, pid, host, tries, ) + tuple(args))
+        trg = os.path.join(trg_path, name)
+        if rename_src:
+            os.rename(rename_src, trg)
+            return trg, None
+        else:
+            trg_fd = os.open(trg, os.O_WRONLY|os.O_CREAT|os.O_EXCL, mode)
+    except (OSError, IOError, ), e:
+        raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
+    try:
+        if user is not None or group is not None:
+            # set user/group ownership for file; man 2 fchown
+            os.fchown(trg_fd, *uid_gid(user, group, fd=trg_fd))
+        # return something that is safe to close in scope
+        return trg, os.fdopen(os.dup(trg_fd), 'wb', 1)
+    except (OSError, IOError, ), e:
+        os.unlink(trg)
+        raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
+    # we return a file on a dup'ed fd, always close original fd
+    finally:
+        if trg_fd is not None:
+            os.close(trg_fd)

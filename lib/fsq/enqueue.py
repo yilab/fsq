@@ -14,7 +14,7 @@ from cStringIO import StringIO
 from contextlib import closing
 
 from . import FSQEnqueueError, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
-              FSQ_ENQUEUE_MAX_TRIES, path as fsq_path, mkitem
+              path as fsq_path, mkitem
 from .internal import rationalize_file, wrap_io_os_err
 
 # TODO: provide an internal/external streamable queue item object use that
@@ -36,9 +36,7 @@ def senqueue(trg_queue, item_s, *args, **kwargs):
     '''
     return vsenqueue(trg_queue, item_s, args, **kwargs)
 
-def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None,
-             tries=None, pid=None, now=None, host=None,
-             enqueue_max_tries=None):
+def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
     '''Enqueue the contents of a file, or file-like object, file-descriptor or
        the contents of a file at an address (e.g. '/my/file') queue with
        an argument list, venqueue is to enqueue what vprintf is to printf
@@ -51,21 +49,17 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None,
     user = FSQ_ITEM_USER if user is None else user
     group = FSQ_ITEM_GROUP if group is None else group
     mode = FSQ_ITEM_MODE if mode is None else mode
-    if enqueue_max_tries is None:
-        enqueue_max_tries = FSQ_ENQUEUE_MAX_TRIES
 
     # open source file
     with closing(rationalize_file(item_f)) as src_file:
         tmp_path = fsq_path.tmp(trg_queue)
-        queue_path = fsq_path.queue(trg_queue)
         # yeild temporary queue item
         name, trg_file = mkitem(tmp_path, args, user=user, group=group,
-                                mode=mode, tries=tries, pid=pid, now=now,
-                                host=host,
-                                enqueue_max_tries=enqueue_max_tries)
+                                mode=mode)
         # tmp target file
         with closing(trg_file):
             try:
+                item_name = os.path.basename(name)
                 # i/o time ... assume line-buffered
                 while True:
                     line = src_file.readline()
@@ -78,15 +72,12 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None,
 
                 # hard-link into queue, unlink tmp, failure case here leaves
                 # cruft in tmp, but no race condition into queue
-                commit_name, dis = mkitem(queue_path, args, user=user,
-                                          group=group, mode=mode, tries=tries,
-                                          pid=pid, now=now, host=host,
-                                          enqueue_max_tries=enqueue_max_tries,
-                                          link_src=name)
+                os.link(name, os.path.join(fsq_path.queue(trg_queue),
+                                           item_name))
                 os.unlink(name)
 
                 # return the queue item id (filename)
-                return os.path.basename(commit_name)
+                return item_name
             except Exception, e:
                 try:
                     os.unlink(name)

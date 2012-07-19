@@ -38,10 +38,6 @@ class FSQCoerceError(FSQError):
     '''Everything is coerced to unicode'''
     pass
 
-class FSQEnqueueMaxTriesError(FSQEnqueueError):
-    '''Max attempts to enqueue exhausted'''
-    pass
-
 class FSQConfigError(FSQError):
     '''Error configuring a queue'''
     pass
@@ -75,6 +71,10 @@ class FSQScanError(FSQError):
 
 class FSQDownError(FSQScanError):
     '''Attempt to scan a down'ed queue'''
+    pass
+
+class FSQDoneError(FSQError):
+    '''Attempt to done/succeed an item failed'''
     pass
 
 class FSQFailError(FSQError):

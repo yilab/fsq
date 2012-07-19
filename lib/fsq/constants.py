@@ -55,8 +55,6 @@ try:
     FSQ_USE_TRIGGER = int(os.environ.get("FSQ_USE_TRIGGER", 0))
     # get/respect exclusive locks on queue items
     FSQ_LOCK = int(os.environ.get("FSQ_LOCK", 1))
-    # max tries to enqueue before FSQ gives up trying
-    FSQ_ENQUEUE_MAX_TRIES = int(os.environ.get("FSQ_ENQUEUE_MAX_TRIES", 10))
     # max tries before tmp fails become permanant -- 0 is infinite
     FSQ_MAX_TRIES = int(os.environ.get("FSQ_MAX_TRIES", 1))
     # time-to-live (in seconds) for any queue item -- 0 is infinite

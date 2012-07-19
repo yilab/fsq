@@ -10,7 +10,7 @@
 import errno
 import datetime
 
-from . import FSQ_LOCK, FSQ_FAIL_PERM, FSQ_TTL, FSQ_MAX_TRIES, FSQ_TIMEFMT,\
+from . import FSQ_LOCK, FSQ_TTL, FSQ_MAX_TRIES, FSQ_TIMEFMT,\
               path as fsq_path, deconstruct, FSQMalformedEntryError,\
               FSQTimeFmtError, FSQWorkItemError, fail, success, done,\
               fail_tmp, fail_perm
@@ -81,21 +81,27 @@ class FSQWorkItem(object):
                 self.tries = arguments[4]
                 self.arguments = tuple(arguments[5:])
             except IndexError, e:
-                raise FSQMalformedEntryError(fail_perm, u'needed at least 4'\
-                                             u' arguments to unpack, got:'\
+                raise FSQMalformedEntryError(errno.EINVAL, u'needed at least'\
+                                             u' 4 arguments to unpack, got:'\
                                              u' {0}'.format(len(arguments)))
             except ValueError, e:
-                raise FSQTimeFmtError(fail_perm, u'invalid date string for'\
-                                      u' strptime fmt {0}:'\
+                raise FSQTimeFmtError(errno.EINVAL, u'invalid date string'\
+                                      u' for strptime fmt {0}:'\
                                       u' {1}'.format(FSQ_TIMEFMT,
                                                      arguments[0]))
+            try:
+                self.tries = int(self.tries)
+            except ValueError, e:
+                raise FSQTimeFmtError(errno.EINVAL, u'tries must be an int,'\
+                                      u' not {0}: {1}'.format(
+                                        self.tries.__class__.__name__,
+                                        self.tries))
             check_ttl_max_tries(self.tries, self.enqueued_at, self.max_tries,
-                                self.ttl, FSQ_FAIL_PERM)
+                                self.ttl)
         except Exception, e:
             try:
                 # unhandled exceptions are perm failures
-                fail_type = getattr(e, 'errno', FSQ_FAIL_PERM)
-                self.fail(fail_type)
+                self.fail_perm()
             finally:
                 self.item.close()
             raise e

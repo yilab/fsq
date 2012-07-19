@@ -24,19 +24,18 @@
 # ORDER MATTERS HERE -- SOME MODULES ARE DEPENDANT ON OTHERS
 from exceptions import FSQError, FSQEnvError, FSQEncodeError,\
                        FSQTimeFmtError, FSQMalformedEntryError,\
-                       FSQCoerceError, FSQEnqueueError,\
-                       FSQEnqueueMaxTriesError, FSQConfigError, FSQPathError,\
-                       FSQInstallError, FSQCannotLockError, FSQWorkItemError,\
-                       FSQTTLExpiredError, FSQMaxTriesError, FSQScanError,\
-                       FSQDownError, FSQFailError, FSQTriggerPullError
+                       FSQCoerceError, FSQEnqueueError, FSQConfigError,\
+                       FSQPathError, FSQInstallError, FSQCannotLockError,\
+                       FSQWorkItemError, FSQTTLExpiredError,\
+                       FSQMaxTriesError, FSQScanError, FSQDownError,\
+                       FSQDoneError, FSQFailError, FSQTriggerPullError
 # constants relies on: exceptions, internal
 from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
                       FSQ_DONE, FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_TRIGGER,\
                       FSQ_ROOT, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
                       FSQ_QUEUE_USER, FSQ_QUEUE_GROUP, FSQ_QUEUE_MODE,\
-                      FSQ_LOCK, FSQ_ENQUEUE_MAX_TRIES, FSQ_FAIL_TMP,\
-                      FSQ_FAIL_PERM, FSQ_SUCCESS, FSQ_MAX_TRIES, FSQ_TTL,\
-                      FSQ_USE_TRIGGER
+                      FSQ_LOCK, FSQ_FAIL_TMP, FSQ_FAIL_PERM, FSQ_SUCCESS,\
+                      FSQ_MAX_TRIES, FSQ_TTL, FSQ_USE_TRIGGER
 
 # path relies on: exceptions, constants, internal
 import path
@@ -72,13 +71,13 @@ __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
             'FSQ_DONE', 'FSQ_FAIL', 'FSQ_TMP', 'FSQ_DOWN', 'FSQ_TRIGGER',
             'FSQ_ROOT', 'FSQ_ITEM_USER', 'FSQ_ITEM_GROUP', 'FSQ_QUEUE_USER',
             'FSQ_QUEUE_GROUP', 'FSQ_ITEM_MODE', 'FSQ_QUEUE_MODE', 'FSQ_LOCK',
-            'FSQ_ENQUEUE_MAX_TRIES', 'FSQ_MAX_TRIES', 'FSQ_TTL',
-            'FSQ_USE_TRIGGER', 'FSQ_SUCCESS', 'FSQ_FAIL_PERM', 'FSQ_FAIL_TMP',
-            'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
-            'FSQMalformedEntryError', 'FSQCoerceError', 'FSQEnqueueError',
-            'FSQEnqueueMaxTriesError', 'FSQConfigError', 'FSQCannotLock',
-            'FSQWorkItemError', 'FSQTTLExpiredError', 'FSQMaxTriesError',
-            'FSQScanError', 'FSQDownError', 'FSQFailError', 'FSQInstallError',
+            'FSQ_MAX_TRIES', 'FSQ_TTL', 'FSQ_USE_TRIGGER', 'FSQ_SUCCESS',
+            'FSQ_FAIL_PERM', 'FSQ_FAIL_TMP', 'FSQError', 'FSQEnvError',
+            'FSQEncodeError', 'FSQTimeFmtError', 'FSQMalformedEntryError',
+            'FSQCoerceError', 'FSQEnqueueError', 'FSQConfigError',
+            'FSQCannotLock', 'FSQWorkItemError', 'FSQTTLExpiredError',
+            'FSQMaxTriesError', 'FSQScanError', 'FSQDownError',
+            'FSQDoneError', 'FSQFailError', 'FSQInstallError',
             'FSQTriggerPullError', 'FSQCannotLockError', 'FSQPathError',
             'path', 'down', 'up', 'is_down', 'trigger', 'untrigger',
             'trigger_pull', 'install', 'uninstall', 'encode', 'decode',

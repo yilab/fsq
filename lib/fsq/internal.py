@@ -145,13 +145,13 @@ def wrap_io_os_err(e):
         msg = ': '.join([msg, e.filename])
     return msg
 
-def check_ttl_max_tries(tries, enqueued_at, max_tries, ttl, fail_perm):
+def check_ttl_max_tries(tries, enqueued_at, max_tries, ttl):
     '''Check that the ttl for an item has not expired, and that the item has
        not exceeded it's maximum allotted tries'''
     if max_tries > 0 and tries >= max_tries:
-        raise FSQMaxTriesError(fail_perm, u'Max tries exceded:'\
-                               u' {0}'.format(max_tries))
+        raise FSQMaxTriesError(errno.EINTR, u'Max tries exceded:'\
+                               u' {0} ({1})'.format(max_tries, tries))
     if ttl > 0 and datetime.datetime.now() < enqueued_at + datetime.timedelta(
             seconds=ttl):
-        raise FSQTTLExpiredError(fail_perm, u'TTL Expired:'\
+        raise FSQTTLExpiredError(errno.EINTR, u'TTL Expired:'\
                                  u' {0}'.format(ttl))
