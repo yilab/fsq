@@ -9,10 +9,10 @@
 #
 # This software is for POSIX compliant systems only.
 import os
-from . import FSQ_SUCCESS, FSQ_FAIL_TMP, FSQDoneError, FSQFailError,\
-              FSQMaxTriesError, FSQEnqueueError, FSQTTLExpiredError,\
-              path as fsq_path, mkitem
-from .internal import wrap_io_os_err, check_ttl_max_tries
+from . import FSQ_SUCCESS, FSQ_FAIL_TMP, FSQ_TIMEFMT, FSQDoneError,\
+              FSQFailError, FSQMaxTriesError, FSQEnqueueError,\
+              FSQTTLExpiredError, path as fsq_path, construct
+from .internal import wrap_io_os_err, check_ttl_max_tries, fmt_time
 
 ####### EXPOSED METHODS #######
 def fail_tmp(item, max_tries=None, ttl=None):
@@ -26,12 +26,11 @@ def fail_tmp(item, max_tries=None, ttl=None):
         check_ttl_max_tries(item.tries, item.enqueued_at, max_tries, ttl)
         # mv to same plus 1
         item.tries += 1
-        trg_path, discard = mkitem(fsq_path.tmp(item.queue), item.arguments,
-                                   now=item.enqueued_at, pid=item.pid,
-                                   tries=item.tries, entropy=item.entropy,
-                                   rename_src=fsq_path.item(item.queue,
-                                       item.id))
-        return os.path.basename(trg_path)
+        new_name = construct(( fmt_time(item.enqueued_at, FSQ_TIMEFMT),
+                             item.entropy, item.pid,
+                             item.host, item.tries, ) + tuple(item.arguments))
+        os.rename(item.id, fsq_path.item(item.queue, new_name))
+        return new_name
     except (FSQMaxTriesError, FSQTTLExpiredError, FSQEnqueueError, ), e:
         fail_perm(item)
         e.message = u': '.join([

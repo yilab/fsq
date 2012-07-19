@@ -49,7 +49,7 @@ class FSQWorkItem(object):
        mechanism.'''
     ####### MAGICAL METHODS AND ATTRS #######
     def __init__(self, trg_queue, item_id, max_tries=None, ttl=None,
-                 lock=None):
+                 lock=None, no_open=False):
         '''Construct an FSQWorkItem object from an item_id (file-name), and
            queue-name.  The lock kwarg will override the default locking
            preference (taken from environment).'''
@@ -59,16 +59,11 @@ class FSQWorkItem(object):
         self.max_tries = FSQ_MAX_TRIES if max_tries is None else max_tries
         self.ttl = FSQ_TTL if ttl is None else ttl
         self.lock = FSQ_LOCK if lock is None else lock
+        self.item = None
 
         # open file immediately
-        try:
-            self.item = rationalize_file(fsq_path.item(trg_queue, item_id),
-                                         lock=self.lock)
-        except (OSError, IOError, ), e:
-            if e.errno == errno.ENOENT:
-                raise FSQWorkItemError(e.errno, u'no such item in queue {0}:'\
-                                       u' {1}'.format(trg_queue, item_id))
-            raise FSQWorkItemError(e.errno, wrap_io_os_err(e))
+        if not no_open:
+            self.open()
         try:
             self.delimiter, arguments = deconstruct(item_id)
             try:
@@ -103,7 +98,7 @@ class FSQWorkItem(object):
                 # unhandled exceptions are perm failures
                 self.fail_perm()
             finally:
-                self.item.close()
+                self.close()
             raise e
 
     def __del__(self):
@@ -112,6 +107,21 @@ class FSQWorkItem(object):
             self.item.close()
 
     ####### EXPOSED METHODS AND ATTRS #######
+    def close():
+        if self.item is not None:
+            self.item.close()
+
+    def open():
+        self.close()
+        try:
+            self.item = rationalize_file(fsq_path.item(self.queue, self.id),
+                                         lock=self.lock)
+        except (OSError, IOError, ), e:
+            if e.errno == errno.ENOENT:
+                raise FSQWorkItemError(e.errno, u'no such item in queue {0}:'\
+                                       u' {1}'.format(trg_queue, item_id))
+            raise FSQWorkItemError(e.errno, wrap_io_os_err(e))
+
     def done(self, done_type=None):
         '''Complete an item, either successfully or with failure'''
         return done(self, done_type)

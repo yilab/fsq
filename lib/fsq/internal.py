@@ -12,7 +12,7 @@ import grp
 import datetime
 import numbers
 
-from . import FSQCoerceError, FSQEncodeError, FSQEnvError,\
+from . import FSQCoerceError, FSQEncodeError, FSQEnvError, FSQTimeFmtError,\
               FSQCannotLockError, FSQMaxTriesError, FSQTTLExpiredError
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
@@ -155,3 +155,16 @@ def check_ttl_max_tries(tries, enqueued_at, max_tries, ttl):
             seconds=ttl):
         raise FSQTTLExpiredError(errno.EINTR, u'TTL Expired:'\
                                  u' {0}'.format(ttl))
+def fmt_time(d_time, timefmt):
+    try:
+        return coerce_unicode(d_time.strftime(timefmt))
+    except AttributeError:
+        raise TypeError(u'date must be a datetime, date, time, or other type'\
+                        u' supporting strftime, not {0}'.format(
+                        d_time.__class__.__name__))
+    except TypeError:
+        raise TypeError(u'timefmt must be a string or read-only buffer,'\
+                        ' not {0}'.format(timefmt.__class__.__name__))
+    except ValueError:
+        raise FSQTimeFmtError(errno.EINVAL, u'invalid fmt for strftime:'\
+                              ' {0}'.format(timefmt))
