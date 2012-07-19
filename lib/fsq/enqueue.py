@@ -46,17 +46,6 @@ def _mkentropy(pid, now, host):
     return _ENTROPY
 
 ####### EXPOSED METHODS #######
-def mkitem(trg_path, args, user=None, group=None, mode=None):
-    '''mkitem is the guts of how queue item filenames are reserved and
-       atomically created.  rename_src exists to provide the ability to
-       rename a source file into trg_path with args, providing the facility
-       to atomically finish/fail queue items.  rename_src is not used to
-       commit from tmp to queue, link/unlink is prefered to avoid any
-       possibility (should be none if everything is to spec) of collision
-       in queue. rename and link require all queue directories to exist
-       on the same partition.'''
-
-####### EXPOSED METHODS #######
 def enqueue(trg_queue, item_f, *args, **kwargs):
     '''Enqueue the contents of a file, or file-like object, file-descriptor or
        the contents of a file at an address (e.g. '/my/file') queue with
