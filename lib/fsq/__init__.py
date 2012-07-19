@@ -52,9 +52,6 @@ from encode import encode, decode
 # construct relies on: constants, exceptions, encode, internal
 from construct import construct, deconstruct
 
-# mkitem relies on: constants, exceptions, construct
-from mkitem import mkitem
-
 # enqueue relies on: constants, exceptions, path, internal, mkitem
 from enqueue import enqueue, senqueue, venqueue, vsenqueue
 
@@ -81,6 +78,6 @@ __all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
             'FSQTriggerPullError', 'FSQCannotLockError', 'FSQPathError',
             'path', 'down', 'up', 'is_down', 'trigger', 'untrigger',
             'trigger_pull', 'install', 'uninstall', 'encode', 'decode',
-            'construct', 'deconstruct', 'mkitem', 'enqueue', 'senqueue',
-            'venqueue', 'vsenqueue', 'success', 'fail', 'done', 'fail_tmp',
-            'fail_perm', 'FSQWorkItem', 'FSQScanGenerator', 'scan', ]
+            'construct', 'deconstruct', 'enqueue', 'senqueue', 'venqueue',
+            'vsenqueue', 'success', 'fail', 'done', 'fail_tmp', 'fail_perm',
+            'FSQWorkItem', 'FSQScanGenerator', 'scan', ]
