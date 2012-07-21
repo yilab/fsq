@@ -10,10 +10,9 @@
 import errno
 import datetime
 
-from . import FSQ_LOCK, FSQ_TTL, FSQ_MAX_TRIES, FSQ_TIMEFMT,\
-              path as fsq_path, deconstruct, FSQMalformedEntryError,\
-              FSQTimeFmtError, FSQWorkItemError, fail, success, done,\
-              fail_tmp, fail_perm
+from . import constants as _c, path as fsq_path, deconstruct,\
+              FSQMalformedEntryError, FSQTimeFmtError, FSQWorkItemError,\
+              fail, success, done, fail_tmp, fail_perm
 from .internal import rationalize_file, wrap_io_os_err, check_ttl_max_tries
 
 class FSQEnqueueItem(object):
@@ -56,9 +55,9 @@ class FSQWorkItem(object):
 
         self.id = item_id
         self.queue = trg_queue
-        self.max_tries = FSQ_MAX_TRIES if max_tries is None else max_tries
-        self.ttl = FSQ_TTL if ttl is None else ttl
-        self.lock = FSQ_LOCK if lock is None else lock
+        self.max_tries = _c.FSQ_MAX_TRIES if max_tries is None else max_tries
+        self.ttl = _c.FSQ_TTL if ttl is None else ttl
+        self.lock = _c.FSQ_LOCK if lock is None else lock
         self.item = None
 
         # open file immediately
@@ -69,7 +68,7 @@ class FSQWorkItem(object):
             try:
                 # construct datetime.datetime from enqueued_at
                 self.enqueued_at = datetime.datetime.strptime(arguments[0],
-                                                              FSQ_TIMEFMT)
+                                                              _c.FSQ_TIMEFMT)
                 self.entropy = arguments[1]
                 self.pid = arguments[2]
                 self.hostname = arguments[3]
@@ -82,7 +81,7 @@ class FSQWorkItem(object):
             except ValueError, e:
                 raise FSQTimeFmtError(errno.EINVAL, u'invalid date string'\
                                       u' for strptime fmt {0}:'\
-                                      u' {1}'.format(FSQ_TIMEFMT,
+                                      u' {1}'.format(_c.FSQ_TIMEFMT,
                                                      arguments[0]))
             try:
                 self.tries = int(self.tries)
@@ -107,11 +106,11 @@ class FSQWorkItem(object):
             self.item.close()
 
     ####### EXPOSED METHODS AND ATTRS #######
-    def close():
+    def close(self):
         if self.item is not None:
             self.item.close()
 
-    def open():
+    def open(self):
         self.close()
         try:
             self.item = rationalize_file(fsq_path.item(self.queue, self.id),
@@ -119,7 +118,7 @@ class FSQWorkItem(object):
         except (OSError, IOError, ), e:
             if e.errno == errno.ENOENT:
                 raise FSQWorkItemError(e.errno, u'no such item in queue {0}:'\
-                                       u' {1}'.format(trg_queue, item_id))
+                                       u' {1}'.format(self.queue, self.id))
             raise FSQWorkItemError(e.errno, wrap_io_os_err(e))
 
     def done(self, done_type=None):

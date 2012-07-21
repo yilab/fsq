@@ -10,8 +10,7 @@
 # This software is for POSIX compliant systems only.
 import errno
 
-from . import FSQMalformedEntryError, FSQ_DELIMITER, FSQ_ENCODE, encode,\
-              decode
+from . import FSQMalformedEntryError, constants as _c, encode, decode
 from .internal import coerce_unicode, delimiter_encodeseq
 
 ####### EXPOSED METHODS #######
@@ -19,7 +18,8 @@ def construct(args):
     '''Construct a queue-name from a set of arguments and a delimiter'''
     # make everything unicode
     name = u''
-    delimiter, encodeseq = delimiter_encodeseq(FSQ_DELIMITER, FSQ_ENCODE)
+    delimiter, encodeseq = delimiter_encodeseq(_c.FSQ_DELIMITER,
+                                               _c.FSQ_ENCODE)
     if len(args) == 0:
         return delimiter
     for arg in args:
@@ -45,7 +45,7 @@ def deconstruct(name):
         return delimiter, args
 
     # normal case
-    delimiter, encodeseq = delimiter_encodeseq(delimiter, FSQ_ENCODE)
+    delimiter, encodeseq = delimiter_encodeseq(delimiter, _c.FSQ_ENCODE)
     encoding_trg = sep
     for c in name[1:]:
         if 3 == len(encoding_trg):

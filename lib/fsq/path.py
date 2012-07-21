@@ -12,14 +12,13 @@ import os
 import errno
 
 from .internal import coerce_unicode
-from . import FSQ_QUEUE, FSQ_TMP, FSQ_ROOT, FSQ_DONE, FSQ_FAIL, FSQ_DOWN,\
-              FSQ_TRIGGER, FSQPathError
+from . import constants as _c, FSQPathError
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 _ILLEGAL_NAMES=('.', '..', )
 
 def _path(queue, extra):
-    return os.path.join(coerce_unicode(FSQ_ROOT), valid_name(queue),
+    return os.path.join(coerce_unicode(_c.FSQ_ROOT), valid_name(queue),
                         valid_name(extra))
 
 ####### EXPOSED METHODS #######
@@ -35,28 +34,28 @@ def base(p_queue):
 
 def tmp(p_queue):
     '''Construct a path to the tmp dir for a queue'''
-    return _path(p_queue, FSQ_TMP)
+    return _path(p_queue, _c.FSQ_TMP)
 
 def queue(p_queue):
     '''Construct a path to the queue dir for a queue'''
-    return _path(p_queue, FSQ_QUEUE)
+    return _path(p_queue, _c.FSQ_QUEUE)
 
 def fail(p_queue):
     '''Construct a path to the fail dir for a queue'''
-    return _path(p_queue, FSQ_FAIL)
+    return _path(p_queue, _c.FSQ_FAIL)
 
 def done(p_queue):
     '''Construct a path to the done dir for a queue'''
-    return _path(p_queue, FSQ_DONE)
+    return _path(p_queue, _c.FSQ_DONE)
 
 def down(p_queue):
     '''Construct a path to the down file for a queue'''
-    return _path(p_queue, FSQ_DOWN)
+    return _path(p_queue, _c.FSQ_DOWN)
 
 def item(p_queue, queue_id):
     '''Construct a path to a queued item'''
-    return os.path.join(_path(p_queue, FSQ_QUEUE), queue_id)
+    return os.path.join(_path(p_queue, _c.FSQ_QUEUE), queue_id)
 
 def trigger(p_queue):
     '''Construct a path to a trigger (FIFO)'''
-    return _path(p_queue, FSQ_TRIGGER)
+    return _path(p_queue, _c.FSQ_TRIGGER)

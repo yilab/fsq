@@ -10,8 +10,8 @@
 import os
 import errno
 
-from . import FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE, path as fsq_path,\
-              FSQConfigError, FSQTriggerPullError
+from . import constants as _c, path as fsq_path, FSQConfigError,\
+              FSQTriggerPullError
 from .internal import uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
@@ -30,9 +30,9 @@ def _cleanup(path, e):
 def down(queue, user=None, group=None, mode=None):
     '''Down a queue, by creating a down file'''
     # default our owners and mode
-    user = FSQ_ITEM_USER if user is None else user
-    group = FSQ_ITEM_GROUP if group is None else group
-    mode = FSQ_ITEM_MODE if mode is None else mode
+    user = _c.FSQ_ITEM_USER if user is None else user
+    group = _c.FSQ_ITEM_GROUP if group is None else group
+    mode = _c.FSQ_ITEM_MODE if mode is None else mode
 
     # construct the down path, and install
     down_path = fsq_path.down(queue)
@@ -75,7 +75,7 @@ def is_down(queue):
 
 def trigger(queue, user=None, group=None, mode=None):
     '''Installs a trigger for the specified queue.'''
-    mode = FSQ_ITEM_MODE if mode is None else mode
+    mode = _c.FSQ_ITEM_MODE if mode is None else mode
     trigger_path = fsq_path.trigger(queue)
     fd = None
     try:

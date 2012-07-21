@@ -10,7 +10,7 @@
 import errno
 import os
 
-from . import FSQEncodeError, FSQ_DELIMITER, FSQ_ENCODE
+from . import FSQEncodeError, constants as _c
 from .internal import coerce_unicode, delimiter_encodeseq
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
@@ -23,8 +23,8 @@ def encode(arg, delimiter=None, encodeseq=None, encoded=tuple()):
     arg = coerce_unicode(arg)
     new_arg = sep = u''
     delimiter, encodeseq = delimiter_encodeseq(
-        FSQ_DELIMITER if delimiter is None else delimiter,
-        FSQ_ENCODE if encodeseq is None else encodeseq)
+        _c.FSQ_DELIMITER if delimiter is None else delimiter,
+        _c.FSQ_ENCODE if encodeseq is None else encodeseq)
 
     # char-wise encode walk
     for seq in arg:
@@ -47,8 +47,8 @@ def decode(arg, delimiter=None, encodeseq=None):
     arg = coerce_unicode(arg)
     new_arg = sep = u''
     delimiter, encodeseq = delimiter_encodeseq(
-        FSQ_DELIMITER if delimiter is None else delimiter,
-        FSQ_ENCODE if encodeseq is None else encodeseq)
+        _c.FSQ_DELIMITER if delimiter is None else delimiter,
+        _c.FSQ_ENCODE if encodeseq is None else encodeseq)
 
     # char-wise decode walk -- minimally stateful
     encoding_trg = sep

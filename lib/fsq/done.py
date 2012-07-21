@@ -9,9 +9,8 @@
 #
 # This software is for POSIX compliant systems only.
 import os
-from . import FSQ_SUCCESS, FSQ_FAIL_TMP, FSQ_TIMEFMT, FSQDoneError,\
-              FSQFailError, FSQMaxTriesError, FSQEnqueueError,\
-              FSQTTLExpiredError, path as fsq_path, construct
+from . import constants as _c, FSQDoneError, FSQFailError, FSQMaxTriesError,\
+              FSQEnqueueError, FSQTTLExpiredError, path as fsq_path, construct
 from .internal import wrap_io_os_err, check_ttl_max_tries, fmt_time
 
 ####### EXPOSED METHODS #######
@@ -26,7 +25,7 @@ def fail_tmp(item, max_tries=None, ttl=None):
         check_ttl_max_tries(item.tries, item.enqueued_at, max_tries, ttl)
         # mv to same plus 1
         item.tries += 1
-        new_name = construct(( fmt_time(item.enqueued_at, FSQ_TIMEFMT),
+        new_name = construct(( fmt_time(item.enqueued_at, _c.FSQ_TIMEFMT),
                              item.entropy, item.pid,
                              item.host, item.tries, ) + tuple(item.arguments))
         os.rename(item.id, fsq_path.item(item.queue, new_name))
@@ -57,14 +56,14 @@ def fail_perm(item):
 def done(item, done_type=None, max_tries=None, ttl=None):
     '''Wrapper for any type of finish, successful, permanant failure or
        temporary failure'''
-    if done_type is None or done_type == FSQ_SUCCESS:
+    if done_type is None or done_type == _c.FSQ_SUCCESS:
         return success(item)
     return fail(item, fail_type=done_type, max_tries=max_tries, ttl=ttl)
 
 def fail(item, fail_type=None, max_tries=None, ttl=None):
     '''Fail a work item, either temporarily or permanantly'''
     # default to fail_perm
-    if fail_type is not None and fail_type == FSQ_FAIL_TMP:
+    if fail_type is not None and fail_type == _c.FSQ_FAIL_TMP:
         return fail_tmp(item, max_tries=max_tries, ttl=ttl)
     return fail_perm(item)
 

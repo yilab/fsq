@@ -16,8 +16,7 @@ import socket
 from cStringIO import StringIO
 from contextlib import closing
 
-from . import FSQEnqueueError, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
-              FSQ_TIMEFMT, path as fsq_path, construct
+from . import FSQEnqueueError, constants as _c, path as fsq_path, construct
 from .internal import rationalize_file, wrap_io_os_err, fmt_time,\
                       coerce_unicode, uid_gid
 
@@ -71,10 +70,10 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
     '''
     # setup defaults
     trg_fd = trg = name = None
-    user = FSQ_ITEM_USER if user is None else user
-    group = FSQ_ITEM_GROUP if group is None else group
-    mode = FSQ_ITEM_MODE if mode is None else mode
-    now = fmt_time(datetime.datetime.now(), FSQ_TIMEFMT)
+    user = _c.FSQ_ITEM_USER if user is None else user
+    group = _c.FSQ_ITEM_GROUP if group is None else group
+    mode = _c.FSQ_ITEM_MODE if mode is None else mode
+    now = fmt_time(datetime.datetime.now(), _c.FSQ_TIMEFMT)
     pid = coerce_unicode(os.getpid())
     host = coerce_unicode(_HOSTNAME)
     tries = coerce_unicode(0)

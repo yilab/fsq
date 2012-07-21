@@ -7,19 +7,6 @@
 #     they will be explicitly coerced to unicode.
 #
 # This software is for POSIX compliant systems only.
-#
-# TODO: when we get to locking, the proper method for BSD systems
-# is to open with:
-#
-#    O_EXLOCK
-#
-# the proper method on Linux systems is:
-#
-#    # f = open(...)
-#    flock(f.fileno(), LOCK_EX|LOCK_NB)
-#
-# although the latter will always work, the former is simpler.
-
 
 # ORDER MATTERS HERE -- SOME MODULES ARE DEPENDANT ON OTHERS
 from exceptions import FSQError, FSQEnvError, FSQEncodeError,\
@@ -29,13 +16,12 @@ from exceptions import FSQError, FSQEnvError, FSQEncodeError,\
                        FSQWorkItemError, FSQTTLExpiredError,\
                        FSQMaxTriesError, FSQScanError, FSQDownError,\
                        FSQDoneError, FSQFailError, FSQTriggerPullError
+
 # constants relies on: exceptions, internal
-from constants import FSQ_DELIMITER, FSQ_ENCODE, FSQ_TIMEFMT, FSQ_QUEUE,\
-                      FSQ_DONE, FSQ_FAIL, FSQ_TMP, FSQ_DOWN, FSQ_TRIGGER,\
-                      FSQ_ROOT, FSQ_ITEM_USER, FSQ_ITEM_GROUP, FSQ_ITEM_MODE,\
-                      FSQ_QUEUE_USER, FSQ_QUEUE_GROUP, FSQ_QUEUE_MODE,\
-                      FSQ_LOCK, FSQ_FAIL_TMP, FSQ_FAIL_PERM, FSQ_SUCCESS,\
-                      FSQ_MAX_TRIES, FSQ_TTL, FSQ_USE_TRIGGER
+import constants
+
+# const relies on: constants, exceptions, internal
+from const import const, set_const
 
 # path relies on: exceptions, constants, internal
 import path
@@ -64,20 +50,15 @@ from items import FSQWorkItem
 # scan relies on: exceptions, constants, path, items, configure, internal
 from scan import FSQScanGenerator, scan
 
-__all__ = [ 'FSQ_DELIMITER', 'FSQ_ENCODE', 'FSQ_TIMEFMT', 'FSQ_QUEUE',
-            'FSQ_DONE', 'FSQ_FAIL', 'FSQ_TMP', 'FSQ_DOWN', 'FSQ_TRIGGER',
-            'FSQ_ROOT', 'FSQ_ITEM_USER', 'FSQ_ITEM_GROUP', 'FSQ_QUEUE_USER',
-            'FSQ_QUEUE_GROUP', 'FSQ_ITEM_MODE', 'FSQ_QUEUE_MODE', 'FSQ_LOCK',
-            'FSQ_MAX_TRIES', 'FSQ_TTL', 'FSQ_USE_TRIGGER', 'FSQ_SUCCESS',
-            'FSQ_FAIL_PERM', 'FSQ_FAIL_TMP', 'FSQError', 'FSQEnvError',
-            'FSQEncodeError', 'FSQTimeFmtError', 'FSQMalformedEntryError',
-            'FSQCoerceError', 'FSQEnqueueError', 'FSQConfigError',
-            'FSQCannotLock', 'FSQWorkItemError', 'FSQTTLExpiredError',
-            'FSQMaxTriesError', 'FSQScanError', 'FSQDownError',
-            'FSQDoneError', 'FSQFailError', 'FSQInstallError',
+__all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
+            'FSQMalformedEntryError', 'FSQCoerceError', 'FSQEnqueueError',
+            'FSQConfigError', 'FSQCannotLock', 'FSQWorkItemError',
+            'FSQTTLExpiredError', 'FSQMaxTriesError', 'FSQScanError',
+            'FSQDownError', 'FSQDoneError', 'FSQFailError', 'FSQInstallError',
             'FSQTriggerPullError', 'FSQCannotLockError', 'FSQPathError',
-            'path', 'down', 'up', 'is_down', 'trigger', 'untrigger',
-            'trigger_pull', 'install', 'uninstall', 'encode', 'decode',
-            'construct', 'deconstruct', 'enqueue', 'senqueue', 'venqueue',
-            'vsenqueue', 'success', 'fail', 'done', 'fail_tmp', 'fail_perm',
-            'FSQWorkItem', 'FSQScanGenerator', 'scan', ]
+            'path', 'constants', 'const', 'set_const', 'down', 'up',
+            'is_down', 'trigger', 'untrigger', 'trigger_pull', 'install',
+            'uninstall', 'encode', 'decode', 'construct', 'deconstruct',
+            'enqueue', 'senqueue', 'venqueue', 'vsenqueue', 'success', 'fail',
+            'done', 'fail_tmp', 'fail_perm', 'FSQWorkItem',
+            'FSQScanGenerator', 'scan', ]

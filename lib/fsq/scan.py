@@ -16,9 +16,8 @@
 import os
 import errno
 
-from . import FSQ_LOCK, FSQ_TTL, FSQ_MAX_TRIES, FSQWorkItem,\
-              path as fsq_path, FSQScanError, FSQCannotLockError,\
-              FSQWorkItemError, FSQDownError, is_down
+from . import constants as _c, FSQWorkItem, path as fsq_path, FSQScanError,\
+              FSQCannotLockError, FSQWorkItemError, FSQDownError, is_down
 from .internal import wrap_io_os_err
 
 ####### EXPOSED METHODS AND CLASSES #######
@@ -62,9 +61,9 @@ class FSQScanGenerator(object):
 
         # list of item ids
         self.item_ids = item_ids
-        self.lock = lock if lock is None else FSQ_LOCK
-        self.ttl = ttl if ttl is None else FSQ_TTL
-        self.max_tries = FSQ_MAX_TRIES if max_tries is None else max_tries
+        self.lock = _c.FSQ_LOCK if lock is None else lock
+        self.ttl = _c.FSQ_TTL if ttl is None else ttl
+        self.max_tries = _c.FSQ_MAX_TRIES if max_tries is None else max_tries
         self.ignore_down = ignore_down
 
     def __iter__(self):
@@ -110,9 +109,9 @@ def scan(queue, lock=None, ttl=None, max_tries=None, ignore_down=False,
     '''Given a queue, generate a list of files in that queue, and pass it to
        FSQScanGenerator for iteration.  The generator kwarg is provided here
        as a means of implementing a custom generator, use with caution.'''
-    lock = FSQ_LOCK if lock is None else lock
-    ttl = FSQ_TTL if lock is None else ttl
-    max_tries = FSQ_MAX_TRIES if max_tries is None else max_tries
+    lock = _c.FSQ_LOCK if lock is None else lock
+    ttl = _c.FSQ_TTL if lock is None else ttl
+    max_tries = _c.FSQ_MAX_TRIES if max_tries is None else max_tries
     try:
         item_ids = os.listdir(fsq_path.queue(queue))
     except (OSError, IOError, ), e:
