@@ -3,6 +3,7 @@ import sys
 
 from .install import TestInstallUninstall
 from .configure import TestUpDownIsDown, TestTriggers
+from .const import TestConsts
 from . import constants as _test_c
 
 ############ INTERNAL HELPERS
@@ -22,8 +23,13 @@ def run_triggers():
     triggers_tests = _LOADER.loadTestsFromTestCase(TestTriggers)
     _RUNNER.run(triggers_tests)
 
+def run_consts():
+    consts_tests = _LOADER.loadTestsFromTestCase(TestConsts)
+    _RUNNER.run(consts_tests)
+
 def run_all():
     run_install()
     run_updownisdown()
     run_triggers()
+    run_consts()
     print >> sys.stderr, "Total Tests Run: {0}".format(_test_c.TOTAL_COUNT)

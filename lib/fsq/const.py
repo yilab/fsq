@@ -11,6 +11,7 @@
 #
 # This software is for POSIX compliant systems only.
 import errno
+import numbers
 
 from . import constants as _c, FSQEnvError
 from .internal import coerce_unicode
@@ -35,19 +36,25 @@ def set_const(const, val):
     except AttributeError:
         raise FSQEnvError(errno.ENOENT, u'no such constant:'\
                           u' {0}'.format(const))
+    except TypeError:
+        raise TypeError(errno.EINVAL, u'const name must be a string or'\
+                        u' unicode object, not:'\
+                        u' {0}'.format(const.__class__.__name__))
     should_be = cur.__class__
     try:
         if not isinstance(val, should_be):
             if should_be is unicode or cur is None:
                 val = coerce_unicode(val)
             elif should_be is int and const.endswith('MODE'):
-                val = should_be(val, 8)
+                val = int(val, 8)
+            elif isinstance(cur, numbers.Integral):
+                val = int(val)
             else:
-                val = should_be(val)
-
+                should_be(val)
     except (TypeError, ValueError, ):
         raise FSQEnvError(errno.EINVAL, u'invalid type for constant {0},'\
                           u' should be {1}, not:'\
                           u' {2}'.format(const, should_be.__name__,
                                          val.__class__.__name__))
     setattr(_c, const, val)
+    return val

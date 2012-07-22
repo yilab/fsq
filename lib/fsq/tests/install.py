@@ -27,7 +27,6 @@ def _valid_install(queue, is_down=None, is_triggered=None, user=None,
     if is_triggered:
         allowed = allowed|set([ _c.FSQ_TRIGGER, ])
     for d in dirs:
-        d = unicode(d, encoding='utf8')
         if d in allowed:
             seen.append(d)
             t_path = os.path.join(_c.FSQ_ROOT, queue, d)
