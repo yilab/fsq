@@ -1,0 +1,69 @@
+import os
+import pwd
+import grp
+
+from .. import constants as _c
+
+# Test Queue Directory
+TEST_DIR = os.path.join(os.path.dirname(__file__), 'test_queues')
+
+# The original (default) FSQ_ROOT value
+ORIG_ROOT = _c.FSQ_ROOT
+
+# 2 FSQ_ROOT directories for testing, within TEST_DIR
+ROOT1 = os.path.join(TEST_DIR, 'queue')
+ROOT2 = os.path.join(TEST_DIR, 'queue2')
+
+# A Non-ASCII sequence for testing non-ascii installs
+NON_ASCII = u'\xf8'
+
+# FMT String for programmatic test queue creation
+TEST_QUEUE = 'test_{0}'
+
+# The Normal settings (e.g. original settings)
+NORMAL = ( _c.FSQ_QUEUE, _c.FSQ_TMP, _c.FSQ_DONE, _c.FSQ_FAIL, _c.FSQ_DOWN,
+            _c.FSQ_TRIGGER, )
+
+# Overrides which should work always, for the ``Normal'' Settings
+NOT_NORMAL = ( 'foo', 'bar', 'baz', 'bang', 'wham', )
+
+# Names which are not allowed for queues, or directories within queues
+ILLEGAL_NAMES = ('..', '.', 'foo/bar',)
+
+# The original (default) FSQ queue and item modes
+ORIG_MODES = ( _c.FSQ_QUEUE_MODE, _c.FSQ_ITEM_MODE, )
+
+# Some valid modes to test with
+MODES = (00700, 02700, )
+
+# A mode that is always illegal, no matter what
+ILLEGAL_MODE = 'abcdefg'
+
+# An illegal user name (not a string)
+ILLEGAL_NAME = {}
+
+# An illegal UID for testing uid/gid (-1 sets to same, so we use -2)
+ILLEGAL_UID = -2
+
+# An illegal User name for testing user/group names
+ILLEGAL_UNAME = tuple()
+
+# The original (default) FSQ user/group values for queues
+ORIG_QUEUE_UG = ( _c.FSQ_QUEUE_USER, _c.FSQ_QUEUE_GROUP, )
+# The original (default) FSQ user/group values for items
+ORIG_ITEM_UG = ( _c.FSQ_ITEM_USER, _c.FSQ_ITEM_GROUP, )
+
+# our current UID/GID for testing explicit setting of uid/gid
+UID, GID = ( os.getuid(), os.getgid(), )
+
+# our current user/group name for testing explicit setting of user/group names
+UNAME, GNAME = ( pwd.getpwuid(UID).pw_name, grp.getgrgid(GID).gr_name, )
+
+# A root we'll assume will never exist
+NOROOT = os.path.join(TEST_DIR, 'noroot')
+
+# Count of queues installed during current test
+COUNT = 0
+
+# Overall Count of queues installed across all tests
+TOTAL_COUNT = 0

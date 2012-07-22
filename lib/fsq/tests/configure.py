@@ -1,10 +1,13 @@
 import os
 import errno
-from . import ROOT1, ROOT2, NON_ASCII, TEST_QUEUE, NORMAL, NOT_NORMAL,\
-              ILLEGAL_NAMES, ILLEGAL_MODE, ILLEGAL_NAME, ORIG_MODES,\
-              ORIG_QUEUE_UG, ORIG_ITEM_UG, MODES, UID, GID, UNAME, GNAME,\
-              NOROOT, ILLEGAL_UID, ILLEGAL_UNAME, test_type_own_mode,\
-              FSQTestCase, normalize
+
+from . import FSQTestCase
+from .internal import test_type_own_mode, normalize
+from .constants import ROOT1, ROOT2, NON_ASCII, NOT_NORMAL, ILLEGAL_NAMES,\
+                       ILLEGAL_MODE, ILLEGAL_NAME, ILLEGAL_UID,\
+                       ILLEGAL_UNAME, ORIG_QUEUE_UG, ORIG_ITEM_UG, MODES,\
+                       UID, GID, UNAME, GNAME, NOROOT
+# FROM PAPA-BEAR IMPORT THE FOLLOWING
 from .. import install, down, up, is_down, trigger, untrigger, trigger_pull,\
                constants as _c, FSQPathError, FSQInstallError,\
                FSQCoerceError, FSQConfigError, FSQTriggerPullError
