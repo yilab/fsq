@@ -105,7 +105,6 @@ def trigger(queue, user=None, group=None, mode=None):
     # default our owners and mode
     user, group, mode = _dflts(user, group, mode)
     trigger_path = fsq_path.trigger(queue)
-    fd = None
     created = False
     try:
         # mkfifo is incapable of taking unicode, coerce back to str

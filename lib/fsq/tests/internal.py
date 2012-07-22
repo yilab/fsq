@@ -36,4 +36,4 @@ def test_type_own_mode(st, t_path, f_type, uid, gid, mode):
         raise ValueError(u'incorrect uid|gid: {0}|{1} or mode {2}, expected'\
                          u' {3}|{4} with mode {5} for {6}'.format(st.st_uid,
                          st.st_gid, st.st_mode&07777, uid, gid, mode,
-                         os.path.join(t_path)))
+                         t_path))

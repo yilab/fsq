@@ -2,10 +2,8 @@ import numbers
 
 from . import FSQTestCase
 from .internal import normalize
-from .constants import ROOT1, ROOT2, NON_ASCII, NOT_NORMAL, ILLEGAL_NAMES,\
-                       ILLEGAL_MODE, ILLEGAL_NAME, ILLEGAL_UID,\
-                       ILLEGAL_UNAME, ORIG_QUEUE_UG, ORIG_ITEM_UG, MODES,\
-                       STR_MODES, UID, GID, UNAME, GNAME, NOROOT, NOCONST
+from .constants import NON_ASCII, NOT_NORMAL, ILLEGAL_MODE, ILLEGAL_NAME,\
+                       ILLEGAL_UNAME, MODES, STR_MODES, NOCONST
 
 # FROM PAPA-BEAR IMPORT THE FOLLOWING
 from .. import FSQEnvError, FSQCoerceError, const, set_const, constants as _c

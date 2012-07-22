@@ -92,7 +92,7 @@ def uid_gid(user, group, fd=None, path=None):
             raise TypeError(type_msg.format(u'user', user.__class__.__name__))
         except KeyError:
             raise FSQEnvError(errno.EINVAL, nosuch_msg.format(u'user', user))
-    except TypeError, e:
+    except TypeError:
         raise TypeError(type_msg.format(u'group', group.__class__.__name__))
     try:
         group = int(group)
@@ -105,7 +105,7 @@ def uid_gid(user, group, fd=None, path=None):
         except KeyError:
             raise FSQEnvError(errno.EINVAL, nosuch_msg.format(u'group',
                               group))
-    except TypeError, e:
+    except TypeError:
         raise TypeError(type_msg.format(u'group', group.__class__.__name__))
 
     return user, group
@@ -127,6 +127,7 @@ def rationalize_file(item_f, mode='rb', lock=False):
         except Exception, e:
             os.close(n_fd)
             raise e
+
     # StringIO, cStringIO, etc ...
     elif hasattr(item_f, 'readline'):
         return item_f

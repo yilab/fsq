@@ -21,16 +21,16 @@ from exceptions import FSQError, FSQEnvError, FSQEncodeError,\
 import constants
 
 # const relies on: constants, exceptions, internal
-from const import const, set_const
+from const import const, set_const # has tests
 
 # path relies on: exceptions, constants, internal
 import path
 
 # configure relies on: exceptions, path, constants, internal
-from configure import down, up, is_down, trigger, untrigger, trigger_pull
+from configure import down, up, is_down, trigger, untrigger, trigger_pull # has tests
 
 # install relies on exceptions, path, constants, configure, internal
-from install import install, uninstall
+from install import install, uninstall # has tests
 
 # encode relies on: constants, exceptions, internal
 from encode import encode, decode
