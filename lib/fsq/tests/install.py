@@ -1,43 +1,11 @@
 import os
-import pwd
-import grp
-import unittest
-import shutil
-import errno
-
-from . import ROOT1, ROOT2, TEST_DIR, NON_ASCII, TEST_QUEUE, NORMAL,\
-              NOT_NORMAL, ILLEGAL_NAMES, ILLEGAL_MODE, ILLEGAL_NAME,\
-              ORIG_ROOT, ORIG_MODES, ORIG_QUEUE_UG, ORIG_ITEM_UG, MODES, UID,\
-              GID, UNAME, GNAME, NOROOT, ILLEGAL_UID, ILLEGAL_UNAME
+from . import ROOT1, ROOT2, NON_ASCII, TEST_QUEUE, NORMAL, NOT_NORMAL,\
+              ILLEGAL_NAMES, ILLEGAL_MODE, ILLEGAL_NAME, ORIG_MODES,\
+              ORIG_QUEUE_UG, ORIG_ITEM_UG, MODES, UID, GID, UNAME, GNAME,\
+              NOROOT, ILLEGAL_UID, ILLEGAL_UNAME, test_type_own_mode,\
+              FSQTestCase, normalize
 from .. import install, uninstall, constants as _c, FSQPathError,\
                FSQInstallError, FSQCoerceError, FSQConfigError
-
-_COUNT = 0
-
-def _test_type_own_mode(st, t_path, f_type, uid, gid, mode):
-    mask = 0
-    # mask for directories (man 2 stat)
-    if f_type == 'd':
-        f_type = 'directory'
-        mask = 0040000
-    # mask for file (man 2 stat)
-    if f_type == 'f':
-        f_type = 'file'
-        mask = 0100000
-    # mask for FIFO (man 2 stat)
-    elif f_type == 'p':
-        f_type = 'FIFO'
-        mask = 0010000
-    if not st.st_mode&mask:
-        raise ValueError(u'Not a {0}: {1}'.format(f_type, t_path))
-    # st_mode&07777 -- mask out all non perms (man 2 stat)
-    elif (uid is not None and st.st_uid != uid) or\
-           (gid is not None and st.st_gid != gid) or\
-           (mode is not None and (st.st_mode&07777) != mode):
-        raise ValueError(u'incorrect uid|gid: {0}|{1} or mode {2}, expected'\
-                         u' {3}|{4} with mode {5} for {6}'.format(st.st_uid,
-                         st.st_gid, st.st_mode, uid, gid, mode,
-                         os.path.join(_c.FSQ_ROOT, queue, d)))
 
 def _valid_uninstall(queue):
     dirs = os.listdir(_c.FSQ_ROOT)
@@ -64,15 +32,15 @@ def _valid_install(queue, is_down=None, is_triggered=None, user=None,
             st = os.stat(t_path)
             # tests for directory install
             if d not in ( _c.FSQ_DOWN, _c.FSQ_TRIGGER ):
-                _test_type_own_mode(st, t_path, 'd',
-                                    user if user is None else UID,
-                                    group if group is None else GID, mode)
+                test_type_own_mode(st, t_path, 'd',
+                                   user if user is None else UID,
+                                   group if group is None else GID, mode)
             else:
                 f_type = 'f'
                 # is it a FIFO (man 2 stat)
                 if d == _c.FSQ_TRIGGER:
                     f_type = 'p'
-                _test_type_own_mode(st, t_path, f_type,
+                test_type_own_mode(st, t_path, f_type,
                     item_user if item_user is None else UID,
                     item_group if item_group is None else GID, item_mode)
         else:
@@ -82,38 +50,11 @@ def _valid_install(queue, is_down=None, is_triggered=None, user=None,
                          ' failed'.format(set(seen)^allowed))
     return True
 
-def _normalize():
-    global _COUNT, _c
-    _c.FSQ_QUEUE, _c.FSQ_TMP, _c.FSQ_DONE, _c.FSQ_FAIL,\
-                           _c.FSQ_DOWN, _c.FSQ_TRIGGER = NORMAL
-    _c.FSQ_QUEUE_USER, _c.FSQ_QUEUE_GROUP = ORIG_QUEUE_UG
-    _c.FSQ_ITEM_USER, _c.FSQ_ITEM_GROUP = ORIG_ITEM_UG
-    _c.FSQ_QUEUE_MODE, _c.FSQ_ITEM_MODE = ORIG_MODES
-    _COUNT += 1
-    return TEST_QUEUE.format(_COUNT)
 
-class TestInstallUninstall(unittest.TestCase):
-    def setUp(self):
-        try:
-            shutil.rmtree(TEST_DIR)
-        except (OSError, IOError, ), e:
-            if e.errno != errno.ENOENT:
-                raise e
-        os.mkdir(TEST_DIR, 00750)
-        os.mkdir(ROOT1, 00750)
-        os.mkdir(ROOT2, 00750)
-
-    def tearDown(self):
-        _c.FSQ_ROOT = ORIG_ROOT
-        try:
-            shutil.rmtree(TEST_DIR)
-        except(OSError, IOError, ), e:
-            if e.errno != errno.ENOENT:
-                raise e
-
+class TestInstallUninstall(FSQTestCase):
     def _install(self, queue=None, **kwargs):
         if queue is None:
-            queue = _normalize()
+            queue = normalize()
         install(queue, **kwargs)
         self.assertTrue(_valid_install(queue, **kwargs))
         return queue
@@ -146,14 +87,14 @@ class TestInstallUninstall(unittest.TestCase):
                     self._uninstall(queue)
 
                     # change things up
-                    queue = _normalize()
+                    queue = normalize()
                     _c.FSQ_QUEUE, _c.FSQ_TMP, _c.FSQ_DONE,\
                                  _c.FSQ_FAIL, _c.FSQ_DOWN = NOT_NORMAL
                     self._install(queue, is_down=down, is_triggered=is_t)
                     self._uninstall(queue)
 
                     # test unicodeness
-                    queue = _normalize()
+                    queue = normalize()
                     _c.FSQ_TMP = NON_ASCII
                     self._install(queue, is_down=down, is_triggered=is_t)
                     self._uninstall(queue)
@@ -171,7 +112,7 @@ class TestInstallUninstall(unittest.TestCase):
 
     def test_invalroot(self):
         '''Test install/uninstall to/from a non-existant FSQ_ROOT'''
-        queue = _normalize()
+        queue = normalize()
         _c.FSQ_ROOT = NOROOT
         self.assertRaises(FSQInstallError, install, queue)
         self.assertRaises(FSQInstallError, uninstall, queue)
@@ -182,18 +123,18 @@ class TestInstallUninstall(unittest.TestCase):
         for root in ROOT1, ROOT2:
             _c.FSQ_ROOT = root
             # verify installing queue with non-coercable name fails
-            _normalize()
+            normalize()
             self.assertRaises(FSQCoerceError, install, ILLEGAL_NAME)
             self.assertRaises((OSError, AttributeError,), _valid_install,
                               ILLEGAL_NAME)
             for name in ILLEGAL_NAMES:
-                _normalize()
+                normalize()
                 self.assertRaises(FSQPathError, install, name)
                 # verify that the queue doesn't exist
                 self.assertRaises((OSError,ValueError,), _valid_install, name)
                 for other in ('FSQ_QUEUE', 'FSQ_TMP', 'FSQ_FAIL', 'FSQ_DOWN',
                               'FSQ_TRIGGER'):
-                    queue = _normalize()
+                    queue = normalize()
                     setattr(_c, other, name)
                     # verify path error
                     self.assertRaises(FSQPathError, install, queue,
@@ -203,7 +144,7 @@ class TestInstallUninstall(unittest.TestCase):
                                       is_down=True, is_triggered=True)
 
                     # verify non-string CoerceErrors
-                    queue = _normalize()
+                    queue = normalize()
                     setattr(_c, other, ILLEGAL_NAME)
                     self.assertRaises(FSQCoerceError, install, queue,
                                       is_down=True, is_triggered=True)
@@ -228,7 +169,7 @@ class TestInstallUninstall(unittest.TestCase):
                 self._uninstall(queue)
 
                 # test with uid/gid set
-                queue = _normalize()
+                queue = normalize()
                 _c.FSQ_QUEUE_USER, _c.FSQ_QUEUE_GROUP = ( uid, gid, )
                 self._install(queue)
                 self._uninstall(queue)
@@ -242,7 +183,7 @@ class TestInstallUninstall(unittest.TestCase):
                     #END is_triggered LOOP
                 # END down LOOP
             # END root LOOP
-            queue = _normalize()
+            queue = normalize()
             uid = gid = ILLEGAL_UID
             self.assertRaises(FSQInstallError, install, queue, user=uid)
             self.assertRaises(OSError, _valid_install, queue, user=uid)
@@ -252,7 +193,7 @@ class TestInstallUninstall(unittest.TestCase):
                               group=gid)
             self.assertRaises(OSError, _valid_install, queue, user=uid,
                               group=gid)
-            queue = _normalize()
+            queue = normalize()
             uid = gid = ILLEGAL_UNAME
             self.assertRaises(TypeError, install, queue, user=uid)
             self.assertRaises((OSError, AttributeError,), _valid_install,
@@ -284,7 +225,7 @@ class TestInstallUninstall(unittest.TestCase):
                 self._uninstall(queue, item_user=uid, item_group=gid)
 
                 # test with uid/gid set
-                queue = _normalize()
+                queue = normalize()
                 _c.FSQ_ITEM_USER, _c.FSQ_ITEM_GROUP = ( uid, gid, )
                 self._install(queue)
                 self._uninstall(queue)
@@ -306,7 +247,7 @@ class TestInstallUninstall(unittest.TestCase):
             # END root LOOP
             for uid, gid in ((ILLEGAL_UID, ILLEGAL_UID,),
                             (ILLEGAL_UNAME, ILLEGAL_UNAME,)):
-                queue = _normalize()
+                queue = normalize()
                 uid = gid = ILLEGAL_UID
                 self.assertRaises(FSQConfigError, install, queue,
                                   item_user=uid, is_down=True)
@@ -351,7 +292,7 @@ class TestInstallUninstall(unittest.TestCase):
                 self._uninstall(queue)
 
                 # test with mode set
-                queue = _normalize()
+                queue = normalize()
                 _c.FSQ_QUEUE_MODE = mode
                 self._install(queue)
                 self._uninstall(queue)
@@ -373,6 +314,10 @@ class TestInstallUninstall(unittest.TestCase):
                     # END is_triggered LOOP
                 # END down LOOP
             # END root LOOP
+            queue = normalize()
+            mode = ILLEGAL_MODE
+            self.assertRaises(TypeError, install, queue, mode=mode)
+            self.assertRaises(OSError, _valid_install, queue, mode=mode)
         # END mode LOOP
 
     def test_itemmode(self):
@@ -385,7 +330,7 @@ class TestInstallUninstall(unittest.TestCase):
                 self._uninstall(queue, item_mode=mode)
 
                 # test with mode set
-                queue = _normalize()
+                queue = normalize()
                 _c.FSQ_ITEM_MODE = mode
                 self._install(queue)
                 self._uninstall(queue)
@@ -412,4 +357,13 @@ class TestInstallUninstall(unittest.TestCase):
                     # END is_triggered LOOP
                 # END down LOOP
             # END root LOOP
+            queue = normalize()
+            mode = ILLEGAL_MODE
+            self.assertRaises(TypeError, install, queue, item_mode=mode,
+                              is_down=True)
+            self.assertRaises(OSError, _valid_install, queue, item_mode=mode,
+                              is_down=True)
+            queue = self._install(item_mode=mode)
+            self.assertRaises(TypeError, uninstall, queue, item_mode=mode)
+            self.assertFalse(_valid_uninstall(queue))
         # END mode LOOP
