@@ -22,6 +22,12 @@ def _raise(path, e):
         raise FSQConfigError(e.errno, _NSQ.format(path))
     raise FSQConfigError(e.errno, wrap_io_os_err(e))
 
+def _dflts(user, group, mode):
+    user = _c.FSQ_ITEM_USER if user is None else user
+    group = _c.FSQ_ITEM_GROUP if group is None else group
+    mode = _c.FSQ_ITEM_MODE if mode is None else mode
+    return ( user, group, mode, )
+
 def _cleanup(path, e):
     try:
         os.unlink(path)
@@ -43,34 +49,25 @@ def _queue_ok(q_path):
 def down(queue, user=None, group=None, mode=None):
     '''Down a queue, by creating a down file'''
     # default our owners and mode
-    user = _c.FSQ_ITEM_USER if user is None else user
-    group = _c.FSQ_ITEM_GROUP if group is None else group
-    mode = _c.FSQ_ITEM_MODE if mode is None else mode
-
-    # construct the down path, and install
+    user, group, mode = _dflts(user, group, mode)
     down_path = fsq_path.down(queue)
     fd = None
-    created = True
+    created = False
     try:
         # try to guarentee creation
         try:
             fd = os.open(down_path, os.O_CREAT|os.O_WRONLY|os.O_EXCL, mode)
+            created = True
         except (OSError, IOError, ), e:
             if e.errno != errno.EEXIST:
                 raise e
-            created = False
-            # else just open
             fd = os.open(down_path, os.O_CREAT|os.O_WRONLY, mode)
         if user is not None or group is not None:
             os.fchown(fd, *uid_gid(user, group, fd=fd))
-        # if down existed and mode was passed, may need to chmod
-        if not created and mode is not None:
-            st = os.fstat(fd)
-            # mask out only file perms; man 2 stat
-            if mode != st.st_mode&07777:
-                os.fchmod(fd, mode)
+        if not created:
+            os.fchmod(fd, mode)
     except (OSError, IOError, ), e:
-        if created and e.errno != errno.EACCES:
+        if created:
             _cleanup(down_path, e)
         _raise(down_path, e)
     finally:
@@ -106,37 +103,26 @@ def is_down(queue):
 def trigger(queue, user=None, group=None, mode=None):
     '''Installs a trigger for the specified queue.'''
     # default our owners and mode
-    user = _c.FSQ_ITEM_USER if user is None else user
-    group = _c.FSQ_ITEM_GROUP if group is None else group
-    mode = _c.FSQ_ITEM_MODE if mode is None else mode
-
+    user, group, mode = _dflts(user, group, mode)
     trigger_path = fsq_path.trigger(queue)
-    _queue_ok(os.path.dirname(trigger_path))
     fd = None
-    created = True
+    created = False
     try:
         # mkfifo is incapable of taking unicode, coerce back to str
-        os.mkfifo(trigger_path.encode(u'utf8'), mode)
-    except (OSError, IOError, ), e:
-        # if failure not due to existence, rm and bail
-        if e.errno != errno.EEXIST:
-            if e.errno != errno.EACCES:
-                _cleanup(trigger_path, e)
-            _raise(trigger_path, e)
-        created = False
-    try:
+        try:
+            os.mkfifo(trigger_path.encode(u'utf8'), mode)
+            created = True
+        except (OSError, IOError, ), e:
+            # if failure not due to existence, rm and bail
+            if e.errno != errno.EEXIST:
+                raise e
         if user is not None or group is not None:
             # don't open and fchown here, as opening WRONLY without an open
             # reading fd will hang, opening RDONLY will zombie if we don't
             # flush, and intercepts triggers meant to go elsewheres
             os.chown(trigger_path, *uid_gid(user, group, path=trigger_path))
-
-        # mode only needs adjustment if we did not create, and mode was passed
-        if not created and mode is not None:
-            st = os.stat(trigger_path)
-            # mask out only file perms; man 2 stat
-            if mode != st.st_mode&07777:
-                os.chmod(trigger_path, mode)
+        if not created:
+            os.chmod(trigger_path, mode)
     except (OSError, IOError, ), e:
         # only rm if we created and failed, otherwise leave it and fail
         if created:
