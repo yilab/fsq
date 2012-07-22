@@ -38,10 +38,13 @@ def set_const(const, val):
     should_be = cur.__class__
     try:
         if not isinstance(val, should_be):
-            if should_be is unicode:
+            if should_be is unicode or cur is None:
                 val = coerce_unicode(val)
+            elif should_be is int and const.endswith('MODE'):
+                val = should_be(val, 8)
             else:
                 val = should_be(val)
+
     except (TypeError, ValueError, ):
         raise FSQEnvError(errno.EINVAL, u'invalid type for constant {0},'\
                           u' should be {1}, not:'\
