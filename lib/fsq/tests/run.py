@@ -5,6 +5,7 @@ from .path import TestPath
 from .const import TestConsts
 from .configure import TestUpDownIsDown, TestTriggers
 from .install import TestInstallUninstall
+from .encode import TestEncodeDecode
 from . import constants as _test_c
 
 ############ INTERNAL HELPERS
@@ -36,6 +37,10 @@ def run_install():
     install_tests = _LOADER.loadTestsFromTestCase(TestInstallUninstall)
     return _RUNNER.run(install_tests)
 
+def run_encodedecode():
+    encodedecode_tests = _LOADER.loadTestsFromTestCase(TestEncodeDecode)
+    return _RUNNER.run(encodedecode_tests)
+
 def run_all():
     failures = errors = 0
     failures, errors = _extract(run_paths(), errors, failures)
@@ -43,6 +48,7 @@ def run_all():
     failures, errors = _extract(run_updownisdown(), errors, failures)
     failures, errors = _extract(run_triggers(), errors, failures)
     failures, errors = _extract(run_install(), errors, failures)
+    failures, errors = _extract(run_encodedecode(), errors, failures)
     print >> sys.stderr, "Total Tests Run: {0}".format(_test_c.TOTAL_COUNT)
     print >> sys.stderr, "Total Failures: {0}, Total Errors:"\
                          " {1}".format(failures, errors)

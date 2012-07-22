@@ -57,9 +57,21 @@ def delimiter_encodeseq(delimiter, encodeseq):
     if 1 != len(encodeseq):
         raise FSQEncodeError(errno.EINVAL, u'encode sequence must be 1'\
                              u' character, not {0}'.format(len(encodeseq)))
-    elif delimiter == encodeseq:
+    if 1 != len(delimiter):
+        raise FSQEncodeError(errno.EINVAL, u'delimiter must be 1 character,'\
+                             u' not {0}'.format(len(delimiter)))
+    if delimiter == encodeseq:
         raise FSQEncodeError(errno.EINVAL, u'delimiter and encoding may not'\
                              u' be the same: both: {0}'.format(encodeseq))
+    try:
+        delimiter.encode('ascii')
+    except UnicodeEncodeError:
+        raise FSQEncodeError(errno.EINVAL, u'delimiter must be ascii')
+    try:
+        encodeseq.encode('ascii')
+    except UnicodeEncodeError:
+        raise FSQEncodeError(errno.EINVAL, u'encodeseq must be ascii')
+
     return delimiter, encodeseq
 
 def uid_gid(user, group, fd=None, path=None):

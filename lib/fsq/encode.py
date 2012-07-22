@@ -26,6 +26,14 @@ def encode(arg, delimiter=None, encodeseq=None, encoded=tuple()):
         _c.FSQ_DELIMITER if delimiter is None else delimiter,
         _c.FSQ_ENCODE if encodeseq is None else encodeseq)
 
+    # validate encoded tuple
+    for enc in encoded:
+        enc = coerce_unicode(enc)
+        try:
+            enc = enc.encode('ascii')
+        except UnicodeEncodeError:
+            raise FSQEncodeError(errno.EINVAL, u'invalid encoded value: {0}'\
+                                 u' non-ascii'.format(enc))
     # char-wise encode walk
     for seq in arg:
         if seq == delimiter or seq == encodeseq or seq in _ENCODED + encoded:

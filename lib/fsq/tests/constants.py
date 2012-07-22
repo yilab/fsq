@@ -71,3 +71,17 @@ COUNT = 0
 
 # Overall Count of queues installed across all tests
 TOTAL_COUNT = 0
+
+# Different Encode Sequence Char
+ENCODE = '^'
+ILLEGAL_ENCODE = '^^'
+
+# Different Delimiter Char
+DELIMITER = '.'
+ILLEGAL_DELIMITER = '..'
+
+# Extra Chars to Encode
+ENCODED = ('a', 'b', 'c',)
+
+# Original Encode/Delimiter
+ORIG_ENCODE_DELIMITER = ( _c.FSQ_ENCODE, _c.FSQ_DELIMITER, )

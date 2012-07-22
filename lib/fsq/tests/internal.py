@@ -8,6 +8,7 @@ def normalize():
     _c.FSQ_QUEUE_USER, _c.FSQ_QUEUE_GROUP = _test_c.ORIG_QUEUE_UG
     _c.FSQ_ITEM_USER, _c.FSQ_ITEM_GROUP = _test_c.ORIG_ITEM_UG
     _c.FSQ_QUEUE_MODE, _c.FSQ_ITEM_MODE = _test_c.ORIG_MODES
+    _c.FSQ_ENCODE, _c.FSQ_DELIMITER = _test_c.ORIG_ENCODE_DELIMITER
     _test_c.COUNT += 1
     return _test_c.TEST_QUEUE.format(_test_c.COUNT)
 

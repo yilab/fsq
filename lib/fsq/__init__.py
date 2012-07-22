@@ -33,7 +33,7 @@ from configure import down, up, is_down, trigger, untrigger, trigger_pull # has 
 from install import install, uninstall # has tests
 
 # encode relies on: constants, exceptions, internal
-from encode import encode, decode
+from encode import encode, decode # has tests
 
 # construct relies on: constants, exceptions, encode, internal
 from construct import construct, deconstruct
