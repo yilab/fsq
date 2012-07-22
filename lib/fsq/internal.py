@@ -85,13 +85,15 @@ def uid_gid(user, group, fd=None, path=None):
             group = os.getgid()
     try:
         user = int(user)
-    except ValueError:
+    except (TypeError, ValueError):
         try:
             user = pwd.getpwnam(user).pw_uid
         except TypeError:
             raise TypeError(type_msg.format(u'user', user.__class__.__name__))
         except KeyError:
             raise FSQEnvError(errno.EINVAL, nosuch_msg.format(u'user', user))
+    except TypeError, e:
+        raise TypeError(type_msg.format(u'group', group.__class__.__name__))
     try:
         group = int(group)
     except ValueError:
@@ -103,6 +105,8 @@ def uid_gid(user, group, fd=None, path=None):
         except KeyError:
             raise FSQEnvError(errno.EINVAL, nosuch_msg.format(u'group',
                               group))
+    except TypeError, e:
+        raise TypeError(type_msg.format(u'group', group.__class__.__name__))
 
     return user, group
 
