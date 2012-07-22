@@ -4,6 +4,7 @@ import pwd
 import grp
 import shutil
 import errno
+import sys
 
 from .. import constants as _c
 TEST_DIR = os.path.join(os.path.dirname(__file__), 'test_queues')
@@ -28,9 +29,11 @@ ORIG_QUEUE_UG = ( _c.FSQ_QUEUE_USER, _c.FSQ_QUEUE_GROUP, )
 ORIG_ITEM_UG = ( _c.FSQ_ITEM_USER, _c.FSQ_ITEM_GROUP, )
 NOROOT = os.path.join(TEST_DIR, 'noroot')
 COUNT = 0
+_TOTAL_COUNT = 0
 
 class FSQTestCase(unittest.TestCase):
     def setUp(self):
+        global COUNT
         COUNT = 0
         try:
             shutil.rmtree(TEST_DIR)
@@ -44,12 +47,15 @@ class FSQTestCase(unittest.TestCase):
         normalize()
 
     def tearDown(self):
+        global _TOTAL_COUNT
         _c.FSQ_ROOT = ORIG_ROOT
         try:
             shutil.rmtree(TEST_DIR)
         except(OSError, IOError, ), e:
             if e.errno != errno.ENOENT:
                 raise e
+        sys.stderr.write('Total Tests Run: {0} ... '.format(COUNT))
+        _TOTAL_COUNT += COUNT
         normalize()
 
 def normalize():
@@ -88,7 +94,7 @@ def test_type_own_mode(st, t_path, f_type, uid, gid, mode):
                          os.path.join(t_path)))
 
 from .install import TestInstallUninstall
-from .configure import TestUpDownIsDown
+from .configure import TestUpDownIsDown, TestTriggers
 
 _LOADER = unittest.TestLoader()
 _RUNNER = unittest.TextTestRunner(verbosity=2)
@@ -100,12 +106,19 @@ def run_updownisdown():
     updownisdown_tests = _LOADER.loadTestsFromTestCase(TestUpDownIsDown)
     _RUNNER.run(updownisdown_tests)
 
+def run_triggers():
+    triggers_tests = _LOADER.loadTestsFromTestCase(TestTriggers)
+    _RUNNER.run(triggers_tests)
+
 def run_all():
     run_install()
     run_updownisdown()
+    run_triggers()
+    print >> sys.stderr, "Total Tests Run: {0}".format(_TOTAL_COUNT)
 
 __all__ = [ 'ROOT1', 'ROOT2', 'TEST_DIR', 'NON_ASCII', 'TEST_QUEUE',
             'NORMAL', 'WEIRDNESS', 'RAISES', 'ORIG_ROOT', 'ORIG_MODES',
             'ORIG_QUEUE_UG', 'ORIG_ITEM_UG', 'MODES', 'UID', 'GID', 'UNAME',
             'GNAME', 'NOROOT', 'TestInstallUninstall', 'test_type_own_mode',
-            'FSQTestCase' ]
+            'FSQTestCase', 'run_all', 'run_updownidown',
+            'run_triggeruntriggertriggerpull' ]

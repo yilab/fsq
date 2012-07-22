@@ -17,15 +17,18 @@ from .internal import uid_gid, wrap_io_os_err
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 # try to delete a file, and raise a wrapped error
 _NSQ = u'no such queue: {0}'
+def _raise(path, e):
+    if e.errno == errno.ENOENT:
+        raise FSQConfigError(e.errno, _NSQ.format(path))
+    raise FSQConfigError(e.errno, wrap_io_os_err(e))
+
 def _cleanup(path, e):
     try:
         os.unlink(path)
     except (OSError, IOError, ), err:
         if err.errno != errno.ENOENT:
             raise FSQConfigError(err.errno, wrap_io_os_err(err))
-    if e.errno == errno.ENOENT:
-        raise FSQConfigError(e.errno, _NSQ.format(path))
-    raise FSQConfigError(e.errno, wrap_io_os_err(e))
+    _raise(path, e)
 
 def _queue_ok(q_path):
     # TODO: refactor to use fopen / fstatat, python doesn't support this
@@ -47,17 +50,29 @@ def down(queue, user=None, group=None, mode=None):
     # construct the down path, and install
     down_path = fsq_path.down(queue)
     fd = None
+    created = True
     try:
-        fd = os.open(down_path, os.O_CREAT|os.O_WRONLY, mode)
+        # try to guarentee creation
+        try:
+            fd = os.open(down_path, os.O_CREAT|os.O_WRONLY|os.O_EXCL, mode)
+        except (OSError, IOError, ), e:
+            if e.errno != errno.EEXIST:
+                raise e
+            created = False
+            # else just open
+            fd = os.open(down_path, os.O_CREAT|os.O_WRONLY, mode)
         if user is not None or group is not None:
             os.fchown(fd, *uid_gid(user, group, fd=fd))
         # if down existed and mode was passed, may need to chmod
-        if mode is not None:
+        if not created and mode is not None:
             st = os.fstat(fd)
+            # mask out only file perms; man 2 stat
             if mode != st.st_mode&07777:
                 os.fchmod(fd, mode)
     except (OSError, IOError, ), e:
-        _cleanup(down_path, e)
+        if created and e.errno != errno.EACCES:
+            _cleanup(down_path, e)
+        _raise(down_path, e)
     finally:
         if fd is not None:
             os.close(fd)
@@ -90,23 +105,49 @@ def is_down(queue):
 
 def trigger(queue, user=None, group=None, mode=None):
     '''Installs a trigger for the specified queue.'''
+    # default our owners and mode
+    user = _c.FSQ_ITEM_USER if user is None else user
+    group = _c.FSQ_ITEM_GROUP if group is None else group
     mode = _c.FSQ_ITEM_MODE if mode is None else mode
+
     trigger_path = fsq_path.trigger(queue)
+    _queue_ok(os.path.dirname(trigger_path))
     fd = None
+    created = True
     try:
-        os.mkfifo(trigger_path, mode)
+        # mkfifo is incapable of taking unicode, coerce back to str
+        os.mkfifo(trigger_path.encode(u'utf8'), mode)
+    except (OSError, IOError, ), e:
+        # if failure not due to existence, rm and bail
+        if e.errno != errno.EEXIST:
+            if e.errno != errno.EACCES:
+                _cleanup(trigger_path, e)
+            _raise(trigger_path, e)
+        created = False
+    try:
         if user is not None or group is not None:
             # don't open and fchown here, as opening WRONLY without an open
             # reading fd will hang, opening RDONLY will zombie if we don't
             # flush, and intercepts triggers meant to go elsewheres
             os.chown(trigger_path, *uid_gid(user, group, path=trigger_path))
+
+        # mode only needs adjustment if we did not create, and mode was passed
+        if not created and mode is not None:
+            st = os.stat(trigger_path)
+            # mask out only file perms; man 2 stat
+            if mode != st.st_mode&07777:
+                os.chmod(trigger_path, mode)
     except (OSError, IOError, ), e:
-        _cleanup(trigger_path, e)
+        # only rm if we created and failed, otherwise leave it and fail
+        if created:
+            _cleanup(trigger_path, e)
+        _raise(trigger_path, e)
 
 def untrigger(queue):
     '''Uninstalls the trigger for the specified queue -- if a queue has no
        trigger, this function is a no-op.'''
     trigger_path = fsq_path.trigger(queue)
+    _queue_ok(os.path.dirname(trigger_path))
     try:
         os.unlink(trigger_path)
     except (OSError, IOError, ), e:
@@ -118,16 +159,18 @@ def trigger_pull(queue, ignore_listener=False):
        scan'''
     fd = None
     trigger_path = fsq_path.trigger(queue)
+    _queue_ok(os.path.dirname(trigger_path))
     try:
         fd = os.open(trigger_path,
                      os.O_NDELAY|os.O_NONBLOCK|os.O_APPEND|os.O_WRONLY)
         os.write(fd, '\0')
     except (OSError, IOError, ), e:
-        if not ignore_listener and e.errno == errno.ENODEV:
+        if e.errno != errno.ENXIO:
+            if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
+                raise FSQTriggerPullError(e.errno, wrap_io_os_err(e))
+        elif not ignore_listener:
             raise FSQTriggerPullError(e.errno, u'No listener for:'\
                                       u' {0}'.format(trigger_path))
-        if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
-            raise FSQTriggerPullError(e.errno, wrap_io_os_err(e))
     finally:
         if fd is not None:
             os.close(fd)
