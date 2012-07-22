@@ -12,8 +12,8 @@ import errno
 import tempfile
 import shutil
 
-from . import constants as _c, path as fsq_path, FSQInstallError, down,\
-              trigger
+from . import constants as _c, path as fsq_path, FSQInstallError, FSQError,\
+              down, trigger
 from .internal import uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
@@ -110,18 +110,20 @@ def install(trg_queue, is_down=False, is_triggered=False, user=None,
         if e.errno == errno.ENOTEMPTY:
             raise FSQInstallError(e.errno, u'queue exists: {0}'.format(
                                   trg_queue))
+        if isinstance(e, FSQError):
+            raise e
         raise FSQInstallError(e.errno, wrap_io_os_err(e))
 
 def uninstall(trg_queue, item_user=None, item_group=None, item_mode=None):
     '''Idempotently uninstall a queue, should you want to subvert FSQ_ROOT
        settings, merely pass in an abolute path'''
-    # immediately down the queue
-    down(trg_queue, user=item_user, group=item_group,
-         mode=(_c.FSQ_ITEM_MODE if item_mode is None else item_mode))
     # atomically mv our queue to a reserved target so we can recursively
     # remove without prying eyes
-    tmp_full, tmp_queue = _tmp_trg(trg_queue, _c.FSQ_ROOT)
     try:
+        # immediately down the queue
+        down(trg_queue, user=item_user, group=item_group,
+             mode=(_c.FSQ_ITEM_MODE if item_mode is None else item_mode))
+        tmp_full, tmp_queue = _tmp_trg(trg_queue, _c.FSQ_ROOT)
         os.rename(fsq_path.base(trg_queue), tmp_full)
         # this makes me uneasy ... but here we go magick
         shutil.rmtree(tmp_full)
@@ -129,4 +131,6 @@ def uninstall(trg_queue, item_user=None, item_group=None, item_mode=None):
         if e.errno == errno.ENOENT:
             raise FSQInstallError(e.errno, u'no such queue:'\
                                   ' {0}'.format(trg_queue))
+        if isinstance(e, FSQError):
+            raise e
         raise FSQInstallError(e.errno, wrap_io_os_err(e))

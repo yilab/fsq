@@ -81,13 +81,12 @@ def trigger(queue, user=None, group=None, mode=None):
     try:
         os.mkfifo(trigger_path, mode)
         if user is not None or group is not None:
-            fd = os.open(trigger_path, os.O_WRONLY)
-            os.fchown(fd, *uid_gid(user, group, fd=fd))
+            # don't open and fchown here, as opening WRONLY without an open
+            # reading fd will hang, opening RDONLY will zombie if we don't
+            # flush, and intercepts triggers meant to go elsewheres
+            os.chown(trigger_path, *uid_gid(user, group, path=trigger_path))
     except (OSError, IOError, ), e:
         _cleanup(trigger_path, e)
-    finally:
-        if fd is not None:
-            os.close(fd)
 
 def untrigger(queue):
     '''Uninstalls the trigger for the specified queue -- if a queue has no

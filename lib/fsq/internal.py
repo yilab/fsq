@@ -62,12 +62,17 @@ def delimiter_encodeseq(delimiter, encodeseq):
                              u' be the same: both: {0}'.format(encodeseq))
     return delimiter, encodeseq
 
-def uid_gid(user, group, fd=None):
+def uid_gid(user, group, fd=None, path=None):
     '''Get uid and gid from either uid/gid, user name/group name, or from the
-       environment of the calling process, or optionally from an fd'''
+       environment of the calling process, or optionally from an fd, or
+       optionally from a path'''
     type_msg = u'{0} must be a string or integer, not: {1}'
     nosuch_msg = u'no such {0}: {1}'
+    if fd is not None and path is not None:
+        raise ValueError(u'received path and fd arguments, need one or'\
+                         u' neither, not both.')
     st = None if fd is None else os.fstat(fd)
+    st = st if path is None else os.stat(path)
     if user is None:
         if st:
             user = st.st_uid
