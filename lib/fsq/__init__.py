@@ -24,7 +24,7 @@ import constants
 from const import const, set_const # has tests
 
 # path relies on: exceptions, constants, internal
-import path
+import path # has tests
 
 # configure relies on: exceptions, path, constants, internal
 from configure import down, up, is_down, trigger, untrigger, trigger_pull # has tests
