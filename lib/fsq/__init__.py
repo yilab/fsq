@@ -36,7 +36,7 @@ from install import install, uninstall # has tests
 from encode import encode, decode # has tests
 
 # construct relies on: constants, exceptions, encode, internal
-from construct import construct, deconstruct
+from construct import construct, deconstruct # has tests
 
 # enqueue relies on: constants, exceptions, path, internal, mkitem
 from enqueue import enqueue, senqueue, venqueue, vsenqueue
