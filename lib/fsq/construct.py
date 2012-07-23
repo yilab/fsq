@@ -39,18 +39,17 @@ def deconstruct(name):
         raise FSQMalformedEntryError(errno.EINVAL, u'cannot derive delimiter'\
                                      u'from: {0}'.format(name))
 
-    delimiter = name[0]
+    delimiter, encodeseq = delimiter_encodeseq(name[0], _c.FSQ_ENCODE)
     # edge case, no args
     if 1 == len(name):
         return delimiter, args
 
     # normal case
-    delimiter, encodeseq = delimiter_encodeseq(delimiter, _c.FSQ_ENCODE)
     encoding_trg = sep
     for c in name[1:]:
         if 3 == len(encoding_trg):
             encoding_trg = sep
-        elif c == encodeseq or len(encoding_trg):
+        if c == encodeseq or len(encoding_trg):
             encoding_trg = sep.join([encoding_trg, c])
         elif c == delimiter:
             # at delimiter, append and reset working arg
