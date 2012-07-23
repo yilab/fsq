@@ -1,6 +1,6 @@
 import os
 from . import FSQTestCase
-from .internal import test_type_own_mode, normalize
+from .internal import normalize
 from . import constants as _test_c
 
 # FROM PAPA-BEAR IMPORT THE FOLLOWING

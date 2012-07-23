@@ -1,11 +1,9 @@
-import os
 from . import FSQTestCase
-from .internal import test_type_own_mode, normalize
+from .internal import normalize
 from . import constants as _test_c
 
 # FROM PAPA-BEAR IMPORT THE FOLLOWING
-from .. import encode, decode, constants as _c, FSQPathError, FSQCoerceError,\
-               FSQEncodeError
+from .. import encode, decode, constants as _c, FSQCoerceError, FSQEncodeError
 
 class TestEncodeDecode(FSQTestCase):
     def _cycle(self, arg, fsq_encode=None, fsq_delimiter=None, assert_eq=True,

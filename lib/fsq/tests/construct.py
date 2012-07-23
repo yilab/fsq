@@ -1,11 +1,10 @@
-import os
 from . import FSQTestCase
-from .internal import test_type_own_mode, normalize
+from .internal import normalize
 from . import constants as _test_c
 
 # FROM PAPA-BEAR IMPORT THE FOLLOWING
-from .. import construct, deconstruct, constants as _c, FSQPathError,\
-               FSQCoerceError, FSQEncodeError, FSQMalformedEntryError
+from .. import construct, deconstruct, constants as _c, FSQCoerceError,\
+               FSQEncodeError, FSQMalformedEntryError
 
 class TestConstruct(FSQTestCase):
     def _cycle(self, args, fsq_encode=None, fsq_delimiter=None,
