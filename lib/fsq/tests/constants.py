@@ -85,3 +85,10 @@ ENCODED = ('a', 'b', 'c',)
 
 # Original Encode/Delimiter
 ORIG_ENCODE_DELIMITER = ( _c.FSQ_ENCODE, _c.FSQ_DELIMITER, )
+
+PAYLOAD = NORMAL[0]*100
+NON_ASCII_PAYLOAD = NON_ASCII*1024
+SOCKET = os.path.join(TEST_DIR, u'sock-s')
+FIFO = os.path.join(TEST_DIR, u'fifo-s')
+FILE = os.path.join(TEST_DIR, u'test-enqueue')
+NON_ASCII_FILE = os.path.join(TEST_DIR, u'test-enqueue{0}'.format(NON_ASCII))
