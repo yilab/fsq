@@ -12,6 +12,8 @@ import errno
 import os
 import datetime
 import socket
+import select
+import sys
 
 from cStringIO import StringIO
 from contextlib import closing
@@ -69,7 +71,7 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
        can create the queue item.
     '''
     # setup defaults
-    trg_fd = trg = name = None
+    trg_fd = name = None
     user = _c.FSQ_ITEM_USER if user is None else user
     group = _c.FSQ_ITEM_GROUP if group is None else group
     mode = _c.FSQ_ITEM_MODE if mode is None else mode
@@ -81,6 +83,7 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
 
     # open source file
     with closing(rationalize_file(item_f)) as src_file:
+        real_file = True if hasattr(src_file, 'fileno') else False
         # get low, so we can use some handy options; man 2 open
         try:
             item_name = construct(( now, entropy, pid, host,
@@ -96,10 +99,23 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
             with closing(os.fdopen(trg_fd, 'wb', 1)) as trg_file:
                 # i/o time ... assume line-buffered
                 while True:
-                    line = src_file.readline()
-                    if not line:
-                        break
-                    trg_file.write(line)
+                    if real_file:
+                        reads, dis, card = select.select([src_file], [], [])
+                        try:
+                            msg = os.read(reads[0].fileno(), 2048)
+                            if 0 == len(msg):
+                                break
+                        except (OSError, IOError, ), e:
+                            if e.errno in (errno.EWOULDBLOCK, errno.EAGAIN,):
+                                continue
+                            raise e
+                        trg_file.write(msg)
+                    else:
+                        line = src_file.readline()
+                        if not line:
+                            break
+                        trg_file.write(line)
+
                 # flush buffers, and force write to disk pre mv.
                 trg_file.flush()
                 os.fsync(trg_file.fileno())
@@ -112,21 +128,24 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
 
                 # return the queue item id (filename)
                 return item_name
-        except (OSError, IOError, ), e:
-            os.close(trg_fd)
-            os.unlink(trg)
-            raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
         except Exception, e:
             try:
                 os.close(trg_fd)
-            except (OSError, IOError, ), e:
-                if errno != errno.EBADF:
-                    raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
+            except (OSError, IOError, ), err:
+                if err.errno != errno.EBADF:
+                    raise FSQEnqueueError(err.errno, wrap_io_os_err(err))
             try:
-                os.unlink(name)
-            except OSError, e:
-                if e.errno != errno.ENOENT:
-                   raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
+                if tmp_name is not None:
+                    os.unlink(tmp_name)
+            except (OSError, IOError, ), err:
+                if err.errno != errno.ENOENT:
+                   raise FSQEnqueueError(err.errno, wrap_io_os_err(err))
+            try:
+                if name is not None:
+                    os.unlink(name)
+            except OSError, err:
+                if err.errno != errno.ENOENT:
+                   raise FSQEnqueueError(err.errno, wrap_io_os_err(err))
             if isinstance(e, OSError) or isinstance(e, IOError):
                 raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
             raise e

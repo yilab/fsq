@@ -31,7 +31,6 @@ def _lock(fd, lock=False):
             raise FSQCannotLockError(e.errno, u'cannot lock')
         raise e
 
-
 ####### EXPOSED METHODS #######
 def coerce_unicode(s, encoding=u'utf8'):
     if isinstance(s, unicode):
@@ -145,7 +144,13 @@ def rationalize_file(item_f, mode='rb', lock=False):
         return item_f
     # raw file descriptor -- e.g. output of pipe
     elif isinstance(item_f, numbers.Integral):
-        return os.fdopen(os.dup(item_f))
+        n_fd = os.dup(item_f)
+        try:
+            _lock(n_fd, lock)
+            return os.fdopen(n_fd)
+        except Exception, e:
+            os.close(n_fd)
+            raise e
 
     # try to open, read+binary, line-buffered
     f = open(coerce_unicode(item_f), mode, 1)
