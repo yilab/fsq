@@ -13,7 +13,6 @@ import os
 import datetime
 import socket
 import select
-import sys
 
 from cStringIO import StringIO
 from contextlib import closing

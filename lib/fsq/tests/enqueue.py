@@ -2,7 +2,6 @@ import os
 import socket
 import errno
 import signal
-import fcntl
 import numbers
 import sys
 import traceback
@@ -163,7 +162,7 @@ class TestEnqueue(FSQTestCase):
                         elif isinstance(new_thing, numbers.Integral):
                             os.close(new_thing)
 
-                except Exception, e:
+                except Exception:
                     traceback.print_exc()
                     os._exit(1)
                 os._exit(0)
@@ -219,7 +218,6 @@ class TestEnqueue(FSQTestCase):
                     try:
                         conn, addr = server.accept()
                         try:
-                            s = None
                             self._cycle(
                                 fn, conn.fileno() if i == 'fd' else conn,
                                 payload, *args, **kwargs)
