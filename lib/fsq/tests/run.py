@@ -8,6 +8,7 @@ from .install import TestInstallUninstall
 from .encode import TestEncodeDecode
 from .construct import TestConstruct
 from .enqueue import TestEnqueue
+from .scan import TestScan
 from . import constants as _test_c
 
 ############ INTERNAL HELPERS
@@ -51,6 +52,10 @@ def run_enqueue():
     enqueue_tests = _LOADER.loadTestsFromTestCase(TestEnqueue)
     return _RUNNER.run(enqueue_tests)
 
+def run_scan():
+    scan_tests = _LOADER.loadTestsFromTestCase(TestScan)
+    return _RUNNER.run(scan_tests)
+
 def run_all():
     failures = errors = 0
     failures, errors = _extract(run_paths(), errors, failures)
@@ -61,6 +66,7 @@ def run_all():
     failures, errors = _extract(run_encodedecode(), errors, failures)
     failures, errors = _extract(run_construct(), errors, failures)
     failures, errors = _extract(run_enqueue(), errors, failures)
+    failures, errors = _extract(run_scan(), errors, failures)
     print >> sys.stderr, "Total Tests Run: {0}".format(_test_c.TOTAL_COUNT)
     print >> sys.stderr, "Total Failures: {0}, Total Errors:"\
                          " {1}".format(failures, errors)
