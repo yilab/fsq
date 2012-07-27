@@ -20,32 +20,41 @@ from . import FSQEnvError
 from .internal import coerce_unicode
 
 # CONSTANTS WHICH ARE AFFECTED BY ENVIRONMENT
-FSQ_DELIMITER = coerce_unicode(os.environ.get("FSQ_DELIMITER", u'_'))
-FSQ_ENCODE = coerce_unicode(os.environ.get("FSQ_ENCODE", u'%'))
-FSQ_TIMEFMT = coerce_unicode(os.environ.get("FSQ_TIMEFMT", u'%Y%m%d%H%M%S'))
-FSQ_QUEUE = coerce_unicode(os.environ.get("FSQ_QUEUE", u'queue'))
-FSQ_DONE = coerce_unicode(os.environ.get("FSQ_DONE", u'done'))
-FSQ_FAIL = coerce_unicode(os.environ.get("FSQ_FAIL", u'fail'))
-FSQ_TMP = coerce_unicode(os.environ.get("FSQ_TMP", u'tmp'))
-FSQ_DOWN = coerce_unicode(os.environ.get("FSQ_DOWN", u'down'))
-FSQ_TRIGGER = coerce_unicode(os.environ.get("FSQ_TRIGGER", u'trigger-s'))
-FSQ_ROOT = coerce_unicode(os.environ.get("FSQ_ROOT", u'/var/fsq'))
+FSQ_CHARSET = os.environ.get("FSQ_CHARSET", u'utf8')
+FSQ_CHARSET = coerce_unicode(FSQ_CHARSET, FSQ_CHARSET)
+FSQ_DELIMITER = coerce_unicode(os.environ.get("FSQ_DELIMITER", u'_'),
+                               FSQ_CHARSET)
+FSQ_ENCODE = coerce_unicode(os.environ.get("FSQ_ENCODE", u'%'), FSQ_CHARSET)
+FSQ_TIMEFMT = coerce_unicode(os.environ.get("FSQ_TIMEFMT", u'%Y%m%d%H%M%S'),
+                             FSQ_CHARSET)
+FSQ_QUEUE = coerce_unicode(os.environ.get("FSQ_QUEUE", u'queue'), FSQ_CHARSET)
+FSQ_DONE = coerce_unicode(os.environ.get("FSQ_DONE", u'done'), FSQ_CHARSET)
+FSQ_FAIL = coerce_unicode(os.environ.get("FSQ_FAIL", u'fail'), FSQ_CHARSET)
+FSQ_TMP = coerce_unicode(os.environ.get("FSQ_TMP", u'tmp'), FSQ_CHARSET)
+FSQ_DOWN = coerce_unicode(os.environ.get("FSQ_DOWN", u'down'), FSQ_CHARSET)
+FSQ_TRIGGER = coerce_unicode(os.environ.get("FSQ_TRIGGER", u'trigger-s'),
+                             FSQ_CHARSET)
+FSQ_ROOT = coerce_unicode(os.environ.get("FSQ_ROOT", u'/var/fsq'),
+                          FSQ_CHARSET)
 
 # these 2 default to None, as gid/uid may change in due course
 # when using these 2, default to os.getgid(), os.getuid()
 # should be relatively few places
-FSQ_ITEM_GROUP = coerce_unicode(os.environ.get("FSQ_ITEM_GROUP", u'')) or None
-FSQ_ITEM_USER = coerce_unicode(os.environ.get("FSQ_ITEM_USER", u'')) or None
-FSQ_QUEUE_GROUP = \
-    coerce_unicode(os.environ.get("FSQ_QUEUE_GROUP", u'')) or None
-FSQ_QUEUE_USER = coerce_unicode(os.environ.get("FSQ_QUEUE_USER", u'')) or None
+FSQ_ITEM_GROUP = coerce_unicode(os.environ.get("FSQ_ITEM_GROUP", u''),
+                                FSQ_CHARSET) or None
+FSQ_ITEM_USER = coerce_unicode(os.environ.get("FSQ_ITEM_USER", u''),
+                               FSQ_CHARSET) or None
+FSQ_QUEUE_GROUP = coerce_unicode(os.environ.get("FSQ_QUEUE_GROUP", u''),
+                                 FSQ_CHARSET) or None
+FSQ_QUEUE_USER = coerce_unicode(os.environ.get("FSQ_QUEUE_USER", u''),
+                                FSQ_CHARSET) or None
 
 try:
     # octal mode representation -- e.g. 700, 0700, etc.
-    FSQ_ITEM_MODE = \
-        int(coerce_unicode(os.environ.get("FSQ_ITEM_MODE", u'00640')), 8)
-    FSQ_QUEUE_MODE = \
-        int(coerce_unicode(os.environ.get("FSQ_QUEUE_MODE", u'02770')), 8)
+    FSQ_ITEM_MODE = int(coerce_unicode(os.environ.get("FSQ_ITEM_MODE",
+                        u'00640'), FSQ_CHARSET), 8)
+    FSQ_QUEUE_MODE = int(coerce_unicode(os.environ.get("FSQ_QUEUE_MODE",
+                         u'02770'), FSQ_CHARSET), 8)
     # failure cases
     FSQ_FAIL_TMP = int(os.environ.get("FSQ_FAIL_TMP", 111))
     FSQ_FAIL_PERM = int(os.environ.get("FSQ_FAIL_PERM", 100))

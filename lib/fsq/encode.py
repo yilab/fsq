@@ -20,15 +20,16 @@ _ENCODED = (os.path.sep,)
 # we use a very lightweight ``percent'' encoding
 def encode(arg, delimiter=None, encodeseq=None, encoded=tuple()):
     '''Encode a single argument for the file-system'''
-    arg = coerce_unicode(arg)
+    arg = coerce_unicode(arg, _c.FSQ_CHARSET)
     new_arg = sep = u''
     delimiter, encodeseq = delimiter_encodeseq(
         _c.FSQ_DELIMITER if delimiter is None else delimiter,
-        _c.FSQ_ENCODE if encodeseq is None else encodeseq)
+        _c.FSQ_ENCODE if encodeseq is None else encodeseq,
+        _c.FSQ_CHARSET)
 
     # validate encoded tuple
     for enc in encoded:
-        enc = coerce_unicode(enc)
+        enc = coerce_unicode(enc, _c.FSQ_CHARSET)
         try:
             enc = enc.encode('ascii')
         except UnicodeEncodeError:
@@ -52,11 +53,12 @@ def encode(arg, delimiter=None, encodeseq=None, encoded=tuple()):
 
 def decode(arg, delimiter=None, encodeseq=None):
     '''Decode a single argument from the file-system'''
-    arg = coerce_unicode(arg)
+    arg = coerce_unicode(arg, _c.FSQ_CHARSET)
     new_arg = sep = u''
     delimiter, encodeseq = delimiter_encodeseq(
         _c.FSQ_DELIMITER if delimiter is None else delimiter,
-        _c.FSQ_ENCODE if encodeseq is None else encodeseq)
+        _c.FSQ_ENCODE if encodeseq is None else encodeseq,
+        _c.FSQ_CHARSET)
 
     # char-wise decode walk -- minimally stateful
     encoding_trg = sep
@@ -70,7 +72,7 @@ def decode(arg, delimiter=None, encodeseq=None):
             except ValueError:
                 raise FSQEncodeError(errno.EINVAL, u'invalid decode'\
                                      u' target: {0}'.format(encoding_trg))
-            c = coerce_unicode(c)
+            c = coerce_unicode(c, _c.FSQ_CHARSET)
             encoding_trg = sep
         elif c == encodeseq:
             encoding_trg = u'0x'

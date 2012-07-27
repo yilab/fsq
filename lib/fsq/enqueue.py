@@ -74,14 +74,14 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
     user = _c.FSQ_ITEM_USER if user is None else user
     group = _c.FSQ_ITEM_GROUP if group is None else group
     mode = _c.FSQ_ITEM_MODE if mode is None else mode
-    now = fmt_time(datetime.datetime.now(), _c.FSQ_TIMEFMT)
-    pid = coerce_unicode(os.getpid())
-    host = coerce_unicode(_HOSTNAME)
-    tries = coerce_unicode(0)
+    now = fmt_time(datetime.datetime.now(), _c.FSQ_TIMEFMT, _c.FSQ_CHARSET)
+    pid = coerce_unicode(os.getpid(), _c.FSQ_CHARSET)
+    host = coerce_unicode(_HOSTNAME, _c.FSQ_CHARSET)
+    tries = u'0'
     entropy = _mkentropy(pid, now, host)
 
     # open source file
-    with closing(rationalize_file(item_f)) as src_file:
+    with closing(rationalize_file(item_f, _c.FSQ_CHARSET)) as src_file:
         real_file = True if hasattr(src_file, 'fileno') else False
         # get low, so we can use some handy options; man 2 open
         try:
@@ -154,4 +154,11 @@ def vsenqueue(trg_queue, item_s, args, **kwargs):
        arguments, vsenqueue is to venqueue what vsprintf is to vprintf,
        vsenqueue is to senqueue what vsprintf is to sprintf.
     '''
+    charset = kwargs.get('charset', _c.FSQ_CHARSET)
+    if kwargs.has_key('charset'):
+        del kwargs['charset']
+
+    if isinstance(item_s, unicode):
+        item_s = item_s.encode(charset)
+
     return venqueue(trg_queue, StringIO(item_s), args, **kwargs)

@@ -140,6 +140,7 @@ class TestEnqueue(FSQTestCase):
                 try:
                     new_thing = None
                     try:
+                        orig = args[0]
                         if kind is not None:
                             new_thing = args[0]
                             if hasattr(new_thing, 'fileno'):
@@ -152,7 +153,6 @@ class TestEnqueue(FSQTestCase):
                                     new_thing.close()
                                 new_thing = fd
                             args = (new_thing,) + args[1:]
-
                         for i in range(10):
                             _seek(args[0])
                             fn(queue, *args, **kwargs)
@@ -323,111 +323,157 @@ class TestEnqueue(FSQTestCase):
                         if e.errno != errno.EBADF:
                             raise e
 
-    def test_senqueue(self):
-        pass
+    def _run_gammit(self, fn, file_or_str, var_args):
+        items = [_test_c.FILE, _test_c.NON_ASCII_FILE,]
+        contents = tuple()
+        file_items = []
+        kind = None
 
-    def test_vsenqueue(self):
-        pass
+        # setup file or string
+        for item in items:
+            f_item = open(item, 'r')
+            try:
+                contents += (f_item.read().decode('utf8'),)
+            finally:
+                f_item.close()
 
-    def test_enqueue(self):
-        '''Test enqueue, exhaustively'''
-        for root in _test_c.ROOT1, _test_c.ROOT2:
-            for args in ( _test_c.NORMAL, _test_c.NOT_NORMAL,
-                          ( _test_c.NON_ASCII, ), _test_c.ILLEGAL_NAMES):
-                for f in (_test_c.FILE, _test_c.NON_ASCII_FILE,):
-                    contents = None
-                    f_item = open(f, 'r')
-                    try:
-                        contents = f_item.read().decode('utf8')
-                        os.lseek(f_item.fileno(), 0, os.SEEK_SET)
-                        # test file name
-                        for kind in ( f, f_item, f_item.fileno(), ):
-                            self._cycle(enqueue, kind, contents, *args)
-                            self._test_many_forks(enqueue, contents, kind,
+        if file_or_str == 's':
+            items = list(contents)
+        else:
+            kind = True
+
+        arg_sets = [ _test_c.NORMAL, _test_c.NOT_NORMAL,
+                       ( _test_c.NON_ASCII, ), _test_c.ILLEGAL_NAMES ]
+        if not var_args:
+            for ind in range(len(arg_sets)):
+                arg_sets[ind] = (arg_sets[ind],)
+
+        try:
+            for ind in range(len(items)):
+                if file_or_str == 's':
+                    items[ind] = (items[ind],)
+                else:
+                    file_items.append(open(items[ind], 'r'))
+                    items[ind] = ( items[ind], file_items[ind], file_items[ind].fileno(), )
+                items[ind] = (items[ind], contents[ind],)
+
+            del contents
+            for root in _test_c.ROOT1, _test_c.ROOT2:
+                for args in arg_sets:
+                    for ind in range(len(items)):
+                        f_item = None
+                        if file_or_str != 's':
+                            f_item = file_items[ind]
+                        item_kinds,contents = items[ind]
+                        for item in item_kinds:
+                            self._cycle(fn, item, contents, *args)
+                            self._test_many_forks(fn, contents, item,
                                                   *args, kind=(kind, f_item,))
-                            self._test_pipe(enqueue, contents, *args)
-                            self._test_fifo(enqueue, contents, *args)
-                            self._test_socket(enqueue, contents, *args)
+                            if file_or_str != 's':
+                                self._test_pipe(fn, contents, *args)
+                                self._test_fifo(fn, contents, *args)
+                                self._test_socket(fn, contents, *args)
+
                             for uid, gid in ((_test_c.UID, _test_c.GID,),
                                              (_test_c.UNAME, _test_c.GNAME,)):
-                                print >> sys.stderr, u'Tests Passed ... {0}'.format(_test_c.COUNT)
+                                print >> sys.stderr, u'{0} passed {1} tests ...'.format(
+                                    fn.__name__, _test_c.COUNT)
                                 # user passed
-                                self._cycle(enqueue, kind, contents, *args,
-                                            user=uid)
-                                self._test_many_forks(enqueue, contents, kind,
-                                                      *args, user=uid,
+                                self._cycle(fn, item, contents, *args, user=uid)
+                                self._test_many_forks(fn, contents, item, *args,
+                                                      user=uid,
                                                       kind=(kind, f_item,))
-                                self._test_pipe(enqueue, contents, *args,
-                                                user=uid)
-                                self._test_fifo(enqueue, contents, *args,
-                                                user=uid)
-                                self._test_socket(enqueue, contents, *args,
-                                                  user=uid)
+                                if file_or_str != 's':
+                                    self._test_pipe(fn, contents, *args,
+                                                    user=uid)
+                                    self._test_fifo(fn, contents, *args,
+                                                    user=uid)
+                                    self._test_socket(fn, contents, *args,
+                                                      user=uid)
                                 # user set
-                                self._cycle(enqueue, kind, contents, *args,
+                                self._cycle(fn, item, contents, *args,
                                             fsq_user=uid)
-                                self._test_many_forks(enqueue, contents, kind,
+                                self._test_many_forks(fn, contents, item,
                                                       *args, fsq_user=uid,
                                                       kind=(kind, f_item,))
-                                self._test_pipe(enqueue, contents, *args,
-                                                fsq_user=uid)
-                                self._test_fifo(enqueue, contents, *args,
-                                                fsq_user=uid)
-                                self._test_socket(enqueue, contents, *args,
-                                                  fsq_user=uid)
+                                if file_or_str != 's':
+                                    self._test_pipe(fn, contents, *args,
+                                                    fsq_user=uid)
+                                    self._test_fifo(fn, contents, *args,
+                                                    fsq_user=uid)
+                                    self._test_socket(fn, contents, *args,
+                                                      fsq_user=uid)
                                 # group passed
-                                self._cycle(enqueue, kind, contents, *args,
-                                            group=gid)
-                                self._test_many_forks(enqueue, contents, kind,
-                                                      *args, group=gid,
-                                                      kind=(kind, f_item,))
-                                self._test_pipe(enqueue, contents, *args,
-                                                group=gid)
-                                self._test_fifo(enqueue, contents, *args,
-                                                group=gid)
-                                self._test_socket(enqueue, contents, *args,
-                                                  group=gid)
-                                # group set
-                                self._cycle(enqueue, kind, contents, *args,
-                                            fsq_group=gid)
-                                self._test_many_forks(enqueue, contents, kind,
-                                                      *args, fsq_group=gid,
-                                                      kind=(kind, f_item,))
-                                self._test_pipe(enqueue, contents, *args,
-                                                fsq_group=gid)
-                                self._test_fifo(enqueue, contents, *args,
-                                                fsq_group=gid)
-                                self._test_socket(enqueue, contents, *args,
-                                                  fsq_group=gid)
-                                # user/group passed
-                                self._cycle(enqueue, kind, contents, *args,
-                                            user=uid, group=gid)
-                                self._test_many_forks(enqueue, contents, kind,
-                                                      *args, user=uid,
+                                self._cycle(fn, item, contents, *args, group=gid)
+                                self._test_many_forks(fn, contents, item, *args,
                                                       group=gid,
                                                       kind=(kind, f_item,))
-                                self._test_pipe(enqueue, contents, *args,
-                                                user=uid, group=gid)
-                                self._test_fifo(enqueue, contents, *args,
-                                                user=uid, group=gid)
-                                self._test_socket(enqueue, contents, *args,
-                                                  user=uid, group=gid)
+                                if file_or_str != 's':
+                                    self._test_pipe(fn, contents, *args,
+                                                    group=gid)
+                                    self._test_fifo(fn, contents, *args,
+                                                    group=gid)
+                                    self._test_socket(fn, contents, *args,
+                                                      group=gid)
+                                # group set
+                                self._cycle(fn, item, contents, *args,
+                                            fsq_group=gid)
+                                self._test_many_forks(fn, contents, item, *args,
+                                                      fsq_group=gid,
+                                                      kind=(kind, f_item,))
+                                if file_or_str != 's':
+                                    self._test_pipe(fn, contents, *args,
+                                                    fsq_group=gid)
+                                    self._test_fifo(fn, contents, *args,
+                                                    fsq_group=gid)
+                                    self._test_socket(fn, contents, *args,
+                                                      fsq_group=gid)
+                                # user/group passed
+                                self._cycle(fn, item, contents, *args,
+                                            user=uid, group=gid)
+                                self._test_many_forks(fn, contents, item, *args,
+                                                      user=uid, group=gid,
+                                                      kind=(kind, f_item,))
+                                if file_or_str != 's':
+                                    self._test_pipe(fn, contents, *args,
+                                                    user=uid, group=gid)
+                                    self._test_fifo(fn, contents, *args,
+                                                    user=uid, group=gid)
+                                    self._test_socket(fn, contents, *args,
+                                                      user=uid, group=gid)
                                 # user/group set
-                                self._cycle(enqueue, kind, contents, *args,
+                                self._cycle(fn, item, contents, *args,
                                             fsq_user=uid, fsq_group=gid)
-                                self._test_many_forks(enqueue, contents, kind,
+                                self._test_many_forks(fn, contents, item,
                                                       *args, fsq_user=uid,
                                                       fsq_group=gid,
                                                       kind=(kind, f_item,))
-                                self._test_pipe(enqueue, contents, *args,
-                                                fsq_user=uid, fsq_group=gid)
-                                self._test_fifo(enqueue, contents, *args,
-                                                fsq_user=uid, fsq_group=gid)
-                                self._test_socket(enqueue, contents, *args,
-                                                  fsq_user=uid, fsq_group=gid)
+                                if file_or_str != 's':
+                                    self._test_pipe(fn, contents, *args,
+                                                    fsq_user=uid,
+                                                    fsq_group=gid)
+                                    self._test_fifo(fn, contents, *args,
+                                                    fsq_user=uid,
+                                                    fsq_group=gid)
+                                    self._test_socket(fn, contents, *args,
+                                                      fsq_user=uid,
+                                                      fsq_group=gid)
+        finally:
+            for item in file_items:
+                item.close()
 
-                    finally:
-                        f_item.close()
+    def test_enqueue(self):
+        '''Test enqueue, exhaustively'''
+        self._run_gammit(enqueue, 'f', True)
 
     def test_venqueue(self):
-        pass
+        '''Test venqueue, exhaustively'''
+        self._run_gammit(venqueue, 'f', False)
+
+    def test_senqueue(self):
+        '''Test senqueue, exhaustively'''
+        self._run_gammit(senqueue, 's', True)
+
+    def test_vsenqueue(self):
+        '''Test vsenqueue, exhaustively'''
+        self._run_gammit(vsenqueue, 's', False)

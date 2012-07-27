@@ -25,9 +25,10 @@ def fail_tmp(item, max_tries=None, ttl=None):
         check_ttl_max_tries(item.tries, item.enqueued_at, max_tries, ttl)
         # mv to same plus 1
         item.tries += 1
-        new_name = construct(( fmt_time(item.enqueued_at, _c.FSQ_TIMEFMT),
-                             item.entropy, item.pid,
-                             item.host, item.tries, ) + tuple(item.arguments))
+        new_name = construct(( fmt_time(item.enqueued_at, _c.FSQ_TIMEFMT,
+                               _c.FSQ_CHARSET), item.entropy,
+                               item.pid, item.host,
+                               item.tries, ) + tuple(item.arguments))
         os.rename(item.id, fsq_path.item(item.queue, new_name))
         return new_name
     except (FSQMaxTriesError, FSQTTLExpiredError, FSQEnqueueError, ), e:

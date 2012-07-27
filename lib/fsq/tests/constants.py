@@ -37,6 +37,10 @@ ORIG_MODES = ( _c.FSQ_QUEUE_MODE, _c.FSQ_ITEM_MODE, )
 MODES = (00700, 02700, )
 STR_MODES = (u'00700', u'02700', )
 
+# Some valid charsets
+ORIG_CHARSET = _c.FSQ_CHARSET
+CHARSETS = ('ascii', 'latin-1',)
+
 # A mode that is always illegal, no matter what
 ILLEGAL_MODE = u'abcdefg'
 

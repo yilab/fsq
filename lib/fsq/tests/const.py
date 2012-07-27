@@ -3,7 +3,8 @@ import numbers
 from . import FSQTestCase
 from .internal import normalize
 from .constants import NON_ASCII, NOT_NORMAL, ILLEGAL_MODE, ILLEGAL_NAME,\
-                       ILLEGAL_UNAME, MODES, STR_MODES, NOCONST
+                       ILLEGAL_UNAME, MODES, STR_MODES, NOCONST, CHARSETS,\
+                       ORIG_CHARSET
 
 # FROM PAPA-BEAR IMPORT THE FOLLOWING
 from .. import FSQEnvError, FSQCoerceError, const, set_const, constants as _c
@@ -42,7 +43,13 @@ class TestConsts(FSQTestCase):
                         self.assertRaises(FSQEnvError, set_const, i,
                                           ILLEGAL_MODE)
                         self.assertEquals(const(i), orig_val)
-
+                    elif i.endswith('CHARSET'):
+                        for charset in CHARSETS:
+                            normalize()
+                            self.assertEquals(set_const(i, charset), charset)
+                            self.assertEquals(charset, const(i))
+                        normalize()
+                        setattr(_c, i, orig_val)
                     elif isinstance(const(i), numbers.Integral):
                         # a bunch of things that can become an int
                         for j in (0, 1L, True, False, '8888888', ):

@@ -109,7 +109,7 @@ def trigger(queue, user=None, group=None, mode=None):
     try:
         # mkfifo is incapable of taking unicode, coerce back to str
         try:
-            os.mkfifo(trigger_path.encode(u'utf8'), mode)
+            os.mkfifo(trigger_path.encode(_c.FSQ_CHARSET), mode)
             created = True
         except (OSError, IOError, ), e:
             # if failure not due to existence, rm and bail

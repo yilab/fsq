@@ -32,11 +32,11 @@ def _lock(fd, lock=False):
         raise e
 
 ####### EXPOSED METHODS #######
-def coerce_unicode(s, encoding=u'utf8'):
+def coerce_unicode(s, charset):
     if isinstance(s, unicode):
         return s
     try:
-        return unicode(s, encoding=encoding)
+        return unicode(s, encoding=charset)
     except (UnicodeEncodeError, UnicodeDecodeError, ), e:
         raise FSQCoerceError(errno.EINVAL, e.message)
     except TypeError, e:
@@ -48,11 +48,11 @@ def coerce_unicode(s, encoding=u'utf8'):
 
         raise FSQCoerceError(errno.EINVAL, e.message)
 
-def delimiter_encodeseq(delimiter, encodeseq):
+def delimiter_encodeseq(delimiter, encodeseq, charset):
     '''Coerce delimiter and encodeseq to unicode and verify that they are not
        the same'''
-    delimiter = coerce_unicode(delimiter)
-    encodeseq = coerce_unicode(encodeseq)
+    delimiter = coerce_unicode(delimiter, charset)
+    encodeseq = coerce_unicode(encodeseq, charset)
     if 1 != len(encodeseq):
         raise FSQEncodeError(errno.EINVAL, u'encode sequence must be 1'\
                              u' character, not {0}'.format(len(encodeseq)))
@@ -121,7 +121,7 @@ def uid_gid(user, group, fd=None, path=None):
 
     return user, group
 
-def rationalize_file(item_f, mode='rb', lock=False):
+def rationalize_file(item_f, charset, mode='rb', lock=False):
     '''FSQ attempts to treat all file-like things as line-buffered as an
        optimization to the average case.  rationalize_file will handle file
        objects, buffers, raw file-descriptors, sockets, and string
@@ -153,7 +153,7 @@ def rationalize_file(item_f, mode='rb', lock=False):
             raise e
 
     # try to open, read+binary, line-buffered
-    f = open(coerce_unicode(item_f), mode, 1)
+    f = open(coerce_unicode(item_f, charset), mode, 1)
     try:
         _lock(f.fileno(), lock)
         return f
@@ -182,9 +182,9 @@ def check_ttl_max_tries(tries, enqueued_at, max_tries, ttl):
             seconds=ttl):
         raise FSQTTLExpiredError(errno.EINTR, u'TTL Expired:'\
                                  u' {0}'.format(ttl))
-def fmt_time(d_time, timefmt):
+def fmt_time(d_time, timefmt, charset):
     try:
-        return coerce_unicode(d_time.strftime(timefmt))
+        return coerce_unicode(d_time.strftime(timefmt), charset)
     except AttributeError:
         raise TypeError(u'date must be a datetime, date, time, or other type'\
                         u' supporting strftime, not {0}'.format(

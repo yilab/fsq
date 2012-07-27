@@ -18,14 +18,14 @@ from . import constants as _c, FSQPathError
 _ILLEGAL_NAMES=('.', '..', )
 
 def _path(queue, extra=None):
-    args = [coerce_unicode(_c.FSQ_ROOT), valid_name(queue)]
+    args = [coerce_unicode(_c.FSQ_ROOT, _c.FSQ_CHARSET), valid_name(queue)]
     if extra is not None:
         args.append(valid_name(extra))
     return os.path.join(*args)
 
 ####### EXPOSED METHODS #######
 def valid_name(name):
-    name = coerce_unicode(name)
+    name = coerce_unicode(name, _c.FSQ_CHARSET)
     if name in _ILLEGAL_NAMES or 0 <= name.find(os.path.sep):
         raise FSQPathError(errno.EINVAL, u'illegal path name:'\
                                   u' {0}'.format(name))

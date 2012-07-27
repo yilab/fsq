@@ -114,7 +114,7 @@ class FSQWorkItem(object):
         self.close()
         try:
             self.item = rationalize_file(fsq_path.item(self.queue, self.id),
-                                         lock=self.lock)
+                                         _c.FSQ_CHARSET, lock=self.lock)
         except (OSError, IOError, ), e:
             if e.errno == errno.ENOENT:
                 raise FSQWorkItemError(e.errno, u'no such item in queue {0}:'\

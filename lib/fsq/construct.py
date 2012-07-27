@@ -19,19 +19,19 @@ def construct(args):
     # make everything unicode
     name = u''
     delimiter, encodeseq = delimiter_encodeseq(_c.FSQ_DELIMITER,
-                                               _c.FSQ_ENCODE)
+                                               _c.FSQ_ENCODE, _c.FSQ_CHARSET)
     if len(args) == 0:
         return delimiter
     for arg in args:
-        name = delimiter.join([name, encode(coerce_unicode(arg),
-                                            delimiter=delimiter,
-                                            encodeseq=encodeseq)])
+        name = delimiter.join([ name,
+                                encode(coerce_unicode(arg, _c.FSQ_CHARSET),
+                                delimiter=delimiter, encodeseq=encodeseq)])
 
     return name
 
 def deconstruct(name):
     '''Deconstruct a queue-name to a set of arguments'''
-    name = coerce_unicode(name)
+    name = coerce_unicode(name, _c.FSQ_CHARSET)
     new_arg = sep = u''
     args = []
     # can't get delimiter, if string is empty
@@ -39,7 +39,8 @@ def deconstruct(name):
         raise FSQMalformedEntryError(errno.EINVAL, u'cannot derive delimiter'\
                                      u'from: {0}'.format(name))
 
-    delimiter, encodeseq = delimiter_encodeseq(name[0], _c.FSQ_ENCODE)
+    delimiter, encodeseq = delimiter_encodeseq(name[0], _c.FSQ_ENCODE,
+                                               _c.FSQ_CHARSET)
     # edge case, no args
     if 1 == len(name):
         return delimiter, args
