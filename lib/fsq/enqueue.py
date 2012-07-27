@@ -168,6 +168,8 @@ def vsenqueue(trg_queue, item_s, args, **kwargs):
     if kwargs.has_key('charset'):
         del kwargs['charset']
 
+    # we coerce here because StringIO.StringIO will coerce on file-write,
+    # and cStringIO.StringIO has a bug which injects NULs for unicode
     if isinstance(item_s, unicode):
         try:
             item_s = item_s.encode(charset)

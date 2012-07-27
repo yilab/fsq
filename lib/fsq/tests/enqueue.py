@@ -649,6 +649,25 @@ class TestEnqueue(FSQTestCase):
         finally:
             item.close()
 
+    def test_permdenied(self):
+        '''Test proper failure for permission denied'''
+        # test permission denied root
+        queue = normalize()
+        install(queue)
+        os.chmod(os.path.join(_c.FSQ_ROOT, queue), 0)
+        try:
+            item = open(_test_c.FILE, 'r')
+            try:
+                self.assertRaises(FSQEnqueueError, enqueue, queue, item)
+                self.assertRaises(FSQEnqueueError, venqueue, queue, item, [])
+                self.assertRaises(FSQEnqueueError, senqueue, queue, item.read())
+                _seek(item)
+                self.assertRaises(FSQEnqueueError, vsenqueue, queue, item.read(), [])
+            finally:
+                item.close()
+        finally:
+            os.chmod(os.path.join(_c.FSQ_ROOT, queue), 0750)
+
     def test_enqueue(self):
         '''Test enqueue, exhaustively'''
         self._run_gammit(enqueue, 'f', True)
