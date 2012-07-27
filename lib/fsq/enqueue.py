@@ -17,7 +17,8 @@ import select
 from cStringIO import StringIO
 from contextlib import closing
 
-from . import FSQEnqueueError, constants as _c, path as fsq_path, construct
+from . import FSQEnqueueError, FSQCoerceError, FSQError, constants as _c,\
+              path as fsq_path, construct
 from .internal import rationalize_file, wrap_io_os_err, fmt_time,\
                       coerce_unicode, uid_gid
 
@@ -81,7 +82,11 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
     entropy = _mkentropy(pid, now, host)
 
     # open source file
-    with closing(rationalize_file(item_f, _c.FSQ_CHARSET)) as src_file:
+    try:
+        src_file = rationalize_file(item_f, _c.FSQ_CHARSET)
+    except (OSError, IOError, ), e:
+        raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
+    try:
         real_file = True if hasattr(src_file, 'fileno') else False
         # get low, so we can use some handy options; man 2 open
         try:
@@ -90,6 +95,8 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
             tmp_name = os.path.join(fsq_path.tmp(trg_queue), item_name)
             trg_fd = os.open(tmp_name, os.O_WRONLY|os.O_CREAT|os.O_EXCL, mode)
         except (OSError, IOError, ), e:
+            if isinstance(e, FSQError):
+                raise e
             raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
         try:
             if user is not None or group is not None:
@@ -145,9 +152,12 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
             except OSError, err:
                 if err.errno != errno.ENOENT:
                    raise FSQEnqueueError(err.errno, wrap_io_os_err(err))
-            if isinstance(e, OSError) or isinstance(e, IOError):
+            if (isinstance(e, OSError) or isinstance(e, IOError)) and\
+                    not isinstance(e, FSQError):
                 raise FSQEnqueueError(e.errno, wrap_io_os_err(e))
             raise e
+    finally:
+        src_file.close()
 
 def vsenqueue(trg_queue, item_s, args, **kwargs):
     '''Enqueue a string, or string-like object to queue with arbitrary
@@ -159,6 +169,10 @@ def vsenqueue(trg_queue, item_s, args, **kwargs):
         del kwargs['charset']
 
     if isinstance(item_s, unicode):
-        item_s = item_s.encode(charset)
+        try:
+            item_s = item_s.encode(charset)
+        except UnicodeEncodeError:
+            raise FSQCoerceError(errno.EINVAL, u'cannot encode item with'\
+                                 u' charset {0}'.format(charset))
 
     return venqueue(trg_queue, StringIO(item_s), args, **kwargs)

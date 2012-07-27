@@ -96,3 +96,6 @@ SOCKET = os.path.join(TEST_DIR, u'sock-s')
 FIFO = os.path.join(TEST_DIR, u'fifo-s')
 FILE = os.path.join(TEST_DIR, u'test-enqueue')
 NON_ASCII_FILE = os.path.join(TEST_DIR, u'test-enqueue{0}'.format(NON_ASCII))
+
+ILLEGAL_FD = -2
+ILLEGAL_FILE = ILLEGAL_STR = NOT_NORMAL

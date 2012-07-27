@@ -10,8 +10,8 @@ from . import FSQTestCase, constants as _test_c
 from .internal import test_type_own_mode, normalize
 # FROM PAPA-BEAR IMPORT THE FOLLOWING
 from .. import enqueue, venqueue, senqueue, vsenqueue, install, deconstruct,\
-               constants as _c, FSQPathError, FSQInstallError,\
-               FSQCoerceError, FSQConfigError
+               constants as _c, FSQPathError, FSQCoerceError, FSQConfigError,\
+               FSQEnqueueError, FSQEncodeError
 
 def _raise(signum, frame):
     raise IOError(errno.EAGAIN, 'Operation timed out')
@@ -72,6 +72,7 @@ class TestEnqueue(FSQTestCase):
     def _cycle(self, fn, thing, contents, *args, **kwargs):
         _seek(thing)
         queue = args_should_be = fsq_user = fsq_group = fsq_mode = None
+        fsq_queue = None
         if kwargs.has_key('queue'):
             queue = kwargs['queue']
             del kwargs['queue']
@@ -87,6 +88,10 @@ class TestEnqueue(FSQTestCase):
         if kwargs.has_key('fsq_mode'):
             fsq_mode = kwargs['fsq_mode']
             del kwargs['fsq_mode']
+        if kwargs.has_key('fsq_queue'):
+            fsq_queue = kwargs['fsq_queue']
+            _c.FSQ_QUEUE = fsq_queue
+            del kwargs['fsq_queue']
         if queue is None:
             queue = normalize()
             install(queue)
@@ -354,7 +359,8 @@ class TestEnqueue(FSQTestCase):
                     items[ind] = (items[ind],)
                 else:
                     file_items.append(open(items[ind], 'r'))
-                    items[ind] = ( items[ind], file_items[ind], file_items[ind].fileno(), )
+                    items[ind] = ( items[ind], file_items[ind],
+                                   file_items[ind].fileno(), )
                 items[ind] = (items[ind], contents[ind],)
 
             del contents
@@ -367,6 +373,8 @@ class TestEnqueue(FSQTestCase):
                         item_kinds,contents = items[ind]
                         for item in item_kinds:
                             self._cycle(fn, item, contents, *args)
+                            self._cycle(fn, item, contents, *args,
+                                        fsq_queue=_test_c.NOT_NORMAL[0])
                             self._test_many_forks(fn, contents, item,
                                                   *args, kind=(kind, f_item,))
                             if file_or_str != 's':
@@ -376,12 +384,17 @@ class TestEnqueue(FSQTestCase):
 
                             for uid, gid in ((_test_c.UID, _test_c.GID,),
                                              (_test_c.UNAME, _test_c.GNAME,)):
-                                print >> sys.stderr, u'{0} passed {1} tests ...'.format(
+                                print >> sys.stderr, u'{0} passed {1} tests'\
+                                                     u' ...'.format(
                                     fn.__name__, _test_c.COUNT)
                                 # user passed
-                                self._cycle(fn, item, contents, *args, user=uid)
-                                self._test_many_forks(fn, contents, item, *args,
-                                                      user=uid,
+                                self._cycle(fn, item, contents, *args,
+                                            user=uid)
+                                self._cycle(fn, item, contents, *args,
+                                            user=uid,
+                                            fsq_queue=_test_c.NOT_NORMAL[0])
+                                self._test_many_forks(fn, contents, item,
+                                                      *args, user=uid,
                                                       kind=(kind, f_item,))
                                 if file_or_str != 's':
                                     self._test_pipe(fn, contents, *args,
@@ -393,6 +406,9 @@ class TestEnqueue(FSQTestCase):
                                 # user set
                                 self._cycle(fn, item, contents, *args,
                                             fsq_user=uid)
+                                self._cycle(fn, item, contents, *args,
+                                            fsq_user=uid,
+                                            fsq_queue=_test_c.NOT_NORMAL[0])
                                 self._test_many_forks(fn, contents, item,
                                                       *args, fsq_user=uid,
                                                       kind=(kind, f_item,))
@@ -404,9 +420,13 @@ class TestEnqueue(FSQTestCase):
                                     self._test_socket(fn, contents, *args,
                                                       fsq_user=uid)
                                 # group passed
-                                self._cycle(fn, item, contents, *args, group=gid)
-                                self._test_many_forks(fn, contents, item, *args,
-                                                      group=gid,
+                                self._cycle(fn, item, contents, *args,
+                                            group=gid)
+                                self._cycle(fn, item, contents, *args,
+                                            group=gid,
+                                            fsq_queue=_test_c.NOT_NORMAL[0])
+                                self._test_many_forks(fn, contents, item,
+                                                      *args, group=gid,
                                                       kind=(kind, f_item,))
                                 if file_or_str != 's':
                                     self._test_pipe(fn, contents, *args,
@@ -418,8 +438,11 @@ class TestEnqueue(FSQTestCase):
                                 # group set
                                 self._cycle(fn, item, contents, *args,
                                             fsq_group=gid)
-                                self._test_many_forks(fn, contents, item, *args,
-                                                      fsq_group=gid,
+                                self._cycle(fn, item, contents, *args,
+                                            fsq_group=gid,
+                                            fsq_queue=_test_c.NOT_NORMAL[0])
+                                self._test_many_forks(fn, contents, item,
+                                                      *args, fsq_group=gid,
                                                       kind=(kind, f_item,))
                                 if file_or_str != 's':
                                     self._test_pipe(fn, contents, *args,
@@ -431,8 +454,12 @@ class TestEnqueue(FSQTestCase):
                                 # user/group passed
                                 self._cycle(fn, item, contents, *args,
                                             user=uid, group=gid)
-                                self._test_many_forks(fn, contents, item, *args,
-                                                      user=uid, group=gid,
+                                self._cycle(fn, item, contents, *args,
+                                            user=uid, group=gid,
+                                            fsq_queue=_test_c.NOT_NORMAL[0])
+                                self._test_many_forks(fn, contents, item,
+                                                      *args, user=uid,
+                                                      group=gid,
                                                       kind=(kind, f_item,))
                                 if file_or_str != 's':
                                     self._test_pipe(fn, contents, *args,
@@ -444,6 +471,9 @@ class TestEnqueue(FSQTestCase):
                                 # user/group set
                                 self._cycle(fn, item, contents, *args,
                                             fsq_user=uid, fsq_group=gid)
+                                self._cycle(fn, item, contents, *args,
+                                            fsq_user=uid, fsq_group=gid,
+                                            fsq_queue=_test_c.NOT_NORMAL[0])
                                 self._test_many_forks(fn, contents, item,
                                                       *args, fsq_user=uid,
                                                       fsq_group=gid,
@@ -462,6 +492,138 @@ class TestEnqueue(FSQTestCase):
             for item in file_items:
                 item.close()
 
+    def test_badpath(self):
+        item = open(_test_c.FILE, 'r')
+        try:
+            for name in _test_c.ILLEGAL_NAMES:
+                queue = normalize()
+                install(queue)
+                _c.FSQ_QUEUE = name
+                self.assertRaises(FSQPathError, enqueue, queue, item)
+
+                queue = normalize()
+                install(queue)
+                _c.FSQ_QUEUE = name
+                self.assertRaises(FSQPathError, venqueue, queue, item, [])
+
+                queue = normalize()
+                install(queue)
+                _c.FSQ_QUEUE = name
+                self.assertRaises(FSQPathError, senqueue, queue, item.read())
+                _seek(item)
+
+                queue = normalize()
+                install(queue)
+                _c.FSQ_QUEUE = name
+                self.assertRaises(FSQPathError, senqueue, queue, item.read())
+                _seek(item)
+        finally:
+            item.close()
+
+    def test_badenqueue(self):
+        for f in (_test_c.ILLEGAL_FD, _test_c.ILLEGAL_FILE,):
+            queue = normalize()
+            install(queue)
+            self.assertRaises(FSQEnqueueError, enqueue, queue, f)
+
+            queue = normalize()
+            install(queue)
+            self.assertRaises(FSQEnqueueError, venqueue, queue, f, [])
+
+    def test_badsenqueue(self):
+        for s in (_test_c.ILLEGAL_STR,):
+            queue = normalize()
+            install(queue)
+            self.assertRaises(TypeError, senqueue, queue, s)
+
+            queue = normalize()
+            install(queue)
+            self.assertRaises(TypeError, vsenqueue, queue, s, [])
+
+    def test_badconstruct(self):
+        item = open(_test_c.FILE, 'r')
+        try:
+            for name in _test_c.ILLEGAL_NAMES:
+                # assert failure for bad encode char
+                queue = normalize()
+                install(queue)
+                _c.FSQ_ENCODE = _test_c.ILLEGAL_ENCODE
+                self.assertRaises(FSQEncodeError, enqueue, queue, item)
+                self.assertRaises(FSQEncodeError, venqueue, queue, item, [])
+                self.assertRaises(FSQEncodeError, senqueue, queue,
+                                  item.read())
+                _seek(item)
+                self.assertRaises(FSQEncodeError, vsenqueue, queue,
+                                  item.read(), [])
+                _seek(item)
+                queue = normalize()
+                install(queue)
+                _c.FSQ_DELIMITER = _test_c.ILLEGAL_ENCODE
+                self.assertRaises(FSQEncodeError, enqueue, queue, item)
+                self.assertRaises(FSQEncodeError, venqueue, queue, item, [])
+                self.assertRaises(FSQEncodeError, senqueue, queue,
+                                  item.read())
+                _seek(item)
+                self.assertRaises(FSQEncodeError, vsenqueue, queue,
+                                  item.read(), [])
+                _seek(item)
+
+                # assert failure for non coercable arg
+                queue = normalize()
+                install(queue)
+                self.assertRaises(FSQCoerceError, enqueue, queue, item,
+                                  [_test_c.ILLEGAL_NAME])
+                self.assertRaises(FSQCoerceError, venqueue, queue, item,
+                                  [[_test_c.ILLEGAL_NAME],])
+                self.assertRaises(FSQCoerceError, senqueue, queue,
+                                  item.read(), [_test_c.ILLEGAL_NAME])
+                _seek(item)
+                self.assertRaises(FSQCoerceError, vsenqueue, queue,
+                                  item.read(), [[_test_c.ILLEGAL_NAME],])
+                _seek(item)
+
+                # non-ascii encodeseq
+                queue = normalize()
+                install(queue)
+                _c.FSQ_ENCODE = _test_c.NON_ASCII
+                self.assertRaises(FSQEncodeError, enqueue, queue, item)
+                self.assertRaises(FSQEncodeError, venqueue, queue, item, [])
+                self.assertRaises(FSQEncodeError, senqueue, queue,
+                                  item.read())
+                _seek(item)
+                self.assertRaises(FSQEncodeError, vsenqueue, queue,
+                                  item.read(), [])
+                _seek(item)
+
+                # non-ascii delimiter
+                queue = normalize()
+                install(queue)
+                _c.FSQ_DELIMITER = _test_c.NON_ASCII
+                self.assertRaises(FSQEncodeError, enqueue, queue, item)
+                self.assertRaises(FSQEncodeError, venqueue, queue, item, [])
+                self.assertRaises(FSQEncodeError, senqueue, queue,
+                                  item.read())
+                _seek(item)
+                self.assertRaises(FSQEncodeError, vsenqueue, queue,
+                                  item.read(), [])
+                _seek(item)
+
+                # delimiter and encodeseq set to be same
+                queue = normalize()
+                install(queue)
+                normalize()
+                _c.FSQ_DELIMITER = _c.FSQ_ENCODE
+                self.assertRaises(FSQEncodeError, enqueue, queue, item)
+                self.assertRaises(FSQEncodeError, venqueue, queue, item, [])
+                self.assertRaises(FSQEncodeError, senqueue, queue,
+                                  item.read())
+                _seek(item)
+                self.assertRaises(FSQEncodeError, vsenqueue, queue,
+                                  item.read(), [])
+                _seek(item)
+        finally:
+            item.close()
+
     def test_enqueue(self):
         '''Test enqueue, exhaustively'''
         self._run_gammit(enqueue, 'f', True)
@@ -472,8 +634,16 @@ class TestEnqueue(FSQTestCase):
 
     def test_senqueue(self):
         '''Test senqueue, exhaustively'''
+        queue = normalize()
+        install(queue)
+        self.assertRaises(FSQCoerceError, senqueue, queue, _test_c.NON_ASCII,
+                          charset='ascii')
         self._run_gammit(senqueue, 's', True)
 
     def test_vsenqueue(self):
         '''Test vsenqueue, exhaustively'''
+        queue = normalize()
+        install(queue)
+        self.assertRaises(FSQCoerceError, senqueue, queue, _test_c.NON_ASCII,
+                          [], charset='ascii')
         self._run_gammit(vsenqueue, 's', False)
