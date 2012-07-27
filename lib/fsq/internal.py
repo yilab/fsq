@@ -38,14 +38,14 @@ def coerce_unicode(s, charset):
     try:
         return unicode(s, encoding=charset)
     except (UnicodeEncodeError, UnicodeDecodeError, ), e:
-        raise FSQCoerceError(errno.EINVAL, e.message)
+        raise FSQCoerceError(errno.EINVAL, u'cannot decode: {0}'\
+                             u' (charset: {1})'.format(e.reason, charset))
     except TypeError, e:
         if isinstance(s, _COERCE_THESE_TOO):
             try:
                 return unicode(s)
             except Exception, e:
                 raise FSQCoerceError(errno.EINVAL, e.message)
-
         raise FSQCoerceError(errno.EINVAL, e.message)
 
 def delimiter_encodeseq(delimiter, encodeseq, charset):

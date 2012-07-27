@@ -72,7 +72,7 @@ class TestEnqueue(FSQTestCase):
     def _cycle(self, fn, thing, contents, *args, **kwargs):
         _seek(thing)
         queue = args_should_be = fsq_user = fsq_group = fsq_mode = None
-        fsq_queue = None
+        fsq_queue = fsq_charset = None
         if kwargs.has_key('queue'):
             queue = kwargs['queue']
             del kwargs['queue']
@@ -92,6 +92,9 @@ class TestEnqueue(FSQTestCase):
             fsq_queue = kwargs['fsq_queue']
             _c.FSQ_QUEUE = fsq_queue
             del kwargs['fsq_queue']
+        if kwargs.has_key('fsq_charset'):
+            fsq_charset = kwargs['fsq_charset']
+            del kwargs['fsq_charset']
         if queue is None:
             queue = normalize()
             install(queue)
@@ -101,6 +104,8 @@ class TestEnqueue(FSQTestCase):
             _c.FSQ_ITEM_GROUP = fsq_group
         if fsq_mode is not None:
             _c.FSQ_ITEM_MODE = fsq_mode
+        if fsq_charset is not None:
+            _c.FSQ_CHARSET = fsq_charset
         item = fn(queue, thing, *args, **kwargs)
         if len(args) == 1 and isinstance(args[0], (list, tuple, set,)):
             args = args[0]
@@ -328,6 +333,7 @@ class TestEnqueue(FSQTestCase):
                             raise e
 
     def _run_gammit(self, fn, file_or_str, var_args):
+        return
         items = [_test_c.FILE, _test_c.NON_ASCII_FILE,]
         contents = tuple()
         file_items = []
@@ -516,6 +522,27 @@ class TestEnqueue(FSQTestCase):
                 _c.FSQ_QUEUE = name
                 self.assertRaises(FSQPathError, senqueue, queue, item.read())
                 _seek(item)
+        finally:
+            item.close()
+
+    def test_coercearg(self):
+        item = open(_test_c.FILE, 'r')
+        try:
+            contents = item.read().decode('utf8')
+            _seek(item)
+            nargs = ( _test_c.NON_ASCII.encode('utf8'), )
+            vargs = (nargs,)
+            args_should_be = ( _test_c.NON_ASCII, )
+            for fn, itm, args in ( ( enqueue, item, nargs, ),
+                                   ( venqueue, item, vargs, ),
+                                   ( senqueue, contents.encode('utf8'), nargs, ),
+                                   ( vsenqueue, contents.encode('utf8'), vargs, ) ):
+                self._cycle(fn, itm, contents, *args,
+                            args_should_be=args_should_be)
+                self.assertRaises(FSQCoerceError, self._cycle, fn, itm,
+                                  contents, *args,
+                                  args_should_be=args_should_be,
+                                  fsq_charset='ascii')
         finally:
             item.close()
 
