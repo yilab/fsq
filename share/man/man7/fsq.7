@@ -279,7 +279,32 @@ The
 .B fsq
 suite and python library makes use of a number of
 .BR FSQ_ PREFIXED
-environment variables, which modify its behavior.
+environment variables, which modify its behavior. Each environment variable
+is also available as a package-level constant. The preferred method of
+setting the value of a constant is via the
+.B set_const
+method:
+\n
+\n
+	fsq.set_const('FSQ_ROOT', 'new/root')
+\n
+\n
+The preferred method of retrieving the value of a constant is via the
+.B const
+method:
+\n
+\n
+	root = fsq.const('FSQ_ROOT')
+\n
+\n
+The Following environment variables are supported:
+.TP
+.B FSQ_CHARSET
+.br
+.B fsq
+is entirely unicode internally,
+.B FSQ_CHARSET
+is used to decode all passed strings to unicode. (default: 'utf8')
 .TP
 .B FSQ_DELIMITER
 .br
@@ -342,6 +367,24 @@ Name of the
 file.
 .B FSQ_DOWN
 may not contain `/' or be `.' or `..'. (default: `down')
+.TP
+.B FSQ_TRIGGER
+.br
+Name of the
+.I trigger
+file. If
+.B FSQ_USE_TRIGGER
+is specified,
+.B install
+will attempt to
+.BR mkfifo (2) FSQ_TRIGGER
+for the specified queue. The
+.B trigger_pull
+function writes one byte, (non-blocking) to
+.B FSQ_TRIGGER
+for the specified queue.
+.B FSQ_TRIGGER
+may not contain `/' or be `.' or `..'. (default: 'trigger-s')
 .TP
 .B FSQ_ROOT
 .br
@@ -455,6 +498,16 @@ library to determine successful completion by the
 .BR done
 function. (default: 0)
 .TP
+.B FSQ_USE_TRIGGER
+.br
+Boolean flag to cause
+.B install
+to install a
+.BR fifo (7)
+to
+.B FSQ_TRIGGER
+for the specified queue. (default: True)
+.TP
 .B FSQ_LOCK
 .br
 Boolean flag to cause
@@ -474,14 +527,6 @@ prior to yielding an item.  If
 .B scan
 cannot immediately acquire a lock, the locked item will not be yielded.
 (default: 1)
-.TP
-.B FSQ_ENQUEUE_MAX_TRIES
-.br
-Maximum number of attempts for
-.B enqueue
-(while incrementing item
-.IR entropy )
-prior to giving up. (default: 10)
 .TP
 .B FSQ_MAX_TRIES
 .br
@@ -504,28 +549,24 @@ will cause
 .B fsq
 to never timeout queue items. (default: 0)
 .SH BUGS
-If an item may be linked into
-.B FSQ_TMP
-or
-.B FSQ_FAIL
-using
-.BR link (2)
-but not unlinked from
-.B FSQ_QUEUE
-the item may exist in both directories simultaneously.
-\n
 The
-.B mkitem
-function, and all functions that make use of
-.B mkitem
-will fail with
+.BR enqueue ", " senqueue ", " venqueue ", and " vsenqueue
+functions make use of
+.BR link (2),
+as such
+.B FSQ_TMP
+and
+.B FSQ_QUEUE
+must be on the same file-system, else the operation will fail with
 .BR EXDEV .
-As such,
-.B fsq
-.I queue
-directories and subdirectories (e.g
-.BR FSQ_FAIL )
-may not be installed to seperate file-systems.
+The
+.BR fail ", " fail_tmp ", " fail_perm ", " done ", and " success
+functions make use of
+.BR rename (2),
+as such
+.BR FSQ_DONE ", " FSQ_FAIL ", and " FSQ_QUEUE
+must also be on the same file-system, else the operation will also fail with
+.BR EXDEV .
 .SH "SEE ALSO"
 .BR mkfsqueue (1),
 .BR fsq (1),
