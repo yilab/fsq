@@ -333,7 +333,6 @@ class TestEnqueue(FSQTestCase):
                             raise e
 
     def _run_gammit(self, fn, file_or_str, var_args):
-        return
         items = [_test_c.FILE, _test_c.NON_ASCII_FILE,]
         contents = tuple()
         file_items = []
