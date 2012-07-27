@@ -10,7 +10,7 @@ from . import FSQTestCase, constants as _test_c
 from .internal import test_type_own_mode, normalize
 # FROM PAPA-BEAR IMPORT THE FOLLOWING
 from .. import enqueue, venqueue, senqueue, vsenqueue, install, deconstruct,\
-               constants as _c, FSQPathError, FSQCoerceError, FSQConfigError,\
+               constants as _c, FSQPathError, FSQCoerceError,\
                FSQEnqueueError, FSQEncodeError
 
 def _raise(signum, frame):
@@ -145,7 +145,6 @@ class TestEnqueue(FSQTestCase):
                 try:
                     new_thing = None
                     try:
-                        orig = args[0]
                         if kind is not None:
                             new_thing = args[0]
                             if hasattr(new_thing, 'fileno'):

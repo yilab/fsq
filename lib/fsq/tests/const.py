@@ -3,8 +3,7 @@ import numbers
 from . import FSQTestCase
 from .internal import normalize
 from .constants import NON_ASCII, NOT_NORMAL, ILLEGAL_MODE, ILLEGAL_NAME,\
-                       ILLEGAL_UNAME, MODES, STR_MODES, NOCONST, CHARSETS,\
-                       ORIG_CHARSET
+                       ILLEGAL_UNAME, MODES, STR_MODES, NOCONST, CHARSETS
 
 # FROM PAPA-BEAR IMPORT THE FOLLOWING
 from .. import FSQEnvError, FSQCoerceError, const, set_const, constants as _c
