@@ -49,6 +49,10 @@ FSQ_QUEUE_GROUP = coerce_unicode(os.environ.get("FSQ_QUEUE_GROUP", u''),
 FSQ_QUEUE_USER = coerce_unicode(os.environ.get("FSQ_QUEUE_USER", u''),
                                 FSQ_CHARSET) or None
 
+# directory where fsq libraries for executables live
+FSQ_EXEC_DIR = coerce_unicode(os.environ.get("FSQ_EXEC_DIR", u''),
+                              FSQ_CHARSET) or None
+
 try:
     # octal mode representation -- e.g. 700, 0700, etc.
     FSQ_ITEM_MODE = int(coerce_unicode(os.environ.get("FSQ_ITEM_MODE",
