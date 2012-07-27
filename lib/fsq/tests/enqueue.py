@@ -497,6 +497,7 @@ class TestEnqueue(FSQTestCase):
                 item.close()
 
     def test_badpath(self):
+        '''Test for path errors with invalid _c.FSQ_QUEUE or _c.FSQ_TMP'''
         item = open(_test_c.FILE, 'r')
         try:
             for name in _test_c.ILLEGAL_NAMES:
@@ -521,10 +522,34 @@ class TestEnqueue(FSQTestCase):
                 _c.FSQ_QUEUE = name
                 self.assertRaises(FSQPathError, senqueue, queue, item.read())
                 _seek(item)
+
+                queue = normalize()
+                install(queue)
+                _c.FSQ_TMP = name
+                self.assertRaises(FSQPathError, enqueue, queue, item)
+
+                queue = normalize()
+                install(queue)
+                _c.FSQ_TMP = name
+                self.assertRaises(FSQPathError, venqueue, queue, item, [])
+
+                queue = normalize()
+                install(queue)
+                _c.FSQ_TMP = name
+                self.assertRaises(FSQPathError, senqueue, queue, item.read())
+                _seek(item)
+
+                queue = normalize()
+                install(queue)
+                _c.FSQ_TMP = name
+                self.assertRaises(FSQPathError, senqueue, queue, item.read())
+                _seek(item)
         finally:
             item.close()
 
     def test_coercearg(self):
+        '''Test correct and invalid coerce on string functions vsenqueue and
+           senqueue'''
         item = open(_test_c.FILE, 'r')
         try:
             contents = item.read().decode('utf8')
@@ -546,6 +571,8 @@ class TestEnqueue(FSQTestCase):
             item.close()
 
     def test_badenqueue(self):
+        '''Test correct failure for illegal file descriptor and file name
+           (e.g. non-string type)'''
         for f in (_test_c.ILLEGAL_FD, _test_c.ILLEGAL_FILE,):
             queue = normalize()
             install(queue)
@@ -556,6 +583,8 @@ class TestEnqueue(FSQTestCase):
             self.assertRaises(FSQEnqueueError, venqueue, queue, f, [])
 
     def test_badsenqueue(self):
+        '''Test that (v)senqueue raises a TypeError when handed something
+           not-stringesque'''
         for s in (_test_c.ILLEGAL_STR,):
             queue = normalize()
             install(queue)
@@ -566,6 +595,8 @@ class TestEnqueue(FSQTestCase):
             self.assertRaises(TypeError, vsenqueue, queue, s, [])
 
     def test_badconstruct(self):
+        '''Test error cases for known bad arguments in construction, bad
+           encodeseq and bad delimiter'''
         item = open(_test_c.FILE, 'r')
         try:
             for name in _test_c.ILLEGAL_NAMES:
