@@ -12,7 +12,8 @@ import datetime
 
 from . import constants as _c, path as fsq_path, deconstruct,\
               FSQMalformedEntryError, FSQTimeFmtError, FSQWorkItemError,\
-              fail, success, done, fail_tmp, fail_perm
+              FSQMaxTriesError, FSQTTLExpiredError, fail, success, done,\
+              fail_tmp, fail_perm
 from .internal import rationalize_file, wrap_io_os_err, check_ttl_max_tries
 
 class FSQEnqueueItem(object):
@@ -90,8 +91,15 @@ class FSQWorkItem(object):
                                       u' not {0}: {1}'.format(
                                         self.tries.__class__.__name__,
                                         self.tries))
-            check_ttl_max_tries(self.tries, self.enqueued_at, self.max_tries,
-                                self.ttl)
+            try:
+                check_ttl_max_tries(self.tries, self.enqueued_at,
+                                    self.max_tries, self.ttl)
+            except (FSQMaxTriesError, FSQTTLExpiredError, ), e:
+                e.strerror = u': '.join([
+                    e.strerror,
+                    u'for item {0}; failed permanantly'.format(self.id),
+                ])
+                raise e
         except Exception, e:
             try:
                 # unhandled exceptions are perm failures

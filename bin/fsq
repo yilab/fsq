@@ -169,11 +169,11 @@ def main(argv):
                 barf('internal command error: {0}'.format(fsq_cmd))
 
             # DO THE DAMN THING
-            #try:
-            sys.exit(fsq_prog_main([' '.join([_PROG, fsq_cmd])] + args[1:]))
-            #except ( Exception, ), e:
-            #    barf('internal command error: {0} ({1}: {2})'.format(fsq_cmd,
-            #         e.__class__.__name__, e.message))
+            try:
+                sys.exit(fsq_prog_main([' '.join([_PROG, fsq_cmd])] + args[1:]))
+            except ( Exception, ), e:
+                barf('internal command error: {0} ({1}: {2})'.format(fsq_cmd,
+                     e.__class__.__name__, e.message))
         finally:
             del fsq_prog
     finally:

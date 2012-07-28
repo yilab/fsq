@@ -121,8 +121,9 @@ def main(argv):
         barf('cannot coerce queue; charset={0}'.format(_CHARSET))
     try:
         timefmt = fsq.const('FSQ_TIMEFMT')
-        for item in items:
+        while True:
             try:
+                item = items.next()
                 # prepare to fork/exec
                 try:
                     item_id = item.id.encode(_CHARSET)
@@ -177,23 +178,38 @@ def main(argv):
                                                 e.message))
 
                 pid, rc = os.waitpid(pid, 0) # papa fork waits on baby fork
-                try:
-                    if fsq.const('FSQ_SUCCESS') == rc:
-                        fsq.success(item)
-                        chirp('{0}: succeeded'.format(item_id))
-                    elif fsq.const('FSQ_FAIL_TMP') == rc:
-                        fsq.fail_tmp(item)
-                        shout('{0}: failed temporarily'.format(item_id))
-                    else:
-                        fsq.fail_perm(item)
-                        shout('{0}: failed permanantly'.format(item_id))
-                except FSQError, e:
-                    barf(e.message.encode(_CHARSET))
+                if os.WIFEXITED(rc):
+                    rc = os.WEXITSTATUS(rc)
+                    try:
+                        if fsq.const('FSQ_SUCCESS') == rc:
+                            fsq.success(item)
+                            chirp('{0}: succeeded'.format(item_id))
+                        elif fsq.const('FSQ_FAIL_TMP') == rc:
+                            fsq.fail_tmp(item)
+                            shout('{0}: failed temporarily'.format(item_id))
+                        else:
+                            fsq.fail_perm(item)
+                            shout('{0}: failed permanantly'.format(item_id))
+                    except fsq.FSQEnqueueError, e:
+                        barf(e.strerror.encode(_CHARSET))
+                    except fsq.FSQError, e:
+                        shout(e.strerror.encode(_CHARSET))
+                #TODO: else ... was signalled, cleanup
+            except fsq.FSQError, e:
+                shout(e.strerror.encode(_CHARSET))
+            except StopIteration:
+                break
             finally:
-                del item
+                try:
+                    del item
+                except NameError:
+                    pass
 
     except fsq.FSQDownError:
-        barf('{0} is down')
+        barf('{0} is down'.format(args[0]))
+    except fsq.FSQError, e:
+        shout(dir(e))
+        shout(e.message.encode(_CHARSET))
 
 if __name__ == '__main__':
     main(sys.argv)

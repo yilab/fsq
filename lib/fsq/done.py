@@ -22,19 +22,20 @@ def fail_tmp(item, max_tries=None, ttl=None):
         ttl = item.ttl if ttl is None else ttl
 
         # see if we need to fail perm
-        check_ttl_max_tries(item.tries, item.enqueued_at, max_tries, ttl)
+        check_ttl_max_tries(item.tries+1, item.enqueued_at, max_tries, ttl)
         # mv to same plus 1
         item.tries += 1
         new_name = construct(( fmt_time(item.enqueued_at, _c.FSQ_TIMEFMT,
                                _c.FSQ_CHARSET), item.entropy,
-                               item.pid, item.host,
+                               item.pid, item.hostname,
                                item.tries, ) + tuple(item.arguments))
-        os.rename(item.id, fsq_path.item(item.queue, new_name))
+        os.rename(fsq_path.item(item.queue, item.id),
+				  fsq_path.item(item.queue, new_name))
         return new_name
     except (FSQMaxTriesError, FSQTTLExpiredError, FSQEnqueueError, ), e:
         fail_perm(item)
-        e.message = u': '.join([
-            e.message,
+        e.strerror = u': '.join([
+            e.strerror,
             u'for item {0}; failed permanantly'.format(item.id),
         ])
         raise e
