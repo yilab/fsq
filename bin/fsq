@@ -82,8 +82,10 @@ def exit_no_cmd(exec_dir, exit=None, f=sys.stderr):
         barf(': '.join(e.strerror, exec_dir))
     sys.exit(exit)
 
+###### WARNING: main exits
 def main(argv):
     '''Dispatch program for fsq(1) suite'''
+    global _CHARSET
     cset_passed = False
     list_req = False
     exec_dir = None
@@ -95,14 +97,14 @@ def main(argv):
                                    'trigger-fifo=', ))
     except getopt.GetoptError, e:
         # bad usage
-        shout(e.message)
-        usage()
+        barf('invalid flag: -{0}{1}'.format('-' if 1 < len(e.opt) else '',
+             e.opt))
 
     try:
         # options we set before we run prog
         for flag, opt in opts:
             if '-c' == flag or '--charset' == flag:
-                fsq.set_const('FSQ_CHARSET', opt)
+                _CHARSET = fsq.set_const('FSQ_CHARSET', opt)
                 cset_passed = True
             elif '-e' == flag or '--exec-dir' == flag:
                 exec_dir = opt
@@ -124,11 +126,11 @@ def main(argv):
             elif '-h' == flag or '--help' == flag:
                 usage(1)
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
-        barf('invalid argument for {0}: {1}'.format(flag, opt))
+        barf('invalid argument for flag: {0}'.format(flag))
 
     # use locale or if charset not explicitely passed
     if not cset_passed:
-        fsq.set_const('FSQ_CHARSET', _CHARSET)
+        _CHARSET = fsq.set_const('FSQ_CHARSET', _CHARSET)
 
     # set exec dir
     if exec_dir is None:
@@ -147,11 +149,10 @@ def main(argv):
         fsq_cmd = fsq.path.valid_name(args[0])
         if 0 <= fsq_cmd.find('.'):
             barf('illegal prog argument: {0}'.format(args[0]))
-    except (fsq.FSQPathError, ):
+    except fsq.FSQPathError:
         barf('illegal prog argument: {0}'.format(args[0]))
-    except (fsq.FSQCoerceError, ):
-        barf('cannot coerce: {0}; charset={1}'.format(args[0],
-             fsq.const('FSQ_CHARSET')))
+    except fsq.FSQCoerceError:
+        barf('cannot coerce prog; charset={0}'.format(_CHARSET))
 
     # import and ``execute'' command
     try:
@@ -168,11 +169,18 @@ def main(argv):
                 barf('internal command error: {0}'.format(fsq_cmd))
 
             # DO THE DAMN THING
-            sys.exit(fsq_prog_main(args[1:]))
+            #try:
+            sys.exit(fsq_prog_main([' '.join([_PROG, fsq_cmd])] + args[1:]))
+            #except ( Exception, ), e:
+            #    barf('internal command error: {0} ({1}: {2})'.format(fsq_cmd,
+            #         e.__class__.__name__, e.message))
         finally:
             del fsq_prog
     finally:
         cmd_file.close()
+
+    ####### UNREACHED
+    sys.exit(0)
 
 if __name__ == '__main__':
     main(sys.argv[1:])

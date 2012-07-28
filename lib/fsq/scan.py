@@ -48,7 +48,7 @@ class FSQScanGenerator(object):
        mechanism.'''
     ####### MAGICAL METHODS AND ATTRS #######
     def __init__(self, queue, item_ids, lock=None, ttl=None,
-                 max_tries=None, ignore_down=False):
+                 max_tries=None, ignore_down=False, no_open=False):
         '''Construct an FSQScanGenerator object from a list of item_ids and a
            queue name.  The lock kwarg will override the default locking
            preference (taken from environment).'''
@@ -65,6 +65,7 @@ class FSQScanGenerator(object):
         self.ttl = _c.FSQ_TTL if ttl is None else ttl
         self.max_tries = _c.FSQ_MAX_TRIES if max_tries is None else max_tries
         self.ignore_down = ignore_down
+        self.no_open = no_open
 
     def __iter__(self):
         return self
@@ -87,7 +88,8 @@ class FSQScanGenerator(object):
                 self.item = FSQWorkItem(self.queue,
                                         self.item_ids[self._index],
                                         lock=self.lock, ttl=self.ttl,
-                                        max_tries=self.max_tries)
+                                        max_tries=self.max_tries,
+                                        no_open=self.no_open)
             except (FSQWorkItemError, FSQCannotLockError, ), e:
                 # we discard on ENOENT -- e.g. something else already did the
                 #  work
@@ -105,7 +107,7 @@ class FSQScanGenerator(object):
         raise StopIteration()
 
 def scan(queue, lock=None, ttl=None, max_tries=None, ignore_down=False,
-         generator=FSQScanGenerator):
+         no_open=False, generator=FSQScanGenerator):
     '''Given a queue, generate a list of files in that queue, and pass it to
        FSQScanGenerator for iteration.  The generator kwarg is provided here
        as a means of implementing a custom generator, use with caution.'''
@@ -118,8 +120,11 @@ def scan(queue, lock=None, ttl=None, max_tries=None, ignore_down=False,
         if e.errno == errno.ENOENT:
             raise FSQScanError(e.errno, u'no such queue:'\
                                u' {0}'.format(queue))
+        elif isinstance(e, FSQError):
+            raise e
         raise FSQScanError(e.errno, wrap_io_os_err(e))
 
     # sort here should yield time then entropy sorted
     item_ids.sort()
-    return generator(queue, item_ids, lock=lock, ttl=ttl, max_tries=max_tries)
+    return generator(queue, item_ids, lock=lock, ttl=ttl, max_tries=max_tries,
+                     no_open=no_open)
