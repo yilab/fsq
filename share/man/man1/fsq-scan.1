@@ -137,6 +137,14 @@ sh \-c 'exit 100'
 .br
 	fsq scan: _20120729152737_0_12345_mss_0_foo_bar: failed permanently
 .sp
+If
+.I program
+was terminated by a signal,
+.BR fsq\-scan (1)
+will fail the item permanently and stop scanning before processing any more
+work\-items, exiting
+.IR FSQ_FAIL_TMP .
+.sp
 By default
 .BR fsq\-scan (1)
 attempts to obtain an exclusive lock on each work\-item as it iterates, via

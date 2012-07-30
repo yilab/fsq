@@ -14,12 +14,13 @@
 #  * without the --no-lock option, fsq-scan will LOCK_EX each item as it
 #      iterates, should your exec'ed program hang, the file lock will not
 #      be released.
+#  * like xargs(1), if scan is terminated by signal, it orphans ... if a child
+#      is terminated by signal, scan stops scanning.
 #
 # @author: Matthew Story <matt.story@axialmarket.com>
 # @depends: fsq(1), fsq(7), python (>=2.7)
 #
-# TODO: signal handling for parent and child
-# TODO: Concurrency?
+# TODO: Concurrency? -- not right now
 #
 # This software is for POSIX compliant systems only.
 import getopt
@@ -92,6 +93,7 @@ def main(argv):
     ignore_down = False
     empty_ok = False
     no_done = False
+    main_rc = 0
 
     _PROG = argv[0]
     try:
@@ -152,6 +154,8 @@ def main(argv):
     except fsq.FSQCoerceError, e:
         barf('cannot coerce queue; charset={0}'.format(_CHARSET))
     try:
+        fail_perm = fsq.const('FSQ_FAIL_PERM')
+        success = fsq.const('FSQ_SUCCESS')
         timefmt = fsq.const('FSQ_TIMEFMT')
         while True:
             try:
@@ -160,7 +164,8 @@ def main(argv):
 
                 # cannot exec nothing
                 if empty_ok and 0 == len(exec_args):
-                    shout('cannot execvp empty arguments with empty_ok; failing tmp')
+                    shout('cannot execvp empty arguments with empty_ok;'\
+                          ' failing tmp')
                     if not no_done:
                         done_item(item, fsq.const('FSQ_FAIL_PERM'))
                     continue
@@ -183,22 +188,21 @@ def main(argv):
                             # if available, open item for reading on stdin
                             os.dup2(item.item.fileno(), sys.stdin.fileno())
                         except ( OSError, IOError, ), e:
-                            barf('cannot dup: {0};'\
-                                 ' aborting'.format(e.strerror))
+                            barf('cannot dup: {0}'.format(e.strerror))
 
                     # setup the environment
                     if set_env:
-                        # set additional information in environment prior to fork
-                        for env, attr in ( ( 'FSQ_ITEM_PID', 'pid', ),
-                                           ( 'FSQ_ITEM_ENTROPY', 'entropy', ),
-                                           ( 'FSQ_ITEM_HOSTNAME', 'hostname', ),
-                                           ( 'FSQ_ITEM_ID', 'id', ), ):
+                        # set additional info in env
+                        for env, att in (( 'FSQ_ITEM_PID', 'pid', ),
+                                         ( 'FSQ_ITEM_ENTROPY', 'entropy', ),
+                                         ( 'FSQ_ITEM_HOSTNAME', 'hostname', ),
+                                         ( 'FSQ_ITEM_ID', 'id', ), ):
                             try:
-                                os.putenv(env,
-                                          getattr(item, attr).encode(_CHARSET))
+                                os.putenv(env, getattr(item,
+                                          att).encode(_CHARSET))
                             except UnicodeEncodeError, e:
                                 barf('cannot coerce item {0};'
-                                     ' charset={1}'.format(attr, _CHARSET))
+                                     ' charset={1}'.format(att, _CHARSET))
 
                         # format tries and date to env
                         os.putenv('FSQ_ITEM_TRIES', str(item.tries))
@@ -212,17 +216,26 @@ def main(argv):
                         try:
                             os.execvp(exec_args[0], exec_args)
                         except ( OSError, IOError, ), e:
-                            barf('{0}: cannot exec {0};'\
-                                 ' aborting'.format(e.strerror, args[0]))
+                            barf('{0}: cannot exec {0}'.format(e.strerror,
+                                 args[0]))
                         except Exception, e:
-                            barf('cannot execvp ({0}: {1});'\
-                                 ' aborting'.format(e.__class__.__name__,
-                                                    e.message))
+                            barf('cannot execvp ({0}: {1})'.format(
+                                 e.__class__.__name__, e.message))
 
                 pid, rc = os.waitpid(pid, 0) # papa fork waits on baby fork
-                if not no_done and os.WIFEXITED(rc):
-                    done_item(item, os.WEXITSTATUS(rc))
-                #TODO: else ... was signalled, cleanup
+                if os.WIFEXITED(rc):
+                    if not no_done:
+                        done_item(item, os.WEXITSTATUS(rc))
+                    if rc == fail_perm:
+                        main_rc = rc
+                    elif main_rc != fail_perm and rc != success:
+                        main_rc = rc
+                else:
+                    if not no_done:
+                        done_item(item, fail_perm)
+                    barf('{0}: processing terminated by signal {1};'\
+                         ' aborting'.format(item_id, os.WTERMSIG(rc)))
+
             except fsq.FSQError, e:
                 shout(e.strerror.encode(_CHARSET))
             except StopIteration:

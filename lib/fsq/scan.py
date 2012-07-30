@@ -17,7 +17,8 @@ import os
 import errno
 
 from . import constants as _c, FSQWorkItem, path as fsq_path, FSQScanError,\
-              FSQCannotLockError, FSQWorkItemError, FSQDownError, is_down
+              FSQCannotLockError, FSQWorkItemError, FSQDownError, FSQError,\
+              is_down
 from .internal import wrap_io_os_err
 
 ####### EXPOSED METHODS AND CLASSES #######
