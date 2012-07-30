@@ -97,7 +97,7 @@ class FSQWorkItem(object):
             except (FSQMaxTriesError, FSQTTLExpiredError, ), e:
                 e.strerror = u': '.join([
                     e.strerror,
-                    u'for item {0}; failed permanantly'.format(self.id),
+                    u'for item {0}; failed permanently'.format(self.id),
                 ])
                 raise e
         except Exception, e:
@@ -138,7 +138,7 @@ class FSQWorkItem(object):
         return success(self)
 
     def fail(self, fail_type=None):
-        '''Fail this item either temporarily or permanantly.'''
+        '''Fail this item either temporarily or permanently.'''
         return fail(self, fail_type)
 
     def fail_tmp(self):

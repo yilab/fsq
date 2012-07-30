@@ -88,7 +88,7 @@ def main(argv):
     global _CHARSET
     cset_passed = False
     list_req = False
-    exec_dir = None
+    exec_dir = os.environ.get('FSQ_EXEC_DIR', None)
     try:
         opts, args = getopt.getopt(argv, 'hlc:e:r:q:t:d:D:T:', ( 'help',
                                    'list', 'charset=', 'exec-dir=',

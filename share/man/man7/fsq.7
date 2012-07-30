@@ -24,19 +24,16 @@ queue conforms to the following directory structure:
 .I /var/fsq/a_queue/
 The queue
 .I a_queue
-is installed to the
-.B FSQ_ROOT
-.I /var/fsq/
-(default).  To enqueue a file to this queue, use the enqueue function:
-\n
-\n
+is installed to the default
+.IR FSQ_ROOT ,
+.IR /var/fsq/.
+To enqueue a file to this queue, use the enqueue function:
+.sp
 .BR ""	 fsq. enqueue ('a_queue',
 \'/path/to/file', 'args', 'to', 'enqueue')
-\n
-\n
+.sp
 or to enqueue a string, use the senqueue function:
-\n
-\n
+.sp
 .BR ""	 fsq. senqueue ('a_queue',
 \'a string body for my queue item', 'args', 'to', 'enqueue')
 .TP
@@ -52,8 +49,7 @@ or
 function calls, you should be able to see 2 files in the
 .I q_queue/queue
 directory:
-\n
-\n
+.sp
 _20120710213904_0_13044_mss_0_args_to_enqueue
 .br
 _20120710213904_1_13044_mss_0_args_to_enqueue
@@ -63,7 +59,7 @@ _20120710213904_1_13044_mss_0_args_to_enqueue
 |      |        |   |    |  |        |
 .br
 |      |        |   |    |  |        +->
-.BR FSQ_DELIMITER
+.I FSQ_DELIMITER
 seperated
 .br
 |      |        |   |    |  |            arguments
@@ -104,16 +100,13 @@ is incremented to
 |      +->
 .B timestamp
 in
-.B FSQ_TIMEFMT
-format (default:
-.br
-|          `YYYYMMDDHHMMSS').
+.I FSQ_TIMEFMT
+format
 .br
 +->
-.B FSQ_DELIMITER
-(default: `_')
-\n
-\n
+.I FSQ_DELIMITER
+used at enqueue time
+.sp
 .TP
 .I /var/fsq/a_queue/tmp
 The
@@ -122,7 +115,7 @@ directory within
 .I a_queue
 is a location for constructing queue items prior to enqueueing them to the
 .I queue
-directory.  In the above
+directory. In the above
 .B enqueue
 and
 .B senqueue
@@ -144,23 +137,19 @@ Items may be marked as done, by using the
 .B done
 function (typically done during a
 .BR scan ):
-\n
-\n
+.sp
 	for i in
 .BR "" fsq. scan ('a_queue'):
 .BR "" fsq. done (i)
-\n
-\n
+.sp
 The function
 .B success
 may also be used:
-\n
-\n
+.sp
 	for i in
 .BR "" fsq. scan ('a_queue'):
 .BR "" fsq. success (i)
-\n
-\n
+.sp
 The
 .I done
 directory serves as a sort of book-keeping, but it should routinely be pruned,
@@ -171,21 +160,18 @@ The
 .I fail
 directory within
 .I a_queue
-is a location for storing failed queue items following work.  Items may be
+is a location for storing failed queue items following work. Items may be
 marked as failed, by using the
 .B fail
 function:
-\n
-\n
+.sp
 	for i in
 .BR "" fsq. scan ('a_queue'):
 .br
 .BR ""		fsq. fail (i)
-\n
-\n
+.sp
 The fail_perm function may also be used:
-\n
-\n
+.sp
 	for i in
 .BR "" fsq. scan ('a_queue'):
 .br
@@ -196,16 +182,14 @@ The fail_perm function may also be used:
 		except:
 .br
 .BR ""			fsq. fail_perm (i)
-\n
-\n
-Permanant failure may also result if an item is older than,
-.B FSQ_TTL
+.sp
+permanent failure may also result if an item is older than,
+.I FSQ_TTL
 or if the item has been retries more than
-.B FSQ_MAX_TRIES
+.I FSQ_MAX_TRIES
 by way of
 .I fail_tmp:
-\n
-\n
+.sp
 	for i in
 .BR "" fsq. scan ('a_queue'):
 .br
@@ -216,13 +200,11 @@ by way of
 		except:
 .br
 .BR ""			fsq. fail_tmp (i)
-\n
-\n
+.sp
 Alternatively,
 .I retry
 may be used:
-\n
-\n
+.sp
 	for i in
 .BR "" fsq. scan ('a_queue'):
 .br
@@ -233,330 +215,381 @@ may be used:
 		except:
 .br
 .BR ""			fsq. retry (i)
-\n
-\n
+.sp
 .TP
 .I /var/fsq/a_queue/down
 The
 .I down
 file within
 .I a_queue
-is a file controlling wether or not a queue is available to be scanned.  If
+is a file controlling wether or not a queue is available to be scanned. If
 .I down
 exists, the queue will not be scanned.
 .I down
 may be created by using the
 .B down
 function:
-\n
-\n
+.sp
 .BR ""	fsq. down ('a_queue')
-\n
-\n
+.sp
 .I down
 may be removed by using the
 .B up
 function:
-\n
-\n
+.sp
 .BR "" 	fsq. up ('a_queue')
-\n
-\n
+.sp
 Queues with
 .I down
 may be scanned, by passing
 .BR None " or " False
 to
 .BR scan :
-\n
-\n
+.sp
 	fsq.scan('a_queue',
 .BR down=None )
-\n
-\n
+.sp
 .SH ENVIRONMENT
 The
 .B fsq
 suite and python library makes use of a number of
-.BR FSQ_ PREFIXED
+.IR FSQ_ PREFIXED
 environment variables, which modify its behavior. Each environment variable
 is also available as a package-level constant. The preferred method of
 setting the value of a constant is via the
 .B set_const
 method:
-\n
-\n
+.sp
 	fsq.set_const('FSQ_ROOT', 'new/root')
-\n
-\n
+.sp
 The preferred method of retrieving the value of a constant is via the
 .B const
 method:
-\n
-\n
+.sp
 	root = fsq.const('FSQ_ROOT')
-\n
-\n
+.sp
 The Following environment variables are supported:
 .TP
-.B FSQ_CHARSET
+.I FSQ_CHARSET
 .br
 .B fsq
 is entirely unicode internally,
-.B FSQ_CHARSET
-is used to decode all passed strings to unicode. (default: 'utf8')
+.I FSQ_CHARSET
+is used to decode all passed strings to unicode.
+.sp
+default:
+.B utf8
 .TP
-.B FSQ_DELIMITER
+.I FSQ_DELIMITER
 .br
 .B fsq
-stores arguments in file-names, delimited by
-.BR FSQ_DELIMITER .
-(default: `_')
+stores arguments in file\-names, delimited by
+.IR FSQ_DELIMITER .
+.sp
+default:
+.B _
 .TP
-.B FSQ_ENCODE
+.I FSQ_ENCODE
 .br
 .B fsq
 encodes non-filesystem safe characters as well as literal delimiters in
 arguments as
-.B FSQ_ENCODE
+.I FSQ_ENCODE
 prefixed hexidecimal representations of the character's ordinal value; ex:
-.BR %5F .
-(default `%')
+.IR %5F .
+.sp
+default:
+.B %
 .TP
-.B FSQ_TIMEFMT
+.I FSQ_TIMEFMT
 .br
 .BR strftime (3)
-format to use for item timestamp conversion. (default: `%Y%m%d%H%M%S')
+format to use for item timestamp conversion.
+.sp
+default:
+.B %Y%m%d%H%M%S
 .TP
-.B FSQ_QUEUE
+.I FSQ_QUEUE
 .br
 Name of the
 .I queue
 directory.
-.B FSQ_QUEUE
-may not contain `/' or be `.' or `..'. (default: `queue')
+.I FSQ_QUEUE
+may not contain `/' or be `.' or `..'.
+.sp
+default:
+.B queue
 .TP
-.B FSQ_DONE
+.I FSQ_DONE
 .br
 Name of the
 .I done
 directory.
-.B FSQ_DONE
-may not contain `/' or be `.' or `..'. (default: `done')
+.I FSQ_DONE
+may not contain `/' or be `.' or `..'.
+.sp
+default:
+.B done
 .TP
-.B FSQ_FAIL
+.I FSQ_FAIL
 .br
 Name of the
 .I fail
 directory.
-.B FSQ_FAIL
-may not contain `/' or be `.' or `..'. (default: `fail')
+.I FSQ_FAIL
+may not contain `/' or be `.' or `..'.
+.sp
+default:
+.B fail
 .TP
-.B FSQ_TMP
+.I FSQ_TMP
 .br
 Name of the
 .I tmp
 directory.
-.B FSQ_TMP
-may not contain `/' or be `.' or `..'. (default: `tmp')
+.I FSQ_TMP
+may not contain `/' or be `.' or `..'.
+.sp
+default:
+.B tmp
 .TP
-.B FSQ_DOWN
+.I FSQ_DOWN
 .br
 Name of the
 .I down
 file.
-.B FSQ_DOWN
-may not contain `/' or be `.' or `..'. (default: `down')
+.I FSQ_DOWN
+may not contain `/' or be `.' or `..'.
+.sp
+default:
+.B down
 .TP
-.B FSQ_TRIGGER
+.I FSQ_TRIGGER
 .br
 Name of the
 .I trigger
 file. If
-.B FSQ_USE_TRIGGER
+.I FSQ_USE_TRIGGER
 is specified,
 .B install
 will attempt to
-.BR mkfifo (2) FSQ_TRIGGER
+.BR mkfifo (2)
+.I FSQ_TRIGGER
 for the specified queue. The
 .B trigger_pull
-function writes one byte, (non-blocking) to
-.B FSQ_TRIGGER
+function writes one byte (non-blocking) to
+.I FSQ_TRIGGER
 for the specified queue.
-.B FSQ_TRIGGER
-may not contain `/' or be `.' or `..'. (default: 'trigger-s')
+.I FSQ_TRIGGER
+may not contain `/' or be `.' or `..'.
+.sp
+default:
+.B trigger-s
 .TP
-.B FSQ_ROOT
+.I FSQ_ROOT
 .br
-Path to parent directory for queues. (default: `/var/fsq').
+Path to parent directory for queues.
+.sp
+default:
+.B /var/fsq
 .TP
-.B FSQ_ITEM_GROUP
+.I FSQ_ITEM_GROUP
 .br
-Name or gid of group owner for queue items.  If
-.B FSQ_ITEM_GROUP
+Name or gid of group owner for queue items. If
+.I FSQ_ITEM_GROUP
 is a name,
 .B fsq
 uses
 .BR getgrent (3)
-to determine gid.  If
-.B FSQ_ITEM_GROUP
+to determine gid. If
+.I FSQ_ITEM_GROUP
 is unset, group ownership is preserved based on the normal rules for
 .BR open (2)
 with
 .BR O_CREAT .
 .TP
-.B FSQ_ITEM_USER
+.I FSQ_ITEM_USER
 .br
-Name or uid of user owner for queue items.  If
-.B FSQ_ITEM_USER
+Name or uid of user owner for queue items. If
+.I FSQ_ITEM_USER
 is a name,
 .B fsq
 uses
 .BR getpwent (3)
-to determine uid.  If
-.B FSQ_ITEM_USER
+to determine uid. If
+.I FSQ_ITEM_USER
 is unset, user ownership is preserved based on the normal rules for
 .BR open (2)
 with
 .BR O_CREAT .
 .TP
-.B FSQ_QUEUE_GROUP
+.I FSQ_QUEUE_GROUP
 .br
 Name or gid of group owner for
 .I queue
 directories and subdirectories (e.g.
 .IR fail ).
 If
-.B FSQ_QUEUE_GROUP
+.I FSQ_QUEUE_GROUP
 is a name,
 .B fsq
 uses
 .BR getgrent (3)
-to determine gid.  If
-.B FSQ_QUEUE_GROUP
+to determine gid. If
+.I FSQ_QUEUE_GROUP
 is unset, group ownership is set to the gid of the parent process via
 .BR getgid (2).
 .TP
-.B FSQ_QUEUE_USER
+.I FSQ_QUEUE_USER
 .br
 Name or uid of user owner for
 .I queue
 directories and subdirectories (e.g.
 .IR fail ).
 If
-.B FSQ_QUEUE_USER
+.I FSQ_QUEUE_USER
 is a name,
 .B fsq
 uses
 .BR getpwent (3)
-to determine uid.  If
-.B FSQ_QUEUE_USER
+to determine uid. If
+.I FSQ_QUEUE_USER
 is unset, user ownership is set to the uid of the parent process via
 .BR getuid (2).
 .TP
-.B FSQ_ITEM_MODE
+.I FSQ_ITEM_MODE
 .br
-Octal mode for queue items. (default `00640')
+Octal mode for queue items.
+.sp
+default:
+.B 00640
 .TP
-.B FSQ_QUEUE_MODE
+.I FSQ_QUEUE_MODE
 .br
-Octal mode for queue directories. (default `02770')
+Octal mode for queue directories.
+.sp
+default:
+.B 02770
 .TP
-.B FSQ_FAIL_TMP
+.I FSQ_FAIL_TMP
 .br
 Integer code for temporary failure.
-.B FSQ_FAIL_TMP
+.I FSQ_FAIL_TMP
 is used by
 .B fsq
 utilities as a temporary failure exit code and by the python
 .B fsq
 library to determine temporary failure by the
 .BR done " and " fail
-functions. (default: 111)
+functions.
+.sp
+default:
+.B 111
 .TP
-.B FSQ_FAIL_PERM
+.I FSQ_FAIL_PERM
 .br
-Integer code for permanant failure.
-.B FSQ_FAIL_PERM
+Integer code for permanent failure.
+.I FSQ_FAIL_PERM
 is used by
 .B fsq
-utilities as a permanant failure exit code and by the python
+utilities as a permanent failure exit code and by the python
 .B fsq
-library to determine permanant failure by the
+library to determine permanent failure by the
 .BR done " and " fail
-functions. (default: 100)
+functions.
+.sp
+default:
+.B 100
 .TP
-.B FSQ_SUCCESS
+.I FSQ_SUCCESS
 .br
 Integer code for success.
-.B FSQ_FAIL_SUCCESS
+.I FSQ_SUCCESS
 is used by
 .B fsq
 utilities as a successful exit code and by the python
 .B fsq
 library to determine successful completion by the
 .BR done
-function. (default: 0)
+function.
+.sp
+default:
+.B 0
 .TP
-.B FSQ_USE_TRIGGER
+.I FSQ_USE_TRIGGER
 .br
 Boolean flag to cause
 .B install
 to install a
 .BR fifo (7)
 to
-.B FSQ_TRIGGER
-for the specified queue. (default: True)
+.I FSQ_TRIGGER
+for the specified queue.
+.sp
+default:
+.B 1
 .TP
-.B FSQ_LOCK
+.I FSQ_LOCK
 .br
 Boolean flag to cause
 .B scan
-to lock or not lock.  Setting
-.B FSQ_LOCK
+to lock or not lock. Setting
+.I FSQ_LOCK
 to 0 should only be done if you do not intend on processing work (e.g. you are
 introspecting). If
-.B FSQ_LOCK
+.I FSQ_LOCK
 is 1
 .B scan
 will attempt to acquire an exclusive lock
-.BR "" ( LOCK_EX|LOCK_NB )
+.BR "" ( LOCK_EX | LOCK_NB )
 using
 .BR flock (2)
-prior to yielding an item.  If
+prior to yielding an item. If
 .B scan
 cannot immediately acquire a lock, the locked item will not be yielded.
-(default: 1)
+.sp
+default:
+.B 1
 .TP
-.B FSQ_MAX_TRIES
+.I FSQ_MAX_TRIES
 .br
 Maximum number of temporary failures (or retries) before a work-item is failed
-permanantly. A value of 0 for
-.B FSQ_MAX_TRIES
+permanently. A value of
+.I 0
+for
+.I FSQ_MAX_TRIES
 will cause
 .B fsq
-to retry indefinitely. (default: 1)
+to retry indefinitely.
+.sp
+default:
+.B 1
 .TP
-.B FSQ_TTL
-Time-to-live in seconds for a queue item.  Queue items will be failed
-permanantly if their
+.I FSQ_TTL
+Time-to-live in seconds for a queue item. Queue items will be failed
+permanently if their
 .I timestamp
 is greater-than
-.B FSQ_TTL
-seconds prior to now.  A value of 0 for
-.B FSQ_TTL
+.I FSQ_TTL
+seconds prior to the current system time. A value of
+.I 0
+for
+.I FSQ_TTL
 will cause
 .B fsq
-to never timeout queue items. (default: 0)
+to never timeout queue items.
+.sp
+default:
+.B 0
 .SH BUGS
 The
 .BR enqueue ", " senqueue ", " venqueue ", and " vsenqueue
 functions make use of
 .BR link (2),
 as such
-.B FSQ_TMP
+.I FSQ_TMP
 and
-.B FSQ_QUEUE
+.I FSQ_QUEUE
 must be on the same file-system, else the operation will fail with
 .BR EXDEV .
 The
@@ -564,7 +597,7 @@ The
 functions make use of
 .BR rename (2),
 as such
-.BR FSQ_DONE ", " FSQ_FAIL ", and " FSQ_QUEUE
+.IR FSQ_DONE ", " FSQ_FAIL ", and " FSQ_QUEUE
 must also be on the same file-system, else the operation will also fail with
 .BR EXDEV .
 .SH "SEE ALSO"
