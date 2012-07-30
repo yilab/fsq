@@ -69,6 +69,7 @@ def usage(asked_for=0):
     sys.exit(exit)
 
 def done_item(item, code):
+    '''Succeed or fail an item based on the return code of a program'''
     try:
         if fsq.const('FSQ_SUCCESS') == code:
             fsq.success(item)
@@ -80,9 +81,36 @@ def done_item(item, code):
             fsq.fail_perm(item)
             shout('{0}: failed permanantly'.format(item.id))
     except fsq.FSQEnqueueError, e:
-        barf(e.strerror.encode(_CHARSET))
+        shout(e.strerror.encode(_CHARSET))
+        return -1
     except fsq.FSQError, e:
         shout(e.strerror.encode(_CHARSET))
+    return 0
+
+def setenv(item, timefmt):
+    '''Set environment, based on item.  Usually done in a baby fork'''
+    for env, att in (( 'FSQ_ITEM_PID', 'pid', ),
+                     ( 'FSQ_ITEM_ENTROPY', 'entropy', ),
+                     ( 'FSQ_ITEM_HOSTNAME', 'hostname', ),
+                     ( 'FSQ_ITEM_ID', 'id', ), ):
+        try:
+            os.putenv(env, getattr(item,
+                      att).encode(_CHARSET))
+        except UnicodeEncodeError:
+            shout('cannot coerce item {0};'
+                  ' charset={1}'.format(att, _CHARSET))
+            return -1
+
+    # format tries and date to env
+    os.putenv('FSQ_ITEM_TRIES', str(item.tries))
+    try:
+        os.putenv('FSQ_ITEM_ENQUEUED_AT',
+                  item.enqueued_at.strftime(timefmt))
+    except ValueError:
+        shout('invalid timefmt: {0}'.format(timefmt))
+        return -1
+    return 0
+
 
 # all fsq commands use a main function
 def main(argv):
@@ -155,19 +183,19 @@ def main(argv):
         barf('cannot coerce queue; charset={0}'.format(_CHARSET))
     try:
         fail_perm = fsq.const('FSQ_FAIL_PERM')
+        fail_tmp = fsq.const('FSQ_FAIL_PERM')
         success = fsq.const('FSQ_SUCCESS')
         timefmt = fsq.const('FSQ_TIMEFMT')
         while True:
             try:
                 item = items.next()
                 exec_args = tuple(args[1:]) + item.arguments
-
                 # cannot exec nothing
                 if empty_ok and 0 == len(exec_args):
                     shout('cannot execvp empty arguments with empty_ok;'\
                           ' failing tmp')
-                    if not no_done:
-                        done_item(item, fsq.const('FSQ_FAIL_PERM'))
+                    if not no_done and -1 == done_item(item, fail_perm):
+                        sys.exit(fail_tmp)
                     continue
 
                 # prepare to fork/exec
@@ -190,51 +218,36 @@ def main(argv):
                         except ( OSError, IOError, ), e:
                             barf('cannot dup: {0}'.format(e.strerror))
 
-                    # setup the environment
-                    if set_env:
-                        # set additional info in env
-                        for env, att in (( 'FSQ_ITEM_PID', 'pid', ),
-                                         ( 'FSQ_ITEM_ENTROPY', 'entropy', ),
-                                         ( 'FSQ_ITEM_HOSTNAME', 'hostname', ),
-                                         ( 'FSQ_ITEM_ID', 'id', ), ):
-                            try:
-                                os.putenv(env, getattr(item,
-                                          att).encode(_CHARSET))
-                            except UnicodeEncodeError, e:
-                                barf('cannot coerce item {0};'
-                                     ' charset={1}'.format(att, _CHARSET))
-
-                        # format tries and date to env
-                        os.putenv('FSQ_ITEM_TRIES', str(item.tries))
-                        try:
-                            os.putenv('FSQ_ITEM_ENQUEUED_AT',
-                                      item.enqueued_at.strftime(timefmt))
-                        except ValueError:
-                            barf('invalid timefmt: {0}'.format(timefmt))
-
-                        # exec, potentially via PATH
-                        try:
-                            os.execvp(exec_args[0], exec_args)
-                        except ( OSError, IOError, ), e:
-                            barf('{0}: cannot exec {0}'.format(e.strerror,
-                                 args[0]))
-                        except Exception, e:
-                            barf('cannot execvp ({0}: {1})'.format(
-                                 e.__class__.__name__, e.message))
-
-                pid, rc = os.waitpid(pid, 0) # papa fork waits on baby fork
-                if os.WIFEXITED(rc):
-                    if not no_done:
-                        done_item(item, os.WEXITSTATUS(rc))
-                    if rc == fail_perm:
-                        main_rc = rc
-                    elif main_rc != fail_perm and rc != success:
-                        main_rc = rc
-                else:
-                    if not no_done:
-                        done_item(item, fail_perm)
-                    barf('{0}: processing terminated by signal {1};'\
-                         ' aborting'.format(item_id, os.WTERMSIG(rc)))
+                    # setup the environment -- so C-style it hurts
+                    if set_env and -1 == setenv(item, timefmt):
+                        os._exit(fail_tmp)
+                    # exec, potentially via PATH
+                    try:
+                        os.execvp(exec_args[0], exec_args)
+                    except ( OSError, IOError, ), e:
+                        shout('{0}: cannot exec {0}'.format(e.strerror,
+                              args[0]))
+                        os._exit(fail_tmp)
+                    except Exception, e:
+                        shout('cannot execvp ({0}: {1})'.format(
+                              e.__class__.__name__, e.message))
+                        os._exit(fail_tmp)
+                    ######### NOT REACHED
+                    os._exit(fail_perm)
+                else: # if pid is non-0, we are the parent fork
+                    pid, rc = os.waitpid(pid, 0) # wait on baby fork
+                    if os.WIFEXITED(rc):
+                        if not no_done and -1 == done_item(item, os.WEXITSTATUS(rc)):
+                            sys.exit(fail_tmp)
+                        if rc == fail_perm:
+                            main_rc = rc
+                        elif main_rc != fail_perm and rc != success:
+                            main_rc = rc
+                    else:
+                        if not no_done and -1 == done_item(item, fail_perm):
+                            sys.exit(fail_tmp)
+                        barf('{0}: processing terminated by signal {1};'\
+                             ' aborting'.format(item_id, os.WTERMSIG(rc)))
 
             except fsq.FSQError, e:
                 shout(e.strerror.encode(_CHARSET))
@@ -249,7 +262,6 @@ def main(argv):
     except fsq.FSQDownError:
         barf('{0} is down'.format(args[0]))
     except fsq.FSQError, e:
-        shout(dir(e))
         shout(e.strerror.encode(_CHARSET))
 
 if __name__ == '__main__':
