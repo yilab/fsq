@@ -1,26 +1,8 @@
 #!/usr/bin/env python
-# fsq-scan(1) -- a program for scanning an fsq queue, and executing programs
-#                with item arguments and environments. should the executed
-#                program exit FSQ_SUCCESS (default: 0), the queue item will be
-#                marked ``done'', should the program exit FSQ_FAIL_TMP
-#                (default: 111), the item will potentially be retried, should
-#                the program exit FSQ_FAIL_PERM (default: 100), the item will
-#                fail permanantly.  Any other exit code will denote permanant
-#                failure.
+# fsq-up(1) -- a program for turning on queues
 #
-# WARNINGS:
-#  * the --empty-ok flag potentially turns fsq-scan into an arbitrary
-#      execution engine, use with caution
-#  * without the --no-lock option, fsq-scan will LOCK_EX each item as it
-#      iterates, should your exec'ed program hang, the file lock will not
-#      be released.
-#  * like xargs(1), if scan is terminated by signal, it orphans ... if a child
-#      is terminated by signal, scan stops scanning.
-#
-# @author: Matthew Story <matt.story@axialmarket.com>
+# @author: O'Meara will.omeara@axialmarket.com
 # @depends: fsq(1), fsq(7), python (>=2.7)
-#
-# TODO: Concurrency? -- not right now
 #
 # This software is for POSIX compliant systems only.
 import getopt
