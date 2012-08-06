@@ -74,7 +74,8 @@ def main(argv):
             elif '-g' == flag or '--group' == flag:
                 group = opt
             elif '-m' == flag or '--mode' == flag:
-                mode = opt
+                if opt.isdigit():
+                    mode = int(opt)
             elif '-h' == flag or '--help' == flag:
                 usage(1)
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
