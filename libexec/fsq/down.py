@@ -104,9 +104,16 @@ def main(argv):
         barf('invalid flag: -{0}{1}'.format('-' if 1 < len(e.opt) else '',
              e.opt))
     try:
+        user, group, mode = None, None, None
         for flag, opt in opts:
             if '-v' == flag or '--verbose' == flag:
                 _VERBOSE = True
+            elif '-u' == flag or '--user' == flag:
+                user = opt
+            elif '-g' == flag or '--group' == flag:
+                group = opt
+            elif '-m' == flag or '--mode' == flag:
+                mode = opt
             elif '-h' == flag or '--help' == flag:
                 usage(1)
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
@@ -114,10 +121,8 @@ def main(argv):
 
     try:
         for arg in args:
-            fsq.down(arg)
+            fsq.down(arg, user, group, mode)
             chirp('fsq up: {0}: up'.format(arg)) 
-    except fsq.FSQDownError:
-        barf('{0} is down'.format(args))
     except (fsq.FSQScanError, fsq.FSQPathError, ), e:
         barf(e.strerror)
     except fsq.FSQCoerceError, e:
