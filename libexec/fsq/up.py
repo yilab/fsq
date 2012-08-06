@@ -39,7 +39,7 @@ def usage(asked_for=0):
     exit =  fsq.const('FSQ_SUCCESS') if asked_for else\
                 fsq.const('FSQ_FAIL_PERM')
     f = sys.stdout if asked_for else sys.stderr
-    shout('{0} [opts] queue prog [args [...]]'.format(
+    shout('{0} [opts] queue [queue [...]]'.format(
           os.path.basename(_PROG)), f)
     if asked_for:
         shout('{0} [-h|--help] [-v|--verbose]'.format(
