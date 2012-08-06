@@ -1,0 +1,41 @@
+.TH fsq-scan 1 "2012-06-12" "AxialMarket" "AxialMarket System Commands Manual"
+.SH NAME
+fsq\-scan \- Scan an
+.BR fsq (7)
+queue and execute a program for each work\-item with the item\'s enqueued
+arguments.
+.SH SYNOPSIS
+.B "fsq scan"
+.BR "" "[ " flags " ]"
+.IR queue " " program " [ " args " [...]]"
+.br
+.B "fsq scan"
+.BR "" "[ " \-h | \-\-help " ]"
+.BR "" "[ " \-v | \-\-verbose " ]"
+.IR "" "         " queue " " program " [ " args " [...]]]"
+.SH DESCRIPTION
+.BR fsq\-down (1)
+uses the
+.BR fsq (7)
+.B down
+turns on "downed" queues
+.sp
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+.br
+Print an extended usage to stdout and exit with exit status
+.IR 0 .
+Should
+.BR fsq\-down (1)
+fail due to a bad usage, a terse usage will be printed to stderr, and
+.BR fsq\-down (1)
+will exit with exit status
+.IR 100 .
+.TP
+.BR \-v ", " \-\-verbose
+.br
+Print additional diagnostic information to
+.BR stderr .
+.TP
+
