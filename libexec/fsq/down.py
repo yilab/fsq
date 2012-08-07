@@ -76,6 +76,8 @@ def main(argv):
             elif '-m' == flag or '--mode' == flag:
                 if opt.isdigit():
                     mode = int(opt)
+                else:
+                    barf('mode must be a valid octal')
             elif '-h' == flag or '--help' == flag:
                 usage(1)
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
