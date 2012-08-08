@@ -54,13 +54,14 @@ def main(argv):
 
     _PROG = argv[0]
     try:
-        opts, args = getopt.getopt(argv[1:], 
-                                   'hvu:g:m:', ( 
-                                       'help', 
-                                       'verbose',
-                                       'user=',
-                                       'group=',
-                                       'mode=', ))
+        opts, args = getopt.getopt(
+            argv[1:], 
+            'hvu:g:m:', ( 
+                'help', 
+                'verbose',
+                'user=',
+                'group=',
+                'mode=', ))
     except getopt.GetoptError, e:
         barf('invalid flag: -{0}{1}'.format('-' if 1 < len(e.opt) else '',
              e.opt))
@@ -74,7 +75,10 @@ def main(argv):
             elif '-g' == flag or '--group' == flag:
                 group = opt
             elif '-m' == flag or '--mode' == flag:
-                mode = int(opt, 8)
+                try:
+                    mode = int(opt, 8)
+                except ValueError:
+                    barf('invalid mode: {}'.format(opt))
             elif '-h' == flag or '--help' == flag:
                 usage(1)
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
@@ -82,10 +86,8 @@ def main(argv):
 
     try:
         for arg in args:
-            fsq.down(arg, user, group, mode)
+            fsq.down(queue=arg, user=user, group=group, mode=mode)
             chirp('{0}: down'.format(arg)) 
-    except (fsq.FSQScanError, fsq.FSQPathError, ), e:
-        barf(e.strerror)
     except fsq.FSQCoerceError, e:
         barf('cannot coerce queue; charset={0}'.format(_CHARSET))
     except fsq.FSQError, e:
