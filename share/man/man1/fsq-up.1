@@ -1,24 +1,25 @@
-.TH fsq-scan 1 "2012-06-12" "AxialMarket" "AxialMarket System Commands Manual"
+.TH fsq-up 1 "2012-06-12" "AxialMarket" "AxialMarket System Commands Manual"
 .SH NAME
-fsq\-scan \- Scan an
+fsq\-up \- Enable a queue to be scanned an
 .BR fsq (7)
-queue and execute a program for each work\-item with the item\'s enqueued
-arguments.
 .SH SYNOPSIS
-.B "fsq scan"
+.B "fsq up"
 .BR "" "[ " flags " ]"
 .IR queue " " program " [ " args " [...]]"
 .br
-.B "fsq scan"
+.B "fsq up"
 .BR "" "[ " \-h | \-\-help " ]"
 .BR "" "[ " \-v | \-\-verbose " ]"
-.IR "" "         " queue " " program " [ " args " [...]]]"
+.BR
+.IR "" "         " queue " [ " queue " [...]]]"
 .SH DESCRIPTION
 .BR fsq\-up (1)
 uses the
 .BR fsq (7)
 .B up
-turns on "downed" queues
+function to turn on \"downed\" queues.  
+Downed queues cannot be scanned.  
+Upping a queue allows it to be scanned.
 .sp
 .SH OPTIONS
 .TP
@@ -37,4 +38,4 @@ will exit with exit status
 .br
 Print additional diagnostic information to
 .BR stderr .
-.TP
+

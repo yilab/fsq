@@ -67,14 +67,14 @@ def main(argv):
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
         barf('invalid argument for flag: {0}'.format(flag))
 
-    try:
-        for arg in args:
-            fsq.up(arg)
-            chirp('{0}: up'.format(arg)) 
-    except fsq.FSQCoerceError, e:
-        barf('cannot coerce queue; charset={0}'.format(_CHARSET))
-    except fsq.FSQError, e:
-        shout(e.strerror.encode(_CHARSET))
+    for arg in args:
+        try:
+                fsq.up(arg)
+                chirp('{0}: up'.format(arg)) 
+        except fsq.FSQCoerceError, e:
+            barf('cannot coerce queue; charset={0}'.format(_CHARSET))
+        except fsq.FSQError, e:
+            barf(e.strerror.encode(_CHARSET))
 
 
 if __name__ == '__main__':
