@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# fsq-down(1) -- a program for turning on queues
+# fsq-down(1) -- a program for turning off queues
 #
-# @author: O'Meara will.omeara@axialmarket.com
+# @author: O'Meara <will.omeara@axialmarket.com>
 #          Matthew Story <matt.story@axialmarket.com>
 # @depends: fsq(1), fsq(7), python (>=2.7)
 #
@@ -45,6 +45,9 @@ def usage(asked_for=0):
     if asked_for:
         shout('{0} [-h|--help] [-v|--verbose]'.format(
             os.path.basename(_PROG)), f)
+        shout('        [-u user|--user=user]', f)
+        shout('        [-g group|--group=group]', f)
+        shout('        [-m mode|--mode=mode]', f)
         shout('        queue [queue [...]]', f)
     sys.exit(exit)
 
