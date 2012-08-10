@@ -2,6 +2,7 @@
 # fsq-down(1) -- a program for turning on queues
 #
 # @author: O'Meara will.omeara@axialmarket.com
+#          Matthew Story <matt.story@axialmarket.com>
 # @depends: fsq(1), fsq(7), python (>=2.7)
 #
 # This software is for POSIX compliant systems only.

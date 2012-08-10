@@ -8,18 +8,19 @@ fsq\-down \- a program for turning off queues
 .IR "" " queue " [ " queue " [...]]]"
 .br
 .B "fsq down"
-.BR "" "[ " \-h | \-\-help " ]"
-.BR "" "[ " \-v | \-\-verbose " ]"
-.BR "" "[ " \-u user| \-\-user=user " ]"
-.BR "" "[ " \-g group| \-\-group=group " ]"
-.BR "" "[ " \-m mode| \-\-mode=mode " ]"
+.BR "" "[ " "\-h | \-\-help " ]"
+.BR "" "[ " "\-v | \-\-verbose " ]"
+.BR "" "[ " "\-u "user| "\-\-user"=user " ]"
+.BR "" "[ " "\-g "group| "\-\-group"=group " ]"
+.BR "" "[ " "\-m " mode| "\-\-mode"=mode " ]"
 .IR "" "         " queue " [ " queue " [...]]]"
 .SH DESCRIPTION
 .BR fsq\-down (1)
 uses the
 .BR fsq (7)
 .B down program
- to turn off queues by adding a file named down.
+ to turn off queues by adding a file named 
+.IR "FSQ_DOWN".
 This stops a queue from being scanned.
 .sp
 .SH OPTIONS
@@ -49,8 +50,13 @@ create down file owned by this group
 .TP
 .BR \-m mode", " \-\-mode=mode
 .br
-linux octal permission representation. if a down file already exists, 
-fsq-down(1) will chown or chmod the existing file based on these arguments.
+octal mode representation. if a down file already exists, 
+.B fsq-down(1) 
+will 
+.I chown(2) 
+or 
+.I chmod(2) 
+the existing file based on these arguments.
 .sp
 .SH SEE ALSO
 .TP
