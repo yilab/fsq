@@ -10,6 +10,7 @@ import getopt
 import sys
 import fsq
 import os
+import StringIO
 
 
 _PROG = "fsq-enqueue"
@@ -72,7 +73,7 @@ def main(argv):
         barf('invalid flag: -{0}{1}'.format('-' if 1 < len(e.opt) else '',
              e.opt))
     try:
-        user, group, mode = None, None, None
+        user = group = mode = item = None
         for flag, opt in opts:
             if '-v' == flag or '--verbose' == flag:
                 _VERBOSE = True
@@ -86,7 +87,7 @@ def main(argv):
                 except ValueError:
                     barf('invalid mode: {}'.format(opt))
             elif '-f' == flag or '--file' == flag:
-                pass
+                item = open(opt, 'r')
             elif '-h' == flag or '--help' == flag:
                 usage(1)
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
@@ -95,9 +96,12 @@ def main(argv):
     try:
         queue = args[0]
         fsq_args = args[1:]
-        fsq.enqueue(queue=queue, args=fsq_args, user=user, 
-                    group=group, mode=mode)
-        chirp('{0}: down'.format(args)) 
+        if item is None:
+            item = StringIO.StringIO()
+        fsq.venqueue(trg_queue=queue, item_f=item, args=fsq_args, 
+                     user=user, group=group, mode=mode)
+        chirp('{0} queue: new item queued using args: {1}'.format(args[0], 
+                                                                  args[1:])) 
     except fsq.FSQCoerceError, e:
         barf('cannot coerce queue; charset={0}'.format(_CHARSET))
     except fsq.FSQError, e:
