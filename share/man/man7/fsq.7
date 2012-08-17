@@ -13,8 +13,8 @@ is a standard for implementing queueing structures in
 .I POSIX
 file-systems.
 .B fsq
-provides a standard for both directory layouts and queue-item naming, which
-allow for idempotent queue-item construction, atomic enqueueing, atomic
+provides a standard for both directory layouts and work-item naming, which
+allow for idempotent work-item construction, atomic enqueueing, atomic
 failure, and atomic completion.
 
 Each
@@ -35,14 +35,14 @@ To enqueue a file to this queue, use the enqueue function:
 or to enqueue a string, use the senqueue function:
 .sp
 .BR ""	 fsq. senqueue ('a_queue',
-\'a string body for my queue item', 'args', 'to', 'enqueue')
+\'a string body for my work-item', 'args', 'to', 'enqueue')
 .TP
 .I /var/fsq/a_queue/queue
 The
 .I queue
 directory within
 .I a_queue
-is the location where items are queued to. Following the above
+is the location where work-items are queued to. Following the above
 .B enqueue
 or
 .B senqueue
@@ -74,17 +74,17 @@ number of failed attempts
 .BR hostname :
 the name of the host on
 .br
-|      |        |   |        which the item was enqueued.
+|      |        |   |        which the work-item was enqueued.
 .br
 |      |        |   +->
 .B pid
 of the process which enqueued the
 .br
-|      |        |       item
+|      |        |       work-item
 .br
 |      |        +->
 .BR entropy :
-should a work item be generated
+should a work-item be generated
 .br
 |      |            with the same arguments,
 .BR pid ,
@@ -113,13 +113,13 @@ The
 .I tmp
 directory within
 .I a_queue
-is a location for constructing queue items prior to enqueueing them to the
+is a location for constructing work-items prior to enqueueing them to the
 .I queue
 directory. In the above
 .B enqueue
 and
 .B senqueue
-calls, the queue item files were initially constructed in
+calls, the work-item files were initially constructed in
 .IR tmp ,
 then linked into
 .I queue
@@ -132,7 +132,7 @@ The
 .I done
 directory within
 .I a_queue
-is a location for storing successfully completed queue items following work.
+is a location for storing successfully completed work-items following work.
 Items may be marked as done, by using the
 .B done
 function (typically done during a
@@ -160,7 +160,7 @@ The
 .I fail
 directory within
 .I a_queue
-is a location for storing failed queue items following work. Items may be
+is a location for storing failed work-items following work. Items may be
 marked as failed, by using the
 .B fail
 function:
@@ -183,9 +183,9 @@ The fail_perm function may also be used:
 .br
 .BR ""			fsq. fail_perm (i)
 .sp
-permanent failure may also result if an item is older than,
+permanent failure may also result if an work-item is older than,
 .I FSQ_TTL
-or if the item has been retries more than
+or if the work-item has been retries more than
 .I FSQ_MAX_TRIES
 by way of
 .I fail_tmp:
@@ -304,7 +304,7 @@ default:
 .I FSQ_TIMEFMT
 .br
 .BR strftime (3)
-format to use for item timestamp conversion.
+format to use for work-item timestamp conversion.
 .sp
 default:
 .B %Y%m%d%H%M%S
@@ -395,7 +395,7 @@ default:
 .TP
 .I FSQ_ITEM_GROUP
 .br
-Name or gid of group owner for queue items. If
+Name or gid of group owner for work-items. If
 .I FSQ_ITEM_GROUP
 is a name,
 .B fsq
@@ -410,7 +410,7 @@ with
 .TP
 .I FSQ_ITEM_USER
 .br
-Name or uid of user owner for queue items. If
+Name or uid of user owner for work-items. If
 .I FSQ_ITEM_USER
 is a name,
 .B fsq
@@ -459,7 +459,7 @@ is unset, user ownership is set to the uid of the parent process via
 .TP
 .I FSQ_ITEM_MODE
 .br
-Octal mode for queue items.
+Octal mode for work-items.
 .sp
 default:
 .B 00640
@@ -544,9 +544,9 @@ will attempt to acquire an exclusive lock
 .BR "" ( LOCK_EX | LOCK_NB )
 using
 .BR flock (2)
-prior to yielding an item. If
+prior to yielding an work-item. If
 .B scan
-cannot immediately acquire a lock, the locked item will not be yielded.
+cannot immediately acquire a lock, the locked work-item will not be yielded.
 .sp
 default:
 .B 1
@@ -566,7 +566,7 @@ default:
 .B 1
 .TP
 .I FSQ_TTL
-Time-to-live in seconds for a queue item. Queue items will be failed
+Time-to-live in seconds for a work-item. Queue work-items will be failed
 permanently if their
 .I timestamp
 is greater-than
@@ -577,7 +577,7 @@ for
 .I FSQ_TTL
 will cause
 .B fsq
-to never timeout queue items.
+to never timeout work-items.
 .sp
 default:
 .B 0

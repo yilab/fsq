@@ -1,13 +1,14 @@
 .TH fsq-enqueue 1 "2012-06-12" "AxialMarket" "AxialMarket System Commands Manual"
 .SH NAME
-fsq\-down \- a program for adding an item to a queue
+fsq\-enqueue \- a program for adding an work-item to a 
 .BR fsq (7)
+queue
 .SH SYNOPSIS
 .B "fsq enqueue"
 .BR "" "[ " flags " ]"
 .IR " queue " [ " arg" " [...]]]"
 .br
-.B "fsq down"
+.B "fsq enqueue"
 .BR "" "[ " "\-h" "|" "\-\-help " "]"
 .BR "" "[ " "\-v" "|" "\-\-verbose " "]"
 .br
@@ -25,64 +26,19 @@ fsq\-down \- a program for adding an item to a queue
 uses the
 .BR fsq (7)
 .B enqueue
-function to add items to a queue by adding a file to the queue's queue directory named according to the naming scheme below:
-.br
-_20120710213904_1_13044_mss_0_args_to_enqueue
-.br
-+|-----+------| + |-+-| |+| + |------+------|
-.br
-|      |        |   |    |  |        |
-.br
-|      |        |   |    |  |        +->
-.I FSQ_DELIMITER
-seperated
-.br
-|      |        |   |    |  |            arguments
-.br
-|      |        |   |    |  +->
-.BR tries :
-number of failed attempts
-.br
-|      |        |   |    |      to process
-.br
-|      |        |   |    +->
-.BR hostname :
-the name of the host on
-.br
-|      |        |   |        which the item was enqueued.
-.br
-|      |        |   +->
-.B pid
-of the process which enqueued the
-.br
-|      |        |       item
-.br
-|      |        +->
-.BR entropy :
-should a work item be generated
-.br
-|      |            with the same arguments,
-.BR pid ,
-.BR hostname
-.br
-|      |            and
-.BR timestamp ,
-.B entropy
-is incremented to
-.br
-|      |            generate uniqueness.
-.br
-|      +->
-.B timestamp
-in
-.I FSQ_TIMEFMT
-format
-.br
-+->
-.I FSQ_DELIMITER
-used at enqueue time
+function to add work-items to a queue by adding a file to the queue's queue directory named according to the naming scheme below:
 .sp
-After running this you can ls the queue's queue directory and see this file,
+After running this you can ls the queue's queue directory and see this file, for example:
+.sp
+$ fsq enqueue test_queue foo bar baz
+.br
+$ ls -l $FSQ_ROOT/test_queue/$FSQ_QUEUE/
+.br
+_20120710213904_1_13044_mss_0_foo_bar_baz
+.sp
+for more information on how this file name is constructed, see
+.B fsq (7)
+documentation
 .IR "FSQ_ENQUEUE".
 This adds a file to a queue. If a file is given, the contents of the queued file will be the given file.
 .sp
@@ -127,5 +83,5 @@ contents of the queued file
 .sp
 .SH SEE ALSO
 .TP
-fsq-down(1), fsq-up(1), fsq(1), chmod(2), chown(2), fsq(7)
+.B "fsq-scan(1), fsq(1), chmod(2), chown(2), fsq(7)"
 
