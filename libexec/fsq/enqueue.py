@@ -50,6 +50,8 @@ def usage(asked_for=0):
         shout('        [-g group|--group=group]', f)
         shout('        [-m mode|--mode=mode]', f)
         shout('        [-f file|--file=file]', f)
+        shout('        [-e | --empty]', f)
+        shout('        [-t | --trigger]', f)
         shout('        queue [arg [...]]', f)
     sys.exit(exit)
 
@@ -62,9 +64,11 @@ def main(argv):
     try:
         opts, args = getopt.getopt(
             argv[1:], 
-            'hvu:g:m:f:', ( 
+            'hvteu:g:m:f:', ( 
                 'help', 
                 'verbose',
+                'trigger',
+                'empty',
                 'file=',
                 'user=',
                 'group=',
@@ -74,6 +78,7 @@ def main(argv):
              e.opt))
     try:
         user = group = mode = item = None
+        empty = trigger = False
         for flag, opt in opts:
             if '-v' == flag or '--verbose' == flag:
                 _VERBOSE = True
@@ -88,6 +93,11 @@ def main(argv):
                     barf('invalid mode: {}'.format(opt))
             elif '-f' == flag or '--file' == flag:
                 item = open(opt, 'r')
+                empty = False
+            elif '-e' == flag or '--empty' == flag:
+                empty = True
+            elif '-t' == flag or '--trigger' == flag:
+                trigger = True
             elif '-h' == flag or '--help' == flag:
                 usage(1)
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
@@ -96,10 +106,15 @@ def main(argv):
     try:
         queue = args[0]
         fsq_args = args[1:]
-        if item is None:
-            item = StringIO.StringIO()
-        fsq.venqueue(trg_queue=queue, item_f=item, args=fsq_args, 
-                     user=user, group=group, mode=mode)
+        if item is None and empty is False:
+            item = StringIO.StringIO(sys.stdin.read())
+        elif item is None and empty is True:
+            item = StringIO.StringIO('')
+        #else item was set with file flag
+        fsq.venqueue(queue, item, fsq_args, user=user, group=group, mode=mode)
+        item.close()
+        if trigger is True:
+            fsq.trigger_pull(queue)
         chirp('{0} queue: new item queued using args: {1}'.format(args[0], 
                                                                   args[1:])) 
     except fsq.FSQCoerceError, e:

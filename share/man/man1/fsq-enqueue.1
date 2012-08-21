@@ -20,6 +20,10 @@ queue
 .br
 .BR "         " "[ " "\-f " file| "\-\-file" "=file ]"
 .br
+.BR "         " "[ " "\-e" | "\-\-empty" " ]"
+.br
+.BR "         " "[ " "\-t" | "\-\-trigger" " ]"
+.br
 .IR "" "         " queue " [ " arg " [...]]]"
 .SH DESCRIPTION
 .BR fsq\-enqueue (1)
@@ -80,6 +84,14 @@ the existing file based on these arguments.
 .BR "\-f " file, " \-\-file"=file
 .br
 contents of the queued file
+.TP
+.BR "\-e \-\-empty"
+.br
+set the work-item to have no contents
+.TP
+.BR "\-t \-\-trigger"
+.br
+pull the trigger once the work-item is queued
 .sp
 .SH SEE ALSO
 .TP
