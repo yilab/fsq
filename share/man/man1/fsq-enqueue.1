@@ -34,7 +34,7 @@ function to add work-items to a queue by adding a file to the queue's queue dire
 .sp
 After running this you can ls the queue's queue directory and see this file, for example:
 .sp
-$ fsq enqueue test_queue foo bar baz
+$ fsq enqueue --empty test_queue foo bar baz
 .br
 $ ls -l $FSQ_ROOT/test_queue/$FSQ_QUEUE/
 .br
@@ -43,6 +43,13 @@ _20120710213904_1_13044_mss_0_foo_bar_baz
 for more information on how this file name is constructed, see
 .B fsq (7)
 documentation
+
+.sp
+content of work-items files are either empty, set by
+.B -f|--file
+, or set by
+.B stdin
+
 .IR "FSQ_ENQUEUE".
 This adds a file to a queue. If a file is given, the contents of the queued file will be the given file.
 .sp
