@@ -105,9 +105,9 @@ def main(argv):
 
     try:
         if len(args) == 0:
-            usage(1)
+            usage(0)
         elif (empty is False and item is None):
-            shout("work-item content was not set with --empty or --file="\
+            shout("work-item content was not set with --empty or --file. "\
                   "waiting on stdin...")
         queue = args[0]
         fsq_args = args[1:]
