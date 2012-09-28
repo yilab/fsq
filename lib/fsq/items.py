@@ -110,12 +110,15 @@ class FSQWorkItem(object):
 
     def __del__(self):
         '''Always close the file when the ref count drops to 0'''
-        if hasattr(self, 'item'):
-            self.item.close()
+        self.close()
+
 
     ####### EXPOSED METHODS AND ATTRS #######
     def close(self):
-        if self.item is not None:
+        # TODO : Why not just check to instance of file object?
+        if (hasattr(self, 'item') and hasattr(self.item, 'close')
+                and self.item is not None):
+
             self.item.close()
 
     def open(self):
