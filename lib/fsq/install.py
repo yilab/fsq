@@ -105,10 +105,10 @@ def install(trg_queue, is_down=False, is_triggered=False, user=None,
         # atomic commit -- by rename
         os.rename(tmp_full, fsq_path.base(trg_queue))
     except (OSError, IOError, ), e:
+        shutil.rmtree(tmp_full)
         if e.errno == errno.ENOTEMPTY:
             raise FSQInstallError(e.errno, u'queue exists: {0}'.format(
                                   trg_queue))
-        shutil.rmtree(tmp_full)
         if isinstance(e, FSQError):
             raise e
         raise FSQInstallError(e.errno, wrap_io_os_err(e))
