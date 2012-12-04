@@ -83,9 +83,10 @@ def install(trg_queue, is_down=False, is_triggered=False, user=None,
         # open once to cut down on stat/open for chown/chmod combo
         fd = os.open(tmp_full, os.O_RDONLY)
         try:
+            # always fchmod here as mkdtemp is different than normal mkdir
             os.fchmod(fd, mode)
-            # always fchown here as mkdtemp is different than normal mkdir
-            os.fchown(fd, *uid_gid(user, group))
+            if user is not None or group is not None:
+                os.fchown(fd, *uid_gid(user, group))
         finally:
             os.close(fd)
 
