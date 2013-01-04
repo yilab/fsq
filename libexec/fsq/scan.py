@@ -125,11 +125,12 @@ def main(argv):
 
     _PROG = argv[0]
     try:
-        opts, args = getopt.getopt(argv[1:], 'heEnilLkDt:m:S:T:F:', ( 'help',
+        opts, args = getopt.getopt(argv[1:], 'hveEnilLkDt:m:S:T:F:', ( 'help',
                                    'env', 'no-env', 'no-open', 'ignore-down',
                                    'lock', 'no-lock', 'empty-ok', 'no-done',
                                    'ttl=', 'max-tries=', 'success-code=',
-                                   'fail-tmp-code=', 'fail-perm-code=', ))
+                                   'fail-tmp-code=', 'fail-perm-code=',
+                                   'verbose', ))
     except getopt.GetoptError, e:
         barf('invalid flag: -{0}{1}'.format('-' if 1 < len(e.opt) else '',
              e.opt))
