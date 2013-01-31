@@ -15,6 +15,10 @@ _PROG = "fsq-install"
 _VERBOSE = False
 _CHARSET = fsq.const('FSQ_CHARSET')
 
+def chirp(msg):
+    if _VERBOSE:
+        shout(msg)
+
 def shout(msg, f=sys.stderr):
     '''Log to file (usually stderr), with progname: <log>'''
     print >> f, "{0}: {1}".format(_PROG, msg)
@@ -30,10 +34,11 @@ def usage(asked_for=0):
     if asked_for:
         shout('{0} [-h|--help] [-v|--verbose] [-f|--force]'\
               ' [-d|--down]'.format(os.path.basename(_PROG)), f)
-        shout('        [-t|--triggered] [-i|--ignore-down]', f)
+        shout('        [-t|--triggered] [-i|--ignore-exists]', f)
         shout('        [-o owner|--owner=user|uid]', f)
         shout('        [-g group|--group=group|gid]', f)
         shout('        [-m mode|--mode=int]', f)
+        shout('        [-i ignore|--ignore]', f)
         shout('        queue [queue [...]]', f)
     return 0 if asked_for else fsq.const('FSQ_FAIL_PERM')
 
@@ -42,6 +47,7 @@ def main(argv):
     force = False
     is_down = False
     is_triggered = False
+    ignore = False
     user = None
     group = None
     mode = None
@@ -49,10 +55,10 @@ def main(argv):
 
     _PROG = argv[0]
     try:
-        opts, args = getopt.getopt(argv[1:], 'hvfdto:g:m:', ( '--help',
+        opts, args = getopt.getopt(argv[1:], 'hvfdto:g:m:i:', ( '--help',
                                    '--verbose', '--force', '--down',
                                    '--triggered', '--owner', '--group',
-                                   '--mode', ))
+                                   '--mode', '--ignore-exists', ))
         for flag, opt in opts:
             if flag in ( '-v', '--verbose', ):
                 _VERBOSE = True
@@ -62,6 +68,8 @@ def main(argv):
                 is_down = True
             elif flag in ( '-t', '--triggered', ):
                 is_triggered = True
+            elif flag in ( '-i', '--ignore-exists', ):
+                ignore = True
             elif flag in ( '-o', '--owner', ):
                 for c in ( 'FSQ_QUEUE_USER', 'FSQ_ITEM_USER', ):
                     fsq.set_const(c, opt)
@@ -79,11 +87,18 @@ def main(argv):
 
         for queue in args:
             try:
+                chirp('installing {0} to {1}'.format(queue,
+                                                     fsq.const('FSQ_ROOT')))
                 fsq.install(queue, is_down=is_down, is_triggered=is_triggered)
             except fsq.FSQInstallError, e:
-                if e.errno == errno.ENOTEMPTY and force:
-                    fsq.uninstall(queue)
-                    fsq.install(queue)
+                if e.errno == errno.ENOTEMPTY:
+                    if force:
+                        fsq.uninstall(queue)
+                        fsq.install(queue)
+                    elif ignore:
+                        chirp('skipping {0}; already installed'.format(queue))
+                    else:
+                        raise e
                 else:
                     raise e
 
