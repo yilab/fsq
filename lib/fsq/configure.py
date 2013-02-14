@@ -115,13 +115,13 @@ def trigger(queue, user=None, group=None, mode=None):
             # if failure not due to existence, rm and bail
             if e.errno != errno.EEXIST:
                 raise e
+
+        # don't open and fchown here, as opening WRONLY without an open
+        # reading fd will hang, opening RDONLY will zombie if we don't
+        # flush, and intercepts triggers meant to go elsewheres
+        os.chmod(trigger_path, mode)
         if user is not None or group is not None:
-            # don't open and fchown here, as opening WRONLY without an open
-            # reading fd will hang, opening RDONLY will zombie if we don't
-            # flush, and intercepts triggers meant to go elsewheres
             os.chown(trigger_path, *uid_gid(user, group, path=trigger_path))
-        if not created:
-            os.chmod(trigger_path, mode)
     except (OSError, IOError, ), e:
         # only rm if we created and failed, otherwise leave it and fail
         if created:
