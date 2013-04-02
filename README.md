@@ -16,35 +16,35 @@ Each fsq queue conforms to the following directory structure:
 
     The  queue a_queue is installed to the default FSQ_ROOT, /var/fsq/.  To enqueue a file to this queue, use the enqueue function:
 
-    ``fsq.enqueue('a_queue', ´/path/to/file', 'args', 'to', 'enqueue')``
+    ```fs.enqueue('a_queue', ´/path/to/file', 'args', 'to', 'enqueue')```
 
   or to enqueue a string, use the senqueue function:
 
-    ``fsq.senqueue('a_queue', ´a string body for my work-item', 'args', 'to', 'enqueue')``
+    ```fsq.senqueue('a_queue', ´a string body for my work-item', 'args', 'to', 'enqueue')```
 
     **/var/fsq/a_queue/queue**
 
     The queue directory within a_queue is the location where work-items are queued to.  Following  the  above enqueue or senqueue function calls, you should be able to see 2 files in the q_queue/queue directory:
 
 ``` 
-  _20120710213904_0_13044_mss_0_args_to_enqueue
-  _20120710213904_1_13044_mss_0_args_to_enqueue
-  +|-----+------| + |-+-| |+| + |------+------|
-  |      |        |   |    |  |        |
-  |      |        |   |    |  |        +-> FSQ_DELIMITER seperated
-  |      |        |   |    |  |            arguments
-  |      |        |   |    |  +-> tries: number of failed attempts
-  |      |        |   |    |      to process
-  |      |        |   |    +-> hostname: the name of the host on
-  |      |        |   |        which the work-item was enqueued.
-  |      |        |   +-> pid of the process which enqueued the
-  |      |        |       work-item
-  |      |        +-> entropy: should a work-item be generated
-  |      |            with the same arguments, pid, hostname
-  |      |            and timestamp, entropy is incremented to
-  |      |            generate uniqueness.
-  |      +-> timestamp in FSQ_TIMEFMT format
-  +-> FSQ_DELIMITER used at enqueue time
+_20120710213904_0_13044_mss_0_args_to_enqueue
+_20120710213904_1_13044_mss_0_args_to_enqueue
++|-----+------| + |-+-| |+| + |------+------|
+|      |        |   |    |  |        |
+|      |        |   |    |  |        +-> FSQ_DELIMITER seperated
+|      |        |   |    |  |            arguments
+|      |        |   |    |  +-> tries: number of failed attempts
+|      |        |   |    |      to process
+|      |        |   |    +-> hostname: the name of the host on
+|      |        |   |        which the work-item was enqueued.
+|      |        |   +-> pid of the process which enqueued the
+|      |        |       work-item
+|      |        +-> entropy: should a work-item be generated
+|      |            with the same arguments, pid, hostname
+|      |            and timestamp, entropy is incremented to
+|      |            generate uniqueness.
+|      +-> timestamp in FSQ_TIMEFMT format
++-> FSQ_DELIMITER used at enqueue time
 ```
 
 **/var/fsq/a_queue/tmp**
