@@ -6,7 +6,7 @@ setup(
     author='Matthew Story',
     author_email='matt.story@axial.net',
     packages=['fsq', 'fsq.tests'],
-    scripts=['bin/mkfsqueue','bin/fsq.py','bin/fsq'],
+    scripts=['bin/fsq.py','bin/fsq'],
     data_files=[('share/man/man1', ['man/man1/fsq.1',
                                     'man/man1/fsq-down.1', 
                                     'man/man1/fsq-enqueue.1',
