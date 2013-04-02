@@ -12,7 +12,6 @@ setup(
                                     'man/man1/fsq-enqueue.1',
                                     'man/man1/fsq-scan.1',
                                     'man/man1/fsq-up.1',
-                                    'man/man1/mkfsqueue.1',
                                     'man/man1/mkfsqueue.1']),
                 ('share/man/man7', ['man/man7/fsq.7']),
                 ('libexec/fsq', ['libexec/fsq/down.py',
@@ -26,6 +25,5 @@ setup(
     license='3-BSD',
     description='File System Queue',
     long_description=open('README.md').read(),
-    install_requires='',
 )
 
