@@ -1,4 +1,5 @@
 from distutils.core import setup
+from glob import glob
 
 setup(
     name='fsq',
@@ -18,8 +19,7 @@ setup(
                                  'libexec/fsq/enqueue.py',
                                  'libexec/fsq/install.py',
                                  'libexec/fsq/scan.py',
-                                 'libexec/fsq/up.py',
-                                 ]),
+                                 'libexec/fsq/up.py']),
                ],
     url='https://github.com/axialmarket/fsq',
     license='3-BSD',
