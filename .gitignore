@@ -29,3 +29,6 @@ nosetests.xml
 .project
 .pydevproject
 
+*~
+.DS_Store
+*.swp

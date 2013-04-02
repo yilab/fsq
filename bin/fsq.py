@@ -1,0 +1,186 @@
+#!/usr/bin/env python
+# fsq(1) -- a convenience wrapper for the fsq(1) suite
+# @author: Matthew Story <matt.story@axialmarket.com>
+# @depends: fsq(7), python (>=2.7)
+#
+# This software is for POSIX compliant systems only.
+import os
+import sys
+import re
+import locale
+import getopt
+import imp
+
+#TODO: replace this with a more reliable method of determining locale
+# take charset from env or locale prior to importing fsq
+_CHARSET = os.environ.get('FSQ_CHARSET', locale.getpreferredencoding())
+_PROG = sys.argv[0]
+
+# function definitions we need if we're going to communicate that the build is
+# broken.
+def shout(msg, f=sys.stderr):
+    '''Log to file (usually stderr), with progname: <log>'''
+    print >> f, "{0}: {1}".format(_PROG, msg)
+    f.flush()
+
+def barf(msg, exit=None, f=sys.stderr):
+    '''Exit with a log message (usually a fatal error)'''
+    exit = fsq.const('FSQ_FAIL_TMP') if exit is None else exit
+    shout(msg, f)
+    sys.exit(exit)
+
+def usage(asked_for=0):
+    '''Exit with a usage string, used for bad argument or with -h'''
+    exit =  fsq.const('FSQ_SUCCESS') if asked_for else\
+                fsq.const('FSQ_FAIL_PERM')
+    f = sys.stdout if asked_for else sys.stderr
+    shout('{0} [opts] prog [prog [args [...]]'.format(
+          os.path.basename(_PROG)))
+    if asked_for:
+        shout('{0} [-h|--help] [-l|--list]'\
+              ' [-c charset|--charset=charset]'.format(
+                  os.path.basename(_PROG)), f=f)
+        shout('    [-e exec_path|--exec-dir=path] [-r root|--root-dir=path]',
+              f=f)
+        shout('    [-q queue_name|--queue-dir=name]'\
+              ' [-t tmp_name|--tmp-dir=name]', f=f)
+        shout('    [-d done_name|--done-dir=name]'\
+              ' [-D down_name|--down-file=name]', f=f)
+        shout('    [-T trigger_name|--trigger-fifo=name] prog [prog'\
+              ' [args [...]]', f=f)
+    sys.exit(exit)
+
+try:
+    import fsq
+except ImportError, e:
+    barf('dependency failed; check build ({0})'.format(e.message), 2)
+
+
+def exit_no_cmd(exec_dir, exit=None, f=sys.stderr):
+    '''Exit with a list of commands'''
+    exit = fsq.const('FSQ_FAIL_PERM') if exit is None else exit
+    care_about = []
+    try:
+        contents = os.listdir(exec_dir)
+        for suffix in imp.get_suffixes():
+            care_about.append(suffix[0])
+
+        shout('The following commands are supported:', f)
+        shout('', f)
+        rstripper = re.compile(r'[.].*$')
+        # this supposes that cmds are not pkgs -- TODO: fix that
+        seen = []
+        for cmd in contents:
+            if cmd.endswith(tuple(care_about)):
+                no_ext = rstripper.sub('', cmd)
+                if no_ext not in seen:
+                    shout('\t\t{0}'.format(no_ext), f)
+                    seen.append(no_ext)
+        shout('', f)
+
+    except ( OSError, IOError, ), e:
+        barf(': '.join(e.strerror, exec_dir))
+    sys.exit(exit)
+
+###### WARNING: main exits
+def main(argv):
+    '''Dispatch program for fsq(1) suite'''
+    global _CHARSET
+    cset_passed = False
+    list_req = False
+    exec_dir = os.environ.get('FSQ_EXEC_DIR', None)
+    try:
+        opts, args = getopt.getopt(argv, 'hlc:e:r:q:t:d:D:T:', ( 'help',
+                                   'list', 'charset=', 'exec-dir=',
+                                   'root-dir=', 'queue-dir=', 'tmp-dir=',
+                                   'done-dir=', 'down-file=',
+                                   'trigger-fifo=', ))
+    except getopt.GetoptError, e:
+        # bad usage
+        barf('invalid flag: -{0}{1}'.format('-' if 1 < len(e.opt) else '',
+             e.opt))
+
+    try:
+        # options we set before we run prog
+        for flag, opt in opts:
+            if '-c' == flag or '--charset' == flag:
+                _CHARSET = fsq.set_const('FSQ_CHARSET', opt)
+                cset_passed = True
+            elif '-e' == flag or '--exec-dir' == flag:
+                exec_dir = opt
+            elif '-r' == flag or '--root-dir' == flag:
+                fsq.set_const('FSQ_ROOT', opt)
+            elif '-q' == flag or '--queue-dir' == flag:
+                fsq.set_const('FSQ_QUEUE', opt)
+            elif '-t' == flag or '--tmp-dir' == flag:
+                fsq.set_const('FSQ_TMP', opt)
+            elif '-d' == flag or '--done-dir' == flag:
+                fsq.set_const('FSQ_DONE', opt)
+            elif '-D' == flag or '--down-file' == flag:
+                fsq.set_const('FSQ_DOWN', opt)
+            elif '-T' == flag or '--trigger-fifo' == flag:
+                fsq.set_const('FSQ_TRIGGER', opt)
+            elif '-l' == flag or '--list' == flag:
+                # don't exit here because --exec-dir may still be parsed
+                list_req = True
+            elif '-h' == flag or '--help' == flag:
+                usage(1)
+    except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
+        barf('invalid argument for flag: {0}'.format(flag))
+
+    # use locale or if charset not explicitely passed
+    if not cset_passed:
+        _CHARSET = fsq.set_const('FSQ_CHARSET', _CHARSET)
+
+    # set exec dir
+    if exec_dir is None:
+        exec_dir = os.path.join(os.path.dirname(_PROG), os.path.pardir,
+                                'libexec', 'fsq')
+    # set exec dir at fsq package level
+    fsq.set_const('FSQ_EXEC_DIR', exec_dir)
+
+    if list_req:
+        exit_no_cmd(exec_dir, exit=0, f=sys.stdout)
+
+    # validate args
+    if 0 == len(args):
+        usage()
+    try:
+        fsq_cmd = fsq.path.valid_name(args[0])
+        if 0 <= fsq_cmd.find('.'):
+            barf('illegal prog argument: {0}'.format(args[0]))
+    except fsq.FSQPathError:
+        barf('illegal prog argument: {0}'.format(args[0]))
+    except fsq.FSQCoerceError:
+        barf('cannot coerce prog; charset={0}'.format(_CHARSET))
+
+    # import and ``execute'' command
+    try:
+        cmd_file, cmd_path, cmd_desc = imp.find_module(fsq_cmd, [exec_dir])
+    except ImportError:
+        barf('command not found: {0}; (try --list)'.format(fsq_cmd))
+    try:
+        # load the command module into the name ``fsq_prog''
+        fsq_prog = imp.load_module(fsq_cmd, cmd_file, cmd_path, cmd_desc)
+        try:
+            try:
+                fsq_prog_main = fsq_prog.main
+            except AttributeError, e:
+                barf('internal command error: {0}'.format(fsq_cmd))
+
+            # DO THE DAMN THING
+            try:
+                sys.exit(fsq_prog_main([' '.join([_PROG, fsq_cmd])] + args[1:]))
+            except ( Exception, ), e:
+                barf('internal command error: {0} ({1}: {2})'.format(fsq_cmd,
+                     e.__class__.__name__, e.message))
+        finally:
+            del fsq_prog
+    finally:
+        cmd_file.close()
+
+    ####### UNREACHED
+    sys.exit(0)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
