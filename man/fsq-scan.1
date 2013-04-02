@@ -1,0 +1,534 @@
+.TH fsq-scan 1 "2012-06-12" "AxialMarket" "AxialMarket System Commands Manual"
+.SH NAME
+fsq\-scan \- Scan an
+.BR fsq (7)
+queue and execute a program for each work\-item with the item\'s enqueued
+arguments.
+.SH SYNOPSIS
+.B "fsq scan"
+.BR "" "[ " flags " ]"
+.IR queue " " program " [ " args " [...]]"
+.br
+.B "fsq scan"
+.BR "" "[ " \-h | \-\-help " ]"
+.BR "" "[ " \-v | \-\-verbose " ]"
+.BR "" "[ " \-e | \-\-env " ]"
+.BR "" "[ " \-E | \-\-no\-env " ]"
+.br
+.BR "         " "[ " \-n | \-\-no\-open" ]"
+.BR "" "[ " \-i | \-\-ignore\-down " ]"
+.br
+.BR "         " "[ " \-k | \-\-empty\-ok " ]"
+.BR "" "[ " \-D | \-\-no\-done " ]"
+.br
+.BR "         " "[ " \-l | \-\-lock " ]"
+.BR "" "[ " \-L | \-\-no\-lock " ]"
+.br
+.BR "         " "[ " \-t ttl_seconds| \-\-ttl \=seconds " ]"
+.br
+.BR "         " "[ " \-m max_tries| \-\-max\-tries \=number " ]"
+.br
+.BR "         " "[ " \-S success_code| \-\-success\-code \=number " ]"
+.br
+.BR "         " "[ " \-T fail_tmp_code| \-\-fail\-tmp\-code \=number " ]"
+.br
+.BR "         " "[ " \-F fail_perm_code| \-\-fail\-perm\-code \=number " ]"
+.br
+.IR "" "         " queue " " program " [ " args " [...]]"
+.SH DESCRIPTION
+.BR fsq\-scan (1)
+uses the
+.BR fsq (7)
+.B scan
+function to scan a
+.I queue
+for work. For each work\-item,
+.BR fsq\-scan (1)
+executes
+.BR program
+with
+.IR args ,
+appending the enqueued arguments to
+.I args
+prior to calling
+.BR execvp (2).
+For example, if an item were enqueued with the arguments,
+.IR foo ", " bar :
+.sp
+	$ echo "Test Scan" |
+.BI "fsq enqueue" " a_queue"
+foo bar
+.sp
+A scan program executing
+.BR echo (1)
+for each work-item would produce the following result:
+.sp
+	$
+.BI "fsq scan -D" " a_queue"
+echo hi
+.br
+	hi foo bar
+.sp
+.BR fsq\-scan (1)
+introspects the exit code of
+.I program
+for each item. If the exit code of
+.I program
+is equal to
+.I FSQ_SUCCESS
+(default:
+.BR 0 ),
+.BR fsq\-scan (1)
+succeeds the item using the
+.BR fsq (7)
+function
+.IR success :
+.sp
+	$
+.B "fsq scan"
+\-v sh \-c 'exit 0'
+.br
+	fsq scan: working on _20120729152733_0_12345_mss_0_foo_bar ...
+.br
+	fsq scan: _20120729152733_0_12345_mss_0_foo_bar: succeeded
+.sp
+If the exit code of
+.I program
+is equal to
+.I FSQ_FAIL_TMP
+(default:
+.BR 111 ),
+.BR fsq\-scan (1)
+fails the item temporarily (potentially causing a later retry):
+.sp
+	$
+.B "fsq scan"
+\-v \-m 5 \-\- sh \-c 'exit 111'
+.br
+	fsq scan: working on _20120729152735_0_12345_mss_0_foo_bar ...
+.br
+	fsq scan: _20120729152735_0_12345_mss_0_foo_bar: failed temporarily
+.sp
+If an item has surpassed
+.I FSQ_MAX_TRIES
+or
+.I FSQ_TTL
+temporarily failure will be escalated to permanent failure:
+.sp
+	$
+.B "fsq scan"
+\-v \-m 1 \-\- sh \-c 'exit 111'
+.br
+	fsq scan: Max tries exceeded: 1 (1) for item _20120729152735_1_12345_mss_foo_bar; failed permanently
+.sp
+If the exit
+code of
+.I program
+is equal to
+.I FSQ_FAIL_PERM
+(default:
+.BR 100 ),
+.BR fsq\-scan (1)
+fails the item permanantly:
+.sp
+	$
+.B "fsq scan"
+sh \-c 'exit 100'
+.br
+	fsq scan: _20120729152737_0_12345_mss_0_foo_bar: failed permanently
+.sp
+If
+.I program
+was terminated by a signal,
+.BR fsq\-scan (1)
+will fail the item permanently and stop scanning before processing any more
+work\-items, exiting
+.IR FSQ_FAIL_TMP .
+.sp
+By default
+.BR fsq\-scan (1)
+attempts to obtain an exclusive lock on each work\-item as it iterates, via
+.BR flock (2).
+If
+.BR fsq\-scan (1)
+cannot acquire a lock with
+.BR LOCK_EX | LOCK_NB
+it assumes the item is being worked on by another process, and silently skips
+the item.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+.br
+Print an extended usage to stdout and exit with exit status
+.IR 0 .
+Should
+.BR fsq\-scan (1)
+fail due to a bad usage, a terse usage will be printed to stderr, and
+.BR fsq\-scan (1)
+will exit with exit status
+.IR 100 .
+.TP
+.BR \-v ", " \-\-verbose
+.br
+Print additional diagnostic information to
+.BR stderr .
+.TP
+.BR \-e ", " \-\-env
+.br
+.BR Default .
+Expose additional information about work\-items to the
+.BR environ (7)
+of
+.IR program .
+If
+.B \-\-env
+is specified, or if
+.B \-\-no\-env
+is not specified,
+.BR fsq\-scan (1)
+will make the following variables available to
+.I program
+via
+.BR environ (7):
+.sp
+.I "	FSQ_ITEM_PID"
+.br
+		process id of the enqueueing process (via
+.BR getpid (2))
+.br
+.I "	FSQ_ITEM_ENTROPY"
+.br
+		entropy of enqueued item, used by enqueuing process for
+uniqueness.
+.br
+.I "	FSQ_ITEM_HOSTNAME"
+.br
+		name of the enqueueing host (via
+.BR gethostname (2))
+.br
+.IR "	FSQ_ITEM_ID"
+.br
+		id of the enqueued item (also the item filename)
+.br
+.I "	FSQ_ITEM_TRIES
+.br
+		times the enqueued item has been tried unsuccessfully
+.br
+.I "	FSQ_ITEM_ENQUEUED_AT"
+.br
+		original enqueue time for item (fmt:
+.IR FSQ_TIMEFMT )
+.TP
+.BR \-E ", " \-\-no\-env
+.br
+Do not expose additional information about work\-items to the
+.BR environ (7)
+of
+.IR program .
+The
+.B \-\-no\-env
+option is provided as an optimization should
+.I program
+not need to make use information outside of the item arguments and contents.
+.TP
+.BR \-n ", " \-\-no\-open
+.br
+Do not open the work\-item for reading to
+.I program
+on
+.BR stdin .
+The
+.B \-\-no\-open
+option is provided as an optimization should
+.I program
+not need to make use of the contents of work\-items. If
+.B \-\-no\-open
+is passed and
+.B \-\-lock
+is also passed, or
+.B \-\-no\-lock
+is not passed, the work\-item file will be opened for use with
+.BR flock (2)
+but will not be available to
+.I program
+on
+.BR stdout .
+If
+.B \-\-no\-open
+is passed,
+.I program
+should not read from
+.BR stdin ,
+as doing so will produce unreliable results.
+.TP
+.BR \-i ", " \-\-ignore\-down
+.br
+Scan
+.I queue
+even if it is
+.BR down .
+Without passing the
+.BR \-\-ignore\-down
+option,
+.BR fsq\-scan (1)
+will print a message to
+.B stderr
+and exit with status code
+.I FSQ_FAIL_TMP
+prior to iterating over more work\-items if at any point in the scan
+operation, the queue is marked
+.BR down .
+.BR fsq\-scan (1)
+determines
+.I queue
+to be
+.B down
+if a regular file named
+.I FSQ_DOWN
+exists in
+.IR queue .
+.TP
+.BR \-k ", " \-\-empty\-ok
+.br
+Allow
+.BR fsq\-scan (1)
+to execute without
+.I program
+passed as an argument. The use of
+.B \-\-empty\-ok
+allows
+.BR fsq\-scan (1)
+to execute an enqueued
+.I program
+arbitrarily:
+.sp
+	$ echo "Test Scan" |
+.BI "fsq enqueue" " a_queue"
+echo foo bar
+.br
+	$
+.BI "fsq scan -k" " a_queue"
+.br
+	foo bar
+.sp
+Use with caution.
+.TP
+.BR \-D ", " \-\-no\-done
+.br
+Do not mark any work\-items as
+.B done
+following execution of
+.IR program .
+The
+.B \-\-no\-done
+flag will prevent
+.BR success ", " fail_tmp " and " fail_perm
+actions on work\-items. The
+.B \-\-no\-done
+flag is provided to allow for the use of
+.BR fsq\-scan (1)
+for introspection without modification.
+.TP
+.BR \-l ", " \-\-lock
+.br
+.BR Default .
+Exclusively lock the work\-item file for the duration of
+.I program
+execution.  If
+.B \-\-lock
+is passed, or
+.B \-\-no\-lock
+is not passed,
+.BR fsq\-scan (1)
+will attempt to lock each work\-item using
+.BR flock (2)
+and the flags
+.BR LOCK_EX | LOCK_NB
+prior to
+.I program
+execution. Should
+.BR flock (2)
+fail with
+.B EAGAIN
+or
+.BR EWOULDBLOCK ,
+.BR fsq\-scan (1)
+assumes the work is being processed by another process, and silently skips the
+item.
+.TP
+.BR \-L ", " \-\-no\-lock
+.br
+Do not attempt to acquire an exclusive lock on a work\-item prior to
+.I program
+execution.  Should
+.B \-\-no\-lock
+be specified, the user should take care to ensure that no other processes may
+work on a work\-item.  If users are using the
+.BR trigger\-listen (1)
+program, they may send the flag
+.BI \-c 1
+to ensure concurrency of
+.IR 1,
+otherwise users are encouraged to use a locking program (ex:
+.BR flock "(1), " lockf "(1), or " setlock "(8))"
+to ensure that work is not processed multiple times.
+.TP
+.BR \-t "ttl_seconds, " \-\-ttl "=seconds"
+.br
+Set the time\-to\-live for
+.I queue
+work\-items to
+.IR seconds .
+.BR fsq\-scan (1)
+will permanently fail work\-items with
+.I enqueued_at
+times greater\-than or equal\-to
+.I seconds
+older than the current system time. The
+.B \-\-ttl
+option overrides the
+.I FSQ_TTL
+.BR environ (7)
+variable.
+.sp
+default:
+.B 0
+.TP
+.BR \-m "max_tries, " \-\-max\-tries "=number"
+.br
+Set the max\-tries for
+.I queue
+work\-items to
+.IR number .
+.BR fsq\-scan (1)
+will permanently fail work\-items with
+.I tries
+attributes greater\-than or equal\-to
+.IR number .
+.I max_tries
+is tested both before and after execution of
+.IR program .
+Should
+.I program
+exit with exit code
+.IR FSQ_FAIL_TMP ,
+a
+.I tries
+value of
+.IR max_tries - 1
+will cause the work\-item to be failed permanently following failure.
+The
+.B \-\-max\-tries
+option overrides the
+.I FSQ_MAX_TRIES
+.BR environ (7)
+variable.
+.sp
+default:
+.B 1
+.TP
+.BR \-S "success_code, " \-\-success\-code "=number"
+.br
+Set the exit\-code for successful completion of a work\-item (via
+.I program
+execution) to
+.IR number .
+The
+.B \-\-success\-code
+option overrides the
+.I FSQ_SUCCESS
+.BR environ (7)
+variable.
+.sp
+default:
+.B 0
+.TP
+.BR \-T "fail_tmp_code, " \-\-fail\-tmp\-code "=number"
+.br
+Set the exit\-code for temporary failure of a work\-item (via
+.I program
+execution) to
+.IR number .
+The
+.B \-\-fail\-tmp\-code
+option overrides the
+.I FSQ_FAIL_TMP
+.BR environ (7)
+variable.
+.sp
+default:
+.B 111
+.TP
+.BR \-F "fail_perm_code, " \-\-fail\-perm\-code "=number"
+.br
+Set the exit\-code for permanent failure of a work\-item (via
+.I program
+execution) to
+.IR number .
+The
+.B \-\-fail\-perm\-code
+option overrides the
+.I FSQ_FAIL_PERM
+.BR environ (7)
+variable.
+.sp
+default:
+.B 100
+.SH ENVIRONMENT
+.BR fsq\-scan (1)
+makes use of all
+.BR environ (7)
+variables described by
+.BR fsq (7).
+In all cases where
+.BR fsq\-scan (1)
+provides an
+.BR environ (7)
+variable, and an
+.I option
+.BR fsq\-scan (1)
+will prefer the
+.IR option .
+In addition to the normal
+.BR fsq (7)
+variables,
+.BR fsq\-scan (1)
+sets the following variables in
+.I program
+.BR environ (7)
+per work\-item:
+.sp
+.I "	FSQ_ITEM_PID"
+.br
+.I "	FSQ_ITEM_ENTROPY"
+.br
+.I "	FSQ_ITEM_HOSTNAME"
+.br
+.IR "	FSQ_ITEM_ID"
+.br
+.I "	FSQ_ITEM_TRIES
+.br
+.I "	FSQ_ITEM_ENQUEUED_AT"
+.sp
+For more information on these
+.BR environ (7)
+variables, see the
+.B \-\-env
+option above.
+.SH OUTPUT
+.BR fsq\-scan (1)
+reserves
+.B stdout
+for use by
+.IR program ,
+excepting when the
+.BR \-h " or " \-l
+are used.
+.SH BUGS
+If the
+.B \-\-no\-open
+flag is passed, and
+.I program
+attempts to read from
+.B stdin
+the operation is undefined.

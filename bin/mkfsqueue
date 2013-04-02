@@ -1,0 +1,142 @@
+#!/bin/sh
+# mkfsqueue - A program for installing FSQ compliant queues
+# @author: Matthew Story <matt.story@axialmarket.com>
+# @depends: mkdir(1), sh(1), mktemp(1), mkfifo(1)
+VERBOSE="${VERBOSE}" # explicit env initialize
+safe() { "$@" || barf "cannot: $*; aborting"; }
+barf() { shout "$*"; exit 111; }
+shout() { echo "${0##*/}: $*" >&2; }
+# file names that we think are OK
+name_valid() {
+    f="$1"; shift
+    [ -z "$f" -o "$f" = '.' -o "$f" = '..' -o "$f" != "${f#*/}" ] \
+        && barf "invalid name: $f"
+}
+# cleanup from trap or explicit call
+cleanup() {
+    rc=$?
+    [ -n "$working" -a -f "$working" ] && rm -f -- "$working"
+    return $rc
+}
+# change owner/group/mode on installed things
+chall() {
+    owner="$1"; shift
+    group="$1"; shift
+    mode="$1"; shift
+    trg="$1"; shift
+    [ -n "$owner" ] && safe chown -- "$owner" "$trg"
+    [ -n "$group" ] && safe chgrp -- "$group" "$trg"
+    [ -n "$mode" ] && safe chmod -- "$mode" "$trg"
+    [ -d "$trg" ] || safe chmod -- -x "$trg"
+}
+usage() {
+    fd=2
+    rc=64
+    if [ -n "$1" ]; then
+        fd=1
+        rc=0
+    fi
+    shout "${0##*/} [-vVpFD] [-q queue_name] [-d done_name] [-f fail_name]" \
+          "[-t tmp_name] [-P fifo_name] [-n down_name] [-o owner]" \
+          "[-g group] [-m mode] queue [queue [...]]" 2>&$fd
+    exit $rc
+}
+chirp() { [ -n "$VERBOSE" ] && shout "$*"; return 0; }
+
+#defaults
+fifo=0
+force=0
+down=0
+user=
+group=
+mode=2775
+queue_name="queue"
+done_name="done"
+fail_name="fail"
+tmp_name="tmp"
+fifo_name="trigger-s"
+down_name="down"
+while getopts 'hvVpFDq:d:f:t:P:n:o:g:m:' opt; do
+    case "$opt" in
+        v) VERBOSE=1
+            ;;
+        V) VERBOSE=
+            ;;
+        p) fifo=1
+            ;;
+        F) force=1
+            ;;
+        D) down=1
+            ;;
+        q) name_valid "$OPTARG"
+           queue_name="$OPTARG"
+            ;;
+        d) name_valid "$OPTARG"
+           done_name="$OPTARG"
+            ;;
+        f) name_valid "$OPTARG"
+           fail_name="$OPTARG"
+            ;;
+        t) name_valid "$OPTARG"
+           tmp_name="$OPTARG"
+            ;;
+        P) name_valid "$OPTARG"
+           fifo=1
+           fifo_name="$OPTARG"
+            ;;
+        n) name_valid "$OPTARG"
+           down=1
+           down_name="$OPTARG"
+            ;;
+        o) owner="$OPTARG"
+            ;;
+        g) group="$OPTARG"
+            ;;
+        m) mode="$OPTARG"
+            ;;
+        h) usage 1
+            ;;
+        *) usage
+            ;;
+    esac
+done
+shift $((OPTIND - 1)) # goodbye opts
+# we need at least 1 argument
+[ 0 -lt $# ] || usage
+
+# iterate over queues, installing as we go; NB: operation is idempotent within
+# arguments, but not accross arguments
+while [ 0 -lt $# ]; do
+    trg_queue="${1%/}"; shift
+    # if the target exists and -F was not sent, bail
+    [ -e "$trg_queue" -a 0 -eq $force ] && \
+        barf "cannot overwrite: $trg_queue; (try -F)"
+    # make sure we cleanup
+    trap cleanup EXIT INT TERM
+        staging="`mktemp -d -- "$trg_queue.XXXXXXXXX"`" || \
+            barf "cannot: mktemp; aborting"
+        chall "$owner" "$group" "$mode" "$staging"
+        for dir in "$queue_name" "$done_name" "$fail_name" "$tmp_name"; do
+            safe mkdir -- "$staging/$dir"
+            chall "$owner" "$group" "$mode" "$staging/$dir"
+            chirp "staged: $trg_queue/$dir for install"
+        done
+        if [ 0 -lt "$fifo" ]; then
+            safe mkfifo -- "$staging/$fifo_name"
+            chall "$owner" "$group" "$mode" "$staging/$fifo_name"
+            chirp "staged: $fifo_name for install to $trg_queue"
+        fi
+        if [ 0 -lt "$down" ]; then
+            safe touch -- "$staging/$down_name"
+            chall "$owner" "$group" "$mode" "$staging/$down_name"
+            chirp "staged: $down_name for install to $trg_queue"
+        fi
+        # if trg exists and -F was sent, rm existing
+        [ -e "$trg_queue" -a 1 -eq $force ] && safe rm -rf -- "$trg_queue"
+        safe mv -- "$staging" "$trg_queue"
+        chirp "installed: $trg_queue"
+    # unset trap
+    trap "" EXIT INT TERM
+done
+
+exit 0
