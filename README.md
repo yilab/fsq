@@ -55,7 +55,8 @@ The queue directory within a_queue is the location where work-items are queued t
 The tmp directory within a_queue is a location for constructing work-items prior to enqueueing them to the queue directory. In the above enqueue and senqueue calls, the work-item files were initially con‐structed in tmp, then linked into queue and the tmp entry was removed.
 
 
-**/var/fsq/a_queue/done**
+/var/fsq/a_queue/done
+---------------------
 
 The done directory within a_queue is a location for storing successfully completed work-items following work.  Items may be marked as done, by using the done function (typically done during a scan):
 
@@ -68,7 +69,8 @@ The function success may also be used:
 The done directory serves as a sort of book-keeping, but it should routinely be pruned, via cron or some such.
 
 
-**/var/fsq/a_queue/fail**
+/var/fsq/a_queue/fail
+---------------------
 
 The  fail  directory within a_queue is a location for storing failed work-items following work. Items may be marked as failed, by using the fail function:
 
@@ -85,21 +87,41 @@ The fail_perm function may also be used:
 
 permanent failure may also result if an work-item is older than, FSQ_TTL or if the work-item has been retried more than FSQ_MAX_TRIES by way of fail_tmp:
 
-``
     for i in fsq.scan('a_queue'):
       try:
         raise Exception
       except:
         fsq.fail_tmp(i)
 
-  Alternatively, retry may be used:
+Alternatively, retry may be used:
 
     for i in fsq.scan('a_queue'):
       try:
         raise Exception
       except:
         fsq.retry(i)
-``
 
 
+/var/fsq/a_queue/down
+---------------------
+
+The down file within a_queue is a file controlling wether or not a queue is available to be scanned. If down exists, the queue will not be scanned.  down may be created by using the down function:
+
+    fsq.down('a_queue')
+
+down may be removed by using the up function:
+
+    fsq.up('a_queue')
+
+Queues with down may be scanned, by passing None or False to scan:
+
+    fsq.scan('a_queue', down=None)
+
+
+ENVIRONMENT
+===========
+
+The fsq suite and python library makes use of a number of FSQ_PREFIXED environment variables, which  modify its behavior.  Each environment variable is also available as a package-level constant.
+
+Please refer to the fsq(7) manual page for a complete list.
 
