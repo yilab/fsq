@@ -12,7 +12,7 @@ Quick Overview
 
 Each fsq queue conforms to the following directory structure:
 
-/var/fsq/a_queue/
+**/var/fsq/a_queue/**
   The  queue a_queue is installed to the default FSQ_ROOT, /var/fsq/.  To enqueue a file to this queue, use the enqueue function:
 
     fsq.enqueue('a_queue', ´/path/to/file', 'args', 'to', 'enqueue')
@@ -21,7 +21,7 @@ Each fsq queue conforms to the following directory structure:
 
     fsq.senqueue('a_queue', ´a string body for my work-item', 'args', 'to', 'enqueue')
 
-/var/fsq/a_queue/queue
+**/var/fsq/a_queue/queue**
   The queue directory within a_queue is the location where work-items are queued to.  Following  the  above enqueue or senqueue function calls, you should be able to see 2 files in the q_queue/queue directory:
  
   _20120710213904_0_13044_mss_0_args_to_enqueue
@@ -43,17 +43,17 @@ Each fsq queue conforms to the following directory structure:
   |      +-> timestamp in FSQ_TIMEFMT format
   +-> FSQ_DELIMITER used at enqueue time
 
-/var/fsq/a_queue/tmp
+**/var/fsq/a_queue/tmp**
   The tmp directory within a_queue is a location for constructing work-items prior to enqueueing them to the queue directory. In the above enqueue and senqueue calls, the work-item files were initially con‐structed in tmp, then linked into queue and the tmp entry was removed.
 
-/var/fsq/a_queue/done
+**/var/fsq/a_queue/done**
   The  done  directory within a_queue is a location for storing successfully completed work-items following work.  Items may be marked as done, by using the done function (typically done during a scan):
 
-    for i in fsq.scan('a_queue'): fsq.done(i)
+    ``for i in fsq.scan('a_queue'): fsq.done(i)``
 
   The function success may also be used:
 
-    for i in fsq.scan('a_queue'): fsq.success(i)
+    ``for i in fsq.scan('a_queue'): fsq.success(i)``
 
   The done directory serves as a sort of book-keeping, but it should routinely be pruned, via cron or some such.
 
@@ -61,6 +61,7 @@ Each fsq queue conforms to the following directory structure:
 /var/fsq/a_queue/fail
   The  fail  directory within a_queue is a location for storing failed work-items following work. Items may be marked as failed, by using the fail function:
 
+``
     for i in fsq.scan('a_queue'):
       fsq.fail(i)
 
@@ -71,9 +72,11 @@ Each fsq queue conforms to the following directory structure:
         raise Exception
       except:
         fsq.fail_perm(i)
+``
 
   permanent failure may also result if an work-item is older than, FSQ_TTL or if the work-item has been retried more than FSQ_MAX_TRIES by way of fail_tmp:
 
+``
     for i in fsq.scan('a_queue'):
       try:
         raise Exception
@@ -87,7 +90,7 @@ Each fsq queue conforms to the following directory structure:
         raise Exception
       except:
         fsq.retry(i)
-
+``
 
 
 
