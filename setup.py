@@ -6,7 +6,7 @@ setup(
     packages=['fsq'],
     scripts=['bin/mkfsqueue','bin/fsq.py','bin/fsq'],
     url='http://pypi.python.org/pypi/fsq/',
-    license='LICENSE.txt',
+    license='3-BSD',
     description='file system queue',
     long_description=open('README.txt').read(),
     install_requires='',
