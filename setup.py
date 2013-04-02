@@ -8,7 +8,7 @@ setup(
     packages=['fsq', 'fsq.tests'],
     scripts=['bin/mkfsqueue','bin/fsq.py','bin/fsq',
              'libexec/fsq/down.py', 'libexec/fsq/enqueue.py',
-             'libexec/fsq/install.py', 'libexec/fsqscan.py',
+             'libexec/fsq/install.py', 'libexec/fsq/scan.py',
              'libexec/fsq/up.py'],
     data_files=[('share/man/man1', ['fsq.1',
                                     'fsq-down.1', 
