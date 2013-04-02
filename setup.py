@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='fsq',
-    version='0.1.0',
+    version='0.1.1',
     author='Matthew Story',
     author_email='matt.story@axial.net',
     packages=['fsq', 'fsq.tests'],
