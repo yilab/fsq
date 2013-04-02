@@ -5,9 +5,13 @@ setup(
     author_email='matt.story@axial.net',
     packages=['fsq'],
     scripts=['bin/mkfsqueue','bin/fsq.py','bin/fsq'],
-    url='http://pypi.python.org/pypi/fsq/',
+    data_files=[('share/man/man1', ['fsq.1', 'fsq-down.1', 
+                                    'fsq-enqueue.1', 'fsq-scan.1',
+                                    'fsq-up.1', 'mkfsqueue.1']),
+                ('share/man/man7', ['fsq.7']) ]
+    url='https://github.com/axialmarket/fsq',
     license='3-BSD',
-    description='file system queue',
+    description='File System Queue',
     long_description=open('README.txt').read(),
     install_requires='',
 )
