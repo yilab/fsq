@@ -12,18 +12,21 @@ Quick Overview
 
 Each fsq queue conforms to the following directory structure:
 
-**/var/fsq/a_queue/**
-  The  queue a_queue is installed to the default FSQ_ROOT, /var/fsq/.  To enqueue a file to this queue, use the enqueue function:
+    **/var/fsq/a_queue/**
 
-    fsq.enqueue('a_queue', ´/path/to/file', 'args', 'to', 'enqueue')
+    The  queue a_queue is installed to the default FSQ_ROOT, /var/fsq/.  To enqueue a file to this queue, use the enqueue function:
+
+    ``fsq.enqueue('a_queue', ´/path/to/file', 'args', 'to', 'enqueue')``
 
   or to enqueue a string, use the senqueue function:
 
-    fsq.senqueue('a_queue', ´a string body for my work-item', 'args', 'to', 'enqueue')
+    ``fsq.senqueue('a_queue', ´a string body for my work-item', 'args', 'to', 'enqueue')``
 
-**/var/fsq/a_queue/queue**
-  The queue directory within a_queue is the location where work-items are queued to.  Following  the  above enqueue or senqueue function calls, you should be able to see 2 files in the q_queue/queue directory:
- 
+    **/var/fsq/a_queue/queue**
+
+    The queue directory within a_queue is the location where work-items are queued to.  Following  the  above enqueue or senqueue function calls, you should be able to see 2 files in the q_queue/queue directory:
+
+``` 
   _20120710213904_0_13044_mss_0_args_to_enqueue
   _20120710213904_1_13044_mss_0_args_to_enqueue
   +|-----+------| + |-+-| |+| + |------+------|
@@ -42,6 +45,7 @@ Each fsq queue conforms to the following directory structure:
   |      |            generate uniqueness.
   |      +-> timestamp in FSQ_TIMEFMT format
   +-> FSQ_DELIMITER used at enqueue time
+```
 
 **/var/fsq/a_queue/tmp**
   The tmp directory within a_queue is a location for constructing work-items prior to enqueueing them to the queue directory. In the above enqueue and senqueue calls, the work-item files were initially con‐structed in tmp, then linked into queue and the tmp entry was removed.
