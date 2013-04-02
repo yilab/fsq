@@ -6,6 +6,11 @@ fsq(7) is a standard for implementing queueing structures in POSIX file-systems.
 
 fsq(1) is an interface for the file-system based queue-processing standard fsq(7).  fsq(1) provides a variety of commands for enqueueing work, dispatching work and introspecting, auditing and repairing enqueued, failed, and finished work.
 
+Quick Install
+=============
+
+    # cd /path/to/package/base/
+    # sudo python setup.py install
 
 Quick Overview
 ==============
