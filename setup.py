@@ -3,7 +3,7 @@ from glob import glob
 
 setup(
     name='fsq',
-    version='0.1.1',
+    version='0.1.2',
     author='Matthew Story',
     author_email='matt.story@axial.net',
     packages=['fsq', 'fsq.tests'],
