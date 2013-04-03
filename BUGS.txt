@@ -1,0 +1,3 @@
+Wed Apr  3 08:54:08 EDT 2013
+Install on *BSD, SUSE, Solaris, etc... man pages directory is not share/man , it is man.  Need to hook distutils (or explore the state of distutils2 to resolve?)  For FreeBSD, can resolve this trivially with patch from port.
+
