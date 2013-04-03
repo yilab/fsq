@@ -133,12 +133,18 @@ Please refer to the fsq(7) manual page for a complete list.
 AUTHORS
 =======
 
-Matthew Story <matt.story@axial.net>
-Isaac (.ike) Levy <ike@blackskyresearch.net>
-Will O'Meara <will.omeara@axial.net>
+    Matthew Story <matt.story@axial.net>
+    Isaac (.ike) Levy <ike@blackskyresearch.net>
+    Will O'Meara <will.omeara@axial.net>
 
 With Additional Contributions From:
 
-Will Martino
-Will Slippey
-Jacob Yuan
+    Will Martino
+    Will Slippey
+    Jacob Yuan
+
+And Thanks To:
+
+    William Baxter (For trigger, and for inspiring fsq)
+    Bruce Guenter (For nullmailer, featuring a simpler file-system queue)
+    Daniel J Bernstein (For QMail, inspiring trigger and nullmailer)
