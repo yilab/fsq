@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # fsq-up(1) -- a program for turning on queues
 #
-# @author: O'Meara will.omeara@axialmarket.com
+# @author: O'Meara will.omeara@axial.net
 # @depends: fsq(1), fsq(7), python (>=2.7)
 #
 # This software is for POSIX compliant systems only.
@@ -70,7 +70,7 @@ def main(argv):
     for arg in args:
         try:
                 fsq.up(arg)
-                chirp('{0}: up'.format(arg)) 
+                chirp('{0}: up'.format(arg))
         except fsq.FSQCoerceError, e:
             barf('cannot coerce queue; charset={0}'.format(_CHARSET))
         except fsq.FSQError, e:
@@ -79,4 +79,3 @@ def main(argv):
 
 if __name__ == '__main__':
     main(sys.argv)
-

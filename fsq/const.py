@@ -1,5 +1,5 @@
 # fsq -- a python library for manipulating and introspecting FSQ queues
-# @author: Matthew Story <matt.story@axialmarket.com>
+# @author: Matthew Story <matt.story@axial.net>
 #
 # fsq/const.py -- provides constants convenience functions: const, set_const
 #

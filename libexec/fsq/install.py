@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # fsq-install(1) -- a program for installing an fsq queue.
 #
-# @author: Matthew Story <matt.story@axialmarket.com>
+# @author: Matthew Story <matt.story@axial.net>
 # @depends: fsq(1), fsq(7), python (>=2.7)
 #
 # This software is for POSIX compliant systems only.
@@ -38,7 +38,6 @@ def usage(asked_for=0):
         shout('        [-o owner|--owner=user|uid]', f)
         shout('        [-g group|--group=group|gid]', f)
         shout('        [-m mode|--mode=int]', f)
-        shout('        [-i ignore|--ignore]', f)
         shout('        queue [queue [...]]', f)
     return 0 if asked_for else fsq.const('FSQ_FAIL_PERM')
 

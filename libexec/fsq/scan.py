@@ -17,7 +17,7 @@
 #  * like xargs(1), if scan is terminated by signal, it orphans ... if a child
 #      is terminated by signal, scan stops scanning.
 #
-# @author: Matthew Story <matt.story@axialmarket.com>
+# @author: Matthew Story <matt.story@axial.net>
 # @depends: fsq(1), fsq(7), python (>=2.7)
 #
 # TODO: Concurrency? -- not right now

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # fsq-enqueue(1) -- a program for adding an item to a queue
 #
-# @author: O'Meara <will.omeara@axialmarket.com>
-#          Matthew Story <matt.story@axialmarket.com>
+# @author: O'Meara <will.omeara@axial.net>
+#          Matthew Story <matt.story@axial.net>
 # @depends: fsq(1), fsq(7), python (>=2.7)
 #
 # This software is for POSIX compliant systems only.

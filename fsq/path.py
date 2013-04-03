@@ -1,5 +1,5 @@
 # fsq -- a python library for manipulating and introspecting FSQ queues
-# @author: Matthew Story <matt.story@axialmarket.com>
+# @author: Matthew Story <matt.story@axial.net>
 #
 # fsq/construct.py -- provides path construction convenience functions: tmp,
 #                     queue, done, fail, down

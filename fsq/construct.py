@@ -1,5 +1,5 @@
 # fsq -- a python library for manipulating and introspecting FSQ queues
-# @author: Matthew Story <matt.story@axialmarket.com>
+# @author: Matthew Story <matt.story@axial.net>
 #
 # fsq/construct.py -- provides name construction functions: construct,
 #                     deconstruct, encode, decode

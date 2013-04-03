@@ -1,0 +1,121 @@
+.TH fsq-install 1 "2013-04-02" "Axial" "Axial System Commands Manual"
+.SH NAME
+fsq\-install \- install
+.BR fsq (7)
+queues in the file\-system
+.SH SYNOPSIS
+.B "fsq install"
+.BR "" "[ " flags " ]"
+.IR " queue " [ " queue" " [...]]]"
+.br
+.B "fsq install"
+.BR "" "[ " "\-h" "|" "\-\-help " "]"
+.BR "" "[ " "\-v" "|" "\-\-verbose " "]"
+.br
+.BR "            " "[ " "\-f" | "\-\-force" " ]"
+.BR "" "[ " "\-d" | "\-\-down" " ]"
+.br
+.BR "            " "[ " "\-t" | "\-\-triggered" " ]"
+.BR "" "[ " "\-i "| "\-\-ignore\-exists" " ]"
+.br
+.BR "            " "[ " "\-o "owner| "\-\-owner" "=user|uid ]"
+.br
+.BR "            " "[ " "\-g "group| "\-\-group" "=group|gid ]"
+.br
+.BR "            " "[ " "\-m "mode| "\-\-mode" "=int ]"
+.SH DESCRIPTION
+The
+.BR fsq\-install (1)
+program uses the
+.BR fsq (7) " install"
+function to install one or more
+.I queue
+arguments to
+.IR "FSQ_ROOT" .
+Each installed
+.I queue
+contains the directories
+.IR "FSQ_TMP" ", " "FSQ_QUEUE" ", " "FSQ_DONE" ", and " "FSQ_FAIL" ,
+used by the
+.BR fsq (7) " " "functions " enqueue " and " scan
+for queueing and processing work.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+.br
+Help.  Print usage to stdout and exit 0.
+.TP
+.BR \-v ", " \-\-verbose
+.br
+Verbose.  Print additional diagnostic information to stderr.
+.TP
+.BR \-f ", " \-\-force
+.br
+Force.  Forcably remove and re-install
+.I queue
+if it already exists in
+.IR "FSQ_ROOT" .
+.TP
+.BR \-d ", " \-\-down
+.br
+Down.  Install
+.I queue
+with an
+.I "FSQ_DOWN"
+file, to prevent the queue from being scanned.
+.TP
+.BR \-t ", " \-\-triggered
+.br
+Triggered.  Install
+.I queue
+with an
+.I "FSQ_TRIGGER"
+.BR fifo (7),
+for use with the
+.BR trigger\-listen (1)
+program and the
+.BR fsq "(7) " "trigger_pull" " function."
+.TP
+.BR \-i ", " \-\-ignore\-exists
+Ignore Exists.  If
+.I queue
+exists, do not install and exit success. When multiple
+.I queue
+arguments are provided, do not install and continue to next
+.IR queue .
+.br
+.TP
+.BR \-o user", " \-\-owner=user
+.br
+Owner.  Install
+.I queue
+and all files and sub\-directories with user\-owner
+.IR user .
+Accepts either user name or id; default:
+.BR geteuid (2).
+.TP
+.BR \-g group", " \-\-group=group
+.br
+Group.  Install
+.I queue
+and all files and sub\-directories with group\-owner
+.IR group .
+Accepts either group name or id; default:
+.BR getegid (2).
+.TP
+.BR \-m mode", " \-\-mode=mode
+.br
+Mode.  Install
+.I queue
+and all files and sub\-directories with mode
+.IR mode ". " mode
+is expected to be an octal file\-system mode; default:
+.IR 02775 .
+.SH "EXIT STATUS"
+The
+.B fsq\-install
+program exits 0 for success, 100 for bad usage, and 111 for expected error
+cases.  All other exit statuses imply that something beyond the imagination of
+the programmer has occured.
+.SH SEE ALSO
+.BR trigger\-listen "(1), " fsq (7)

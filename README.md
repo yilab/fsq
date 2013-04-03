@@ -130,3 +130,15 @@ The fsq suite and python library makes use of a number of FSQ_PREFIXED environme
 
 Please refer to the fsq(7) manual page for a complete list.
 
+AUTHORS
+=======
+
+Matthew Story <matt.story@axial.net>
+Isaac (.ike) Levy <ike@blackskyresearch.net>
+Will O'Meara <will.omeara@axial.net>
+
+With Additional Contributions From:
+
+Will Martino
+Will Slippey
+Jacob Yuan
