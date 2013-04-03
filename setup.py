@@ -24,6 +24,6 @@ setup(
     url='https://github.com/axialmarket/fsq',
     license='3-BSD',
     description='File System Queue',
-    long_description=open('README.md').read(),
+    long_description=open('README').read(),
 )
 
