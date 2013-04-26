@@ -30,7 +30,7 @@ import path # has tests
 from configure import down, up, is_down, trigger, untrigger, trigger_pull # has tests
 
 # install relies on exceptions, path, constants, configure, internal
-from install import install, uninstall # has tests
+from install import install, uninstall, install_host # has tests
 
 # encode relies on: constants, exceptions, internal
 from encode import encode, decode # has tests
@@ -61,4 +61,4 @@ __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'uninstall', 'encode', 'decode', 'construct', 'deconstruct',
             'enqueue', 'senqueue', 'venqueue', 'vsenqueue', 'success', 'fail',
             'done', 'fail_tmp', 'fail_perm', 'FSQWorkItem',
-            'FSQScanGenerator', 'scan', ]
+            'FSQScanGenerator', 'scan', 'install_host', ]

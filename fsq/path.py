@@ -17,8 +17,8 @@ from . import constants as _c, FSQPathError
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
 _ILLEGAL_NAMES=('.', '..', )
 
-def _path(queue, extra=None):
-    args = [coerce_unicode(_c.FSQ_ROOT, _c.FSQ_CHARSET), valid_name(queue)]
+def _path(queue, extra=None, root=_c.FSQ_ROOT):
+    args = [coerce_unicode(root, _c.FSQ_CHARSET), valid_name(queue)]
     if extra is not None:
         args.append(valid_name(extra))
     return os.path.join(*args)
@@ -31,33 +31,38 @@ def valid_name(name):
                                   u' {0}'.format(name))
     return name
 
-def base(p_queue):
-    return _path(p_queue)
+def base(p_queue, root=_c.FSQ_ROOT):
+    return _path(p_queue, root=root)
 
-def tmp(p_queue):
+def tmp(p_queue, root=_c.FSQ_ROOT):
     '''Construct a path to the tmp dir for a queue'''
-    return _path(p_queue, _c.FSQ_TMP)
+    return _path(p_queue, _c.FSQ_TMP, root=root)
 
-def queue(p_queue):
+def queue(p_queue, root=_c.FSQ_ROOT):
     '''Construct a path to the queue dir for a queue'''
-    return _path(p_queue, _c.FSQ_QUEUE)
+    return _path(p_queue, _c.FSQ_QUEUE, root=root)
 
-def fail(p_queue):
+def fail(p_queue, root=_c.FSQ_ROOT):
     '''Construct a path to the fail dir for a queue'''
-    return _path(p_queue, _c.FSQ_FAIL)
+    return _path(p_queue, _c.FSQ_FAIL, root=root)
 
-def done(p_queue):
+def done(p_queue, root=_c.FSQ_ROOT):
     '''Construct a path to the done dir for a queue'''
-    return _path(p_queue, _c.FSQ_DONE)
+    return _path(p_queue, _c.FSQ_DONE, root=root)
 
-def down(p_queue):
+def down(p_queue, root=_c.FSQ_ROOT):
     '''Construct a path to the down file for a queue'''
-    return _path(p_queue, _c.FSQ_DOWN)
+    return _path(p_queue, _c.FSQ_DOWN, root=root)
 
-def item(p_queue, queue_id):
+def hosts(p_queue, root=_c.FSQ_ROOT):
+    '''Construct a path to the down file for a queue'''
+    return _path(p_queue, _c.FSQ_HOSTS, root=root)
+
+def item(p_queue, queue_id, root=_c.FSQ_ROOT):
     '''Construct a path to a queued item'''
-    return os.path.join(_path(p_queue, _c.FSQ_QUEUE), valid_name(queue_id))
+    return os.path.join(_path(p_queue, _c.FSQ_QUEUE, root=root),
+                        valid_name(queue_id))
 
-def trigger(p_queue):
+def trigger(p_queue, root=_c.FSQ_ROOT):
     '''Construct a path to a trigger (FIFO)'''
-    return _path(p_queue, _c.FSQ_TRIGGER)
+    return _path(p_queue, _c.FSQ_TRIGGER, root=root)

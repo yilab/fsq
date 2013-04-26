@@ -36,6 +36,8 @@ FSQ_TRIGGER = coerce_unicode(os.environ.get("FSQ_TRIGGER", u'trigger-s'),
                              FSQ_CHARSET)
 FSQ_ROOT = coerce_unicode(os.environ.get("FSQ_ROOT", u'/var/fsq'),
                           FSQ_CHARSET)
+FSQ_HOSTS = coerce_unicode(os.environ.get("FSQ_HOSTS", u'hosts'),
+                          FSQ_CHARSET)
 
 # these 2 default to None, as gid/uid may change in due course
 # when using these 2, default to os.getgid(), os.getuid()
