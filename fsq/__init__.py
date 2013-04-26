@@ -31,7 +31,7 @@ import path # has tests
 # configure relies on: exceptions, path, constants, internal, hosts
 from configure import down, up, is_down, trigger, untrigger, trigger_pull,\
                       down_host, up_host, host_is_down, host_trigger,\
-                      host_untrigger, host_trigger_pull# has tests
+                      host_untrigger, host_trigger_pull, hosts # has tests
 
 # install relies on exceptions, path, constants, configure, internal, hosts
 from install import install, uninstall, install_host, uninstall_host # has tests
@@ -54,9 +54,6 @@ from items import FSQWorkItem
 
 # scan relies on: exceptions, constants, path, items, configure, internal
 from scan import FSQScanGenerator, scan
-
-# hosts relies on: exceptions, path
-from hosts import hosts
 
 __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'FSQMalformedEntryError', 'FSQCoerceError', 'FSQEnqueueError',

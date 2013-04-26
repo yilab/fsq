@@ -1,10 +1,11 @@
 # fsq -- a python ligbrary for manipulating and introspecting FSQ queues
 # @author: Matthew Story <matt.story@axial.net>
+# @author: Jeff Rand <jeff.rand@axial.net>
 #
 # fsq/configure.py -- provides queue configuration functions: down, up, is_down
 #                     trigger, untrigger, trigger_pull, down_host, up_host,
 #                     host_is_down, host_trigger, host_untrigger,
-#                     host_trigger_pull
+#                     host_trigger_pull, hosts
 #
 #     fsq is all unicode internally, if you pass in strings,
 #     they will be explicitly coerced to unicode.
@@ -14,7 +15,7 @@ import os
 import errno
 
 from . import constants as _c, path as fsq_path, FSQConfigError,\
-              FSQTriggerPullError, hosts
+              FSQTriggerPullError, FSQHostsError, FSQError
 from .internal import uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
@@ -103,11 +104,12 @@ def is_down(queue, root=_c.FSQ_ROOT):
         raise FSQConfigError(e.errno, wrap_io_os_err(e))
     return True
 
-def trigger(queue, user=None, group=None, mode=None, root=_c.FSQ_ROOT):
+def trigger(queue, user=None, group=None, mode=None, root=_c.FSQ_ROOT,
+            trigger=_c.FSQ_TRIGGER):
     '''Installs a trigger for the specified queue.'''
     # default our owners and mode
     user, group, mode = _dflts(user, group, mode)
-    trigger_path = fsq_path.trigger(queue, root=root)
+    trigger_path = fsq_path.trigger(queue, root=root, trigger=trigger)
     created = False
     try:
         # mkfifo is incapable of taking unicode, coerce back to str
@@ -131,10 +133,10 @@ def trigger(queue, user=None, group=None, mode=None, root=_c.FSQ_ROOT):
             _cleanup(trigger_path, e)
         _raise(trigger_path, e)
 
-def untrigger(queue, root=_c.FSQ_ROOT):
+def untrigger(queue, root=_c.FSQ_ROOT, trigger=_c.FSQ_TRIGGER):
     '''Uninstalls the trigger for the specified queue -- if a queue has no
        trigger, this function is a no-op.'''
-    trigger_path = fsq_path.trigger(queue, root=root)
+    trigger_path = fsq_path.trigger(queue, root=root, trigger=trigger)
     _queue_ok(os.path.dirname(trigger_path))
     try:
         os.unlink(trigger_path)
@@ -142,11 +144,12 @@ def untrigger(queue, root=_c.FSQ_ROOT):
         if e.errno != errno.ENOENT:
             raise FSQConfigError(e.errno, wrap_io_os_err(e))
 
-def trigger_pull(queue, ignore_listener=False, root=_c.FSQ_ROOT):
+def trigger_pull(queue, ignore_listener=False, root=_c.FSQ_ROOT,
+                 trigger=_c.FSQ_TRIGGER):
     '''Write a non-blocking byte to a trigger fifo, to cause a triggered
        scan'''
     fd = None
-    trigger_path = fsq_path.trigger(queue, root=root)
+    trigger_path = fsq_path.trigger(queue, root=root, trigger=trigger)
     _queue_ok(os.path.dirname(trigger_path))
     try:
         fd = os.open(trigger_path,
@@ -174,17 +177,25 @@ def host_is_down(trg_queue, host):
     return is_down(host, root=fsq_path.hosts(trg_queue))
 
 def host_trigger(trg_queue, user=None, group=None, mode=None):
-    root=fsq_path.hosts(trg_queue)
-    for host in hosts(trg_queue):
-        trigger(host, user=user, group=group, mode=mode, root=root)
+    trigger(trg_queue, user=user, group=group, mode=mode,
+            trigger=_c.FSQ_HOSTS_TRIGGER)
 
 def host_untrigger(trg_queue):
-    root=fsq_path.hosts(trg_queue)
-    for host in hosts(trg_queue):
-        untrigger(host, root=root)
+    untrigger(trg_queue, trigger=_c.FSQ_HOSTS_TRIGGER)
 
 def host_trigger_pull(trg_queue, ignore_listener=False):
-    root=fsq_path.hosts(trg_queue)
-    for host in hosts(trg_queue):
-        trigger_pull(host, ignore_listener=ignore_listener, root=root)
+    trigger_pull(trg_queue, ignore_listener=ignore_listener,
+                 trigger=_c.FSQ_HOSTS_TRIGGER)
+
+def hosts(trg_queue):
+    root = fsq_path.hosts(trg_queue)
+    try:
+        return tuple(os.listdir(root))
+    except (OSError, IOError), e:
+        if e.errno == errno.ENOENT:
+            raise FSQHostsError(e.errno, u'no such host:'\
+                               u' {0}'.format(root))
+        elif isinstance(e, FSQError):
+            raise e
+        raise FSQHostsError(e.errno, wrap_io_os_err(e))
 

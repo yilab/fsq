@@ -58,11 +58,14 @@ def hosts(p_queue, root=_c.FSQ_ROOT):
     '''Construct a path to the down file for a queue'''
     return _path(p_queue, _c.FSQ_HOSTS, root=root)
 
+def hostpath(p_queue, root=_c.FSQ_ROOT):
+    return _path(p_queue, _c.FSQ_HOSTS, root=root)
+
 def item(p_queue, queue_id, root=_c.FSQ_ROOT):
     '''Construct a path to a queued item'''
     return os.path.join(_path(p_queue, _c.FSQ_QUEUE, root=root),
                         valid_name(queue_id))
 
-def trigger(p_queue, root=_c.FSQ_ROOT):
+def trigger(p_queue, root=_c.FSQ_ROOT, trigger=_c.FSQ_TRIGGER):
     '''Construct a path to a trigger (FIFO)'''
-    return _path(p_queue, _c.FSQ_TRIGGER, root=root)
+    return _path(p_queue, trigger, root=root)
