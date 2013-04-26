@@ -84,3 +84,7 @@ class FSQFailError(FSQError):
 class FSQTriggerPullError(FSQError):
     '''Error pulling a trigger (writing a byte O_NONBLOCK to a fifo)'''
     pass
+
+class FSQHostsError(FSQError):
+    '''An error occured while trying to read host queue(s) '''
+    pass

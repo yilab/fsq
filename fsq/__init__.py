@@ -15,7 +15,8 @@ from exceptions import FSQError, FSQEnvError, FSQEncodeError,\
                        FSQPathError, FSQInstallError, FSQCannotLockError,\
                        FSQWorkItemError, FSQTTLExpiredError,\
                        FSQMaxTriesError, FSQScanError, FSQDownError,\
-                       FSQDoneError, FSQFailError, FSQTriggerPullError
+                       FSQDoneError, FSQFailError, FSQTriggerPullError,\
+                       FSQHostsError
 
 # constants relies on: exceptions, internal
 import constants
@@ -50,6 +51,9 @@ from items import FSQWorkItem
 # scan relies on: exceptions, constants, path, items, configure, internal
 from scan import FSQScanGenerator, scan
 
+#TODO add something interesting here
+from hosts import hosts
+
 __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'FSQMalformedEntryError', 'FSQCoerceError', 'FSQEnqueueError',
             'FSQConfigError', 'FSQCannotLock', 'FSQWorkItemError',
@@ -61,4 +65,5 @@ __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'uninstall', 'encode', 'decode', 'construct', 'deconstruct',
             'enqueue', 'senqueue', 'venqueue', 'vsenqueue', 'success', 'fail',
             'done', 'fail_tmp', 'fail_perm', 'FSQWorkItem',
-            'FSQScanGenerator', 'scan', 'install_host', ]
+            'FSQScanGenerator', 'scan', 'install_host', 'FSQHostsError',
+            'hosts', ]
