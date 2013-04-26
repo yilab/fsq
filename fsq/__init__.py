@@ -1,5 +1,6 @@
 # fsq -- a python library for manipulating and introspecting FSQ queues
 # @author: Matthew Story <matt.story@axial.net>
+# @author: Jeff Rand <jeff.rand@axial.net>
 #
 # fsq/__init__.py -- wraps fsq in a bow.
 #
@@ -27,11 +28,13 @@ from const import const, set_const # has tests
 # path relies on: exceptions, constants, internal
 import path # has tests
 
-# configure relies on: exceptions, path, constants, internal
-from configure import down, up, is_down, trigger, untrigger, trigger_pull # has tests
+# configure relies on: exceptions, path, constants, internal, hosts
+from configure import down, up, is_down, trigger, untrigger, trigger_pull,\
+                      down_host, up_host, host_is_down, host_trigger,\
+                      host_untrigger, host_trigger_pull# has tests
 
-# install relies on exceptions, path, constants, configure, internal
-from install import install, uninstall, install_host # has tests
+# install relies on exceptions, path, constants, configure, internal, hosts
+from install import install, uninstall, install_host, uninstall_host # has tests
 
 # encode relies on: constants, exceptions, internal
 from encode import encode, decode # has tests
@@ -51,7 +54,7 @@ from items import FSQWorkItem
 # scan relies on: exceptions, constants, path, items, configure, internal
 from scan import FSQScanGenerator, scan
 
-#TODO add something interesting here
+# hosts relies on: exceptions, path
 from hosts import hosts
 
 __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
@@ -66,4 +69,6 @@ __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'enqueue', 'senqueue', 'venqueue', 'vsenqueue', 'success', 'fail',
             'done', 'fail_tmp', 'fail_perm', 'FSQWorkItem',
             'FSQScanGenerator', 'scan', 'install_host', 'FSQHostsError',
-            'hosts', ]
+            'hosts', 'down_host', 'up_host', 'host_is_down', 'host_trigger',
+            'host_untrigger', 'host_trigger_pull', 'host_root',
+            'uninstall_host', ]

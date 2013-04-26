@@ -1,5 +1,6 @@
 # fsq -- a python library for manipulating and introspecting FSQ queues
 # @author: Matthew Story <matt.story@axial.net>
+# @author: Jeff Rand <jeff.rand@axial.net>
 #
 # fsq/enqueue.py -- provides queue (un)install functions: install, uninstall
 #
@@ -13,7 +14,7 @@ import tempfile
 import shutil
 
 from . import constants as _c, path as fsq_path, FSQInstallError, FSQError,\
-              down, trigger
+              down, trigger, down_host
 from .internal import uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
@@ -109,11 +110,12 @@ def _instqueue(trg_queue, uid, gid, root=_c.FSQ_ROOT, is_down=False,
 ####### EXPOSED METHODS #######
 def install(trg_queue, is_down=False, is_triggered=False, user=None,
             group=None, mode=None, item_user=None, item_group=None,
-            item_mode=None):
+            item_mode=None, hosts=None):
     '''Atomically install a queue'''
     mode, user, group, item_user, item_group, item_mode =\
         _def_mode(mode, user, group, item_user, item_group, item_mode)
-
+    if hosts and not hasattr(hosts, '__iter__'):
+        raise TypeError
     # validate here, so that we don't throw an odd exception on the tmp name
     trg_queue = fsq_path.valid_name(trg_queue)
     # uid_gid makes calls to the pw db and|or gr db, in addition to
@@ -123,6 +125,11 @@ def install(trg_queue, is_down=False, is_triggered=False, user=None,
     _instqueue(trg_queue, uid, gid, is_down=is_down, is_triggered=is_triggered,
               user=user, group=group, mode=mode, item_user=item_user,
               item_group=item_group, item_mode=item_mode)
+    if hosts:
+        install_host(trg_queue, hosts, is_down=is_down,  user=user,
+                     group=group, mode=mode, item_user=item_user,
+                     item_group=item_group, item_mode=item_mode)
+
 
 def uninstall(trg_queue, item_user=None, item_group=None, item_mode=None):
     '''Idempotently uninstall a queue, should you want to subvert FSQ_ROOT
@@ -145,7 +152,26 @@ def uninstall(trg_queue, item_user=None, item_group=None, item_mode=None):
             raise e
         raise FSQInstallError(e.errno, wrap_io_os_err(e))
 
-def install_host(trg_queue, hosts, user=None, group=None, mode=None,
+def uninstall_host(trg_queue, host, item_user=None, item_group=None,
+                   item_mode=None):
+    try:
+        root = fsq_path.hosts(trg_queue)
+        # immediately down the queue
+        down_host(trg_queue, host, user=item_user, group=item_group,
+             mode=(_c.FSQ_ITEM_MODE if item_mode is None else item_mode))
+        tmp_full, tmp_queue = _tmp_trg(host, root)
+        os.rename(fsq_path.base(host, root), tmp_full)
+        # this makes me uneasy ... but here we go magick
+        shutil.rmtree(tmp_full)
+    except (OSError, IOError, ), e:
+        if e.errno == errno.ENOENT:
+            raise FSQInstallError(e.errno, u'no such queue:'\
+                                  ' {0}'.format(trg_queue))
+        if isinstance(e, FSQError):
+            raise e
+        raise FSQInstallError(e.errno, wrap_io_os_err(e))
+
+def install_host(trg_queue, hosts=None, user=None, group=None, mode=None,
                  item_user=None, item_group=None, item_mode=None,
                  is_down=False):
     ''' Atomically install host queues '''
@@ -153,13 +179,13 @@ def install_host(trg_queue, hosts, user=None, group=None, mode=None,
     mode, user, group, item_user, item_group, item_mode =\
         _def_mode(mode, user, group, item_user, item_group, item_mode)
     uid, gid = uid_gid(user, group)
-    # TODO dont break if folder exists
-    _instdir(fsq_path.hosts(trg_queue), mode, uid, gid)
-    for host in hosts:
-        host = fsq_path.valid_name(host)
-        root= u'/'.join([ _c.FSQ_ROOT, trg_queue, _c.FSQ_HOSTS, ])
-        _instqueue(host, uid, gid, root=root, is_down=is_down, user=user,
-                   group=group, mode=mode, item_user=item_user,
-                   item_group=item_group, item_mode=item_mode)
-
+    if not os.path.exists(fsq_path.hosts(trg_queue)):
+        _instdir(fsq_path.hosts(trg_queue), mode, uid, gid)
+    root = fsq_path.hosts(trg_queue)
+    if hosts:
+        for host in hosts:
+            host = fsq_path.valid_name(host)
+            _instqueue(host, uid, gid, root=root, is_down=is_down, user=user,
+                       group=group, mode=mode, item_user=item_user,
+                       item_group=item_group, item_mode=item_mode)
 
