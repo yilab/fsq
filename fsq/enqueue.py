@@ -225,7 +225,7 @@ def vreenqueue(item_f, args, **kwargs):
         item_id = item_f
         item_f = fsq_path.item(src_queue, item_f)
     elif hasattr(item_f, 'queue'):
-        item_id = u''.join([ item_f.id, u'_'.join(item_f.arguments), ])
+        item_id = item_f.id
         src_queue = item_f.queue
         item_f = fsq_path.item(item_f.queue, item_f.id)
     elif None is item_id:
@@ -260,12 +260,12 @@ def vreenqueue(item_f, args, **kwargs):
             # hard link directly to tmp
             if link:
                 try:
-                    os.link(fsq_path.item(src_queue, item_id, root=root),
+                    os.link(fsq_path.item(src_queue, item_id),
                                           tmp_name)
                 except (OSError, IOError, ), e:
                     if e.errno == errno.EEXIST:
                         os.unlink(tmp_name)
-                        os.link(fsq_path.tmp(src_queue, item_id, root=root),
+                        os.link(fsq_path.tmp(src_queue, item_id),
                                              tmp_name)
                         continue
                     raise FSQReenqueueError(e.errno, wrap_io_os_err(e))

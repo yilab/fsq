@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# fsq-scan(1) -- a program for scanning an fsq queue, and executing programs
+# fsq-scan(1) -- a program for scanning a fsq queue, and executing programs
 #                with item arguments and environments. should the executed
 #                program exit FSQ_SUCCESS (default: 0), the queue item will be
 #                marked ``done'', should the program exit FSQ_FAIL_TMP
