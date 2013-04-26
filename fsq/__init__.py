@@ -17,7 +17,7 @@ from exceptions import FSQError, FSQEnvError, FSQEncodeError,\
                        FSQWorkItemError, FSQTTLExpiredError,\
                        FSQMaxTriesError, FSQScanError, FSQDownError,\
                        FSQDoneError, FSQFailError, FSQTriggerPullError,\
-                       FSQHostsError
+                       FSQHostsError, FSQReenqueueError
 
 # constants relies on: exceptions, internal
 import constants
@@ -43,7 +43,8 @@ from encode import encode, decode # has tests
 from construct import construct, deconstruct # has tests
 
 # enqueue relies on: constants, exceptions, path, internal, mkitem
-from enqueue import enqueue, senqueue, venqueue, vsenqueue
+from enqueue import enqueue, senqueue, venqueue, vsenqueue, reenqueue,\
+                    sreenqueue, vreenqueue, vsreenqueue
 
 # done relies on: constants, exceptions, path, internal, mkitem
 from done import done, success, fail, fail_tmp, fail_perm
@@ -71,4 +72,5 @@ __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'FSQScanGenerator', 'scan', 'install_host', 'FSQHostsError',
             'hosts', 'down_host', 'up_host', 'host_is_down', 'host_trigger',
             'host_untrigger', 'host_trigger_pull', 'host_root',
-            'uninstall_host', ]
+            'uninstall_host', 'FSQReenqueueError', 'reenqueue', 'sreenqueue',
+            'vreenqueue', 'vsreenqueue', ]

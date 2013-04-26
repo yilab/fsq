@@ -1,8 +1,10 @@
 # fsq -- a python library for manipulating and introspecting FSQ queues
 # @author: Matthew Story <matt.story@axial.net>
+# @author: Jeff Rand <jeff.rand@axial.net>
 #
 # fsq/enqueue.py -- provides enqueueing functions: enqueue, senqueue,
-#                   venqueue, vsenqueue
+#                   venqueue, vsenqueue, reenqueue, sreenqueue, vreenqueue,
+#                   vsreenqueue
 #
 #     fsq is all unicode internally, if you pass in strings,
 #     they will be explicitly coerced to unicode.
@@ -17,8 +19,8 @@ import select
 from cStringIO import StringIO
 from contextlib import closing
 
-from . import FSQEnqueueError, FSQCoerceError, FSQError, constants as _c,\
-              path as fsq_path, construct
+from . import FSQEnqueueError, FSQCoerceError, FSQError, FSQReenqueueError,\
+              constants as _c, path as fsq_path, construct
 from .internal import rationalize_file, wrap_io_os_err, fmt_time,\
                       coerce_unicode, uid_gid
 
@@ -43,7 +45,6 @@ def _mkentropy(pid, now, host):
         _ENTROPY_TIME = now
         _ENTROPY_HOST = host
         _ENTROPY = 0
-
     return _ENTROPY
 
 ####### EXPOSED METHODS #######
@@ -178,3 +179,143 @@ def vsenqueue(trg_queue, item_s, args, **kwargs):
                                  u' charset {0}'.format(charset))
 
     return venqueue(trg_queue, StringIO(item_s), args, **kwargs)
+
+def reenqueue(item_f, *args, **kwargs):
+    '''Enqueue the contents of a file, or file-like object, FSQWorkItem,
+       file-descriptor or the contents of a files queues at an address
+       (e.g. '/my/file') queue with arbitrary arguments from one queue to
+       other queues, reenqueue is to vreenqueue what printf is to vprintf
+    '''
+    return vreenqueue(item_f, args, **kwargs)
+
+def sreenqueue(item_id, item_s, *args, **kwargs):
+    '''Enqueue a string, or string-like object to other queues, with arbitrary
+       arguments, sreenqueue is to reenqueue what sprintf is to printf,
+       sreenqueue is to vsreenqueue what sprintf is to vsprintf.
+    '''
+    return vsreenqueue(item_id, item_s, args, **kwargs)
+
+def vreenqueue(item_f, args, **kwargs):
+    '''Enqueue the contents of a file, or file-like object, FSQWorkItem,
+       file-descriptor or the contents of a files queues at an address
+       (e.g. '/my/file') queue with arbitrary arguments from one queue to
+       other queues, reenqueue is to vreenqueue what printf is to vprintf
+    '''
+    item_id = kwargs.pop('item_id', None)
+    src_queue = kwargs.pop('src_queue', None)
+    link = kwargs.pop('link', False)
+    if isinstance(item_f, basestring):
+        if None is src_queue:
+            raise TypeError
+        item_id = item_f
+        item_f = fsq_path.item(src_queue, item_f)
+    elif hasattr(item_f, 'queue'):
+        item_id = u''.join([ item_f.id, u'_'.join(item_f.arguments), ])
+        src_queue = item_f.queue
+        item_f = fsq_path.item(item_f.queue, item_f.id)
+    elif None is item_id:
+        raise FSQReenqueueError('Improper argmuents')
+    try:
+        src_file = rationalize_file(item_f, _c.FSQ_CHARSET)
+    except (OSError, IOError, ), e:
+        raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
+    try:
+        real_file = True if hasattr(src_file, 'fileno') else False
+        msg = []
+        while True:
+            if real_file:
+                reads, dis, card = select.select([src_file], [], [])
+                try:
+                    line = os.read(reads[0].fileno(), 2048)
+                    if 0 == len(msg):
+                        break
+                    msg.append(line)
+                except (OSError, IOError, ), e:
+                    if e.errno in (errno.EWOULDBLOCK, errno.EAGAIN,):
+                        continue
+                    raise e
+            else:
+                line = src_file.readline()
+                break
+        if isinstance(args, basestring):
+             args = (args,)
+        for queue in args:
+            tmp_name = os.path.join(fsq_path.tmp(queue), item_id)
+            # hard link directly to tmp
+            if link:
+                try:
+                    os.link(fsq_path.item(src_queue, item_id), tmp_name)
+                except (OSError, IOError, ), e:
+                    if e.errno == errno.EEXIST:
+                        os.unlink(tmp_name)
+                        os.link(fsq_path.tmp(src_queue, item_id), tmp_name)
+                        continue
+                    raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
+            # read src_file once and copy to n trg_queues
+            else:
+                trg_fd = os.open(tmp_name, os.O_RDWR|os.O_CREAT|os.O_TRUNC)
+                with closing(os.fdopen(trg_fd, 'wb', 1)) as trg_file:
+                    trg_file.write(u''.join(msg))
+                    # flush buffers, and force write to disk pre mv.
+                    trg_file.flush()
+                    os.fsync(trg_file.fileno())
+        for queue in args:
+            tmp_name = os.path.join(fsq_path.tmp(queue), item_id)
+            # hard-link into queue, unlink tmp, failure case here leaves
+            # cruft in tmp, but no race condition into queue
+            try:
+                os.link(tmp_name, os.path.join(fsq_path.item(queue, item_id)))
+            except (OSError, IOError, ), e:
+                if link and not e.errno == errno.EEXIST:
+                    raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
+            finally:
+                os.unlink(tmp_name)
+    except Exception, e:
+        try:
+            if not link:
+                os.close(trg_fd)
+        except (OSError, IOError, ), err:
+            if err.errno != errno.EBADF:
+                raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
+        try:
+            for queue in args:
+                tmp_name = os.path.join(fsq_path.tmp(queue), item_id)
+                try:
+                    os.unlink(tmp_name)
+                except (OSError, IOError, ), err:
+                    if err.errno == errno.ENOENT:
+                        pass
+        except (OSError, IOError, ), err:
+            if err.errno != errno.ENOENT:
+               raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
+        except OSError, err:
+            if err.errno != errno.ENOENT:
+               raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
+        if (isinstance(e, OSError) or isinstance(e, IOError)) and\
+                not isinstance(e, FSQError):
+            raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
+        raise e
+    finally:
+        src_file.close()
+
+def vsreenqueue(item_id, item_s, args, **kwargs):
+    '''Enqueue a string, or string-like object to other queues, with arbitrary
+       arguments, sreenqueue is to reenqueue what sprintf is to printf,
+       sreenqueue is to vsreenqueue what sprintf is to vsprintf.
+    '''
+    charset = kwargs.get('charset', _c.FSQ_CHARSET)
+    if kwargs.has_key('charset'):
+        del kwargs['charset']
+
+    kwargs['item_id'] = item_id
+    # we coerce here because StringIO.StringIO will coerce on file-write,
+    # and cStringIO.StringIO has a bug which injects NULs for unicode
+    if isinstance(item_s, unicode):
+        try:
+            item_s = item_s.encode(charset)
+        except UnicodeEncodeError:
+            raise FSQCoerceError(errno.EINVAL, u'cannot encode item with'\
+                                 u' charset {0}'.format(charset))
+
+    return vreenqueue(StringIO(item_s), args, **kwargs)
+

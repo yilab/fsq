@@ -88,3 +88,7 @@ class FSQTriggerPullError(FSQError):
 class FSQHostsError(FSQError):
     '''An error occured while trying to read host queue(s) '''
     pass
+
+class FSQReenqueueError(FSQError):
+    '''An error occured while reenqueuing an item'''
+
