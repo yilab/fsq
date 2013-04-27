@@ -31,41 +31,52 @@ def valid_name(name):
                                   u' {0}'.format(name))
     return name
 
-def base(p_queue, root=_c.FSQ_ROOT):
-    return _path(p_queue, root=root)
+def base(p_queue, host=None):
+    if host:
+        return _path(host, root=hosts(p_queue))
+    return _path(p_queue)
 
-def tmp(p_queue, root=_c.FSQ_ROOT):
+def tmp(p_queue, host=None):
+    if host:
+        return _path(_c.FSQ_TMP, root=_path(host, root=hosts(p_queue)))
     '''Construct a path to the tmp dir for a queue'''
-    return _path(p_queue, _c.FSQ_TMP, root=root)
+    return _path(p_queue, _c.FSQ_TMP)
 
-def queue(p_queue, root=_c.FSQ_ROOT):
+def queue(p_queue, host=None):
     '''Construct a path to the queue dir for a queue'''
-    return _path(p_queue, _c.FSQ_QUEUE, root=root)
+    if host:
+        return _path(_c.FSQ_QUEUE, root=_path(host, root=hosts(p_queue)))
+    return _path(p_queue, _c.FSQ_QUEUE)
 
-def fail(p_queue, root=_c.FSQ_ROOT):
+def fail(p_queue, host=None):
+    if host:
+        return _path(_c.FSQ_FAIL, root=_path(host, root=hosts(p_queue)))
     '''Construct a path to the fail dir for a queue'''
-    return _path(p_queue, _c.FSQ_FAIL, root=root)
+    return _path(p_queue, _c.FSQ_FAIL)
 
-def done(p_queue, root=_c.FSQ_ROOT):
+def done(p_queue, host=None):
+    if host:
+        return _path(_c.FSQ_DONE, root=_path(host, root=hosts(p_queue)))
     '''Construct a path to the done dir for a queue'''
-    return _path(p_queue, _c.FSQ_DONE, root=root)
+    return _path(p_queue, _c.FSQ_DONE)
 
-def down(p_queue, root=_c.FSQ_ROOT):
+def down(p_queue, host=None):
+    if host:
+        return _path(_c.FSQ_DOWN, root=_path(host, root=hosts(p_queue)))
     '''Construct a path to the down file for a queue'''
-    return _path(p_queue, _c.FSQ_DOWN, root=root)
+    return _path(p_queue, _c.FSQ_DOWN)
 
-def hosts(p_queue, root=_c.FSQ_ROOT):
-    '''Construct a path to the down file for a queue'''
-    return _path(p_queue, _c.FSQ_HOSTS, root=root)
+def hosts(p_queue):
+    '''Construct a path to the hosts path for a queue'''
+    return _path(p_queue, _c.FSQ_HOSTS)
 
-def hostpath(p_queue, root=_c.FSQ_ROOT):
-    return _path(p_queue, _c.FSQ_HOSTS, root=root)
-
-def item(p_queue, queue_id, root=_c.FSQ_ROOT):
+def item(p_queue, queue_id, host=None):
+    if host:
+        return os.path.join(_path(host, _c.FSQ_QUEUE, root=hosts(p_queue)),
+                            valid_name(queue_id))
     '''Construct a path to a queued item'''
-    return os.path.join(_path(p_queue, _c.FSQ_QUEUE, root=root),
-                        valid_name(queue_id))
+    return os.path.join(_path(p_queue, _c.FSQ_QUEUE), valid_name(queue_id))
 
-def trigger(p_queue, root=_c.FSQ_ROOT, trigger=_c.FSQ_TRIGGER):
+def trigger(p_queue, trigger=_c.FSQ_TRIGGER):
     '''Construct a path to a trigger (FIFO)'''
-    return _path(p_queue, trigger, root=root)
+    return _path(p_queue, trigger)

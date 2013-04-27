@@ -51,13 +51,12 @@ def _formhostpath(args, hosts, all_hosts):
     path = []
     if not hosts and not all_hosts:
         for arg in args:
-            path.append((arg, _c.FSQ_ROOT),)
-    else:
-        for arg in args:
-            if all_hosts:
-                hosts = fsq_hosts(arg)
-            for host in hosts:
-                path.append((host, fsq_path.hostpath(arg)))
+            return ((arg, None),)
+    for arg in args:
+        if all_hosts:
+            hosts = fsq_hosts(arg)
+        for host in hosts:
+            path.append((arg, host))
     return tuple(path)
 
 ####### EXPOSED METHODS #######
@@ -255,18 +254,16 @@ def vreenqueue(item_f, args, **kwargs):
         if isinstance(args, basestring):
              args = (args,)
         paths = _formhostpath(args, hosts, all_hosts)
-        for queue, root in paths:
-            tmp_name = os.path.join(fsq_path.tmp(queue, root=root), item_id)
+        for queue, host in paths:
+            tmp_name = os.path.join(fsq_path.tmp(queue, host=host), item_id)
             # hard link directly to tmp
             if link:
                 try:
-                    os.link(fsq_path.item(src_queue, item_id),
-                                          tmp_name)
+                    os.link(fsq_path.item(src_queue, item_id), tmp_name)
                 except (OSError, IOError, ), e:
                     if e.errno == errno.EEXIST:
                         os.unlink(tmp_name)
-                        os.link(fsq_path.tmp(src_queue, item_id),
-                                             tmp_name)
+                        os.link(fsq_path.tmp(src_queue, item_id), tmp_name)
                         continue
                     raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
             # read src_file once and copy to n trg_queues
@@ -277,18 +274,19 @@ def vreenqueue(item_f, args, **kwargs):
                     # flush buffers, and force write to disk pre mv.
                     trg_file.flush()
                     os.fsync(trg_file.fileno())
-        for queue, root in paths:
-            tmp_name = os.path.join(fsq_path.tmp(queue, root=root), item_id)
+        for queue, host in paths:
+            tmp_name = os.path.join(fsq_path.tmp(queue, host=host), item_id)
             # hard-link into queue, unlink tmp, failure case here leaves
             # cruft in tmp, but no race condition into queue
             try:
                 os.link(tmp_name, os.path.join(fsq_path.item(queue, item_id,
-                                                             root=root)))
+                                                             host=host)))
             except (OSError, IOError, ), e:
                 if link and not e.errno == errno.EEXIST:
                     raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
             finally:
                 os.unlink(tmp_name)
+        return item_id
     except Exception, e:
         try:
             if not link:
@@ -297,9 +295,9 @@ def vreenqueue(item_f, args, **kwargs):
             if err.errno != errno.EBADF:
                 raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
         try:
-            for queue, root in paths:
-                tmp_name = os.path.join(fsq_path.tmp(queue, root=root),
-                                        item_id)
+            for queue, host in paths:
+                tmp_name = os.path.join(fsq_path.tmp(queue, host=host),
+                                                     item_id)
                 try:
                     os.unlink(tmp_name)
                 except (OSError, IOError, ), err:

@@ -43,7 +43,7 @@ def _instdir(trg_dir, mode, uid, gid):
         raise FSQInstallError(e.errno, wrap_io_os_err(e))
 
 # make a hidden tmp target queue
-def _tmp_trg(trg_queue, root):
+def _tmp_trg(trg_queue, root=_c.FSQ_ROOT):
     tmp_queue = None
     try:
         tmp_queue = tempfile.mkdtemp(u'', u''.join([u'.', trg_queue]), root)
@@ -68,10 +68,23 @@ def _def_mode(mode, user, group, item_user, item_group, item_mode):
     item_mode = _c.FSQ_ITEM_MODE if mode is None else item_mode
     return mode, user, group, item_user, item_group, item_mode
 
-def _instqueue(trg_queue, uid, gid, root=_c.FSQ_ROOT, is_down=False,
-              is_triggered=False, user=None, group=None, mode=None,
-              item_user=None, item_group=None, item_mode=None):
-    tmp_full, tmp_queue = _tmp_trg(trg_queue, root)
+####### EXPOSED METHODS #######
+def install(trg_queue, is_down=False, is_triggered=False, user=None,
+            group=None, mode=None, item_user=None, item_group=None,
+            item_mode=None, hosts=None):
+
+    '''Atomically install a queue'''
+    mode, user, group, item_user, item_group, item_mode =\
+        _def_mode(mode, user, group, item_user, item_group, item_mode)
+    if hosts and not hasattr(hosts, '__iter__'):
+        raise TypeError
+    # validate here, so that we don't throw an odd exception on the tmp name
+    trg_queue = fsq_path.valid_name(trg_queue)
+    # uid_gid makes calls to the pw db and|or gr db, in addition to
+    # potentially stat'ing, as such, we want to avoid calling it unless we
+    # absoultely have to
+    uid, gid = uid_gid(user, group)
+    tmp_full, tmp_queue = _tmp_trg(trg_queue, _c.FSQ_ROOT)
     try:
         # open once to cut down on stat/open for chown/chmod combo
         fd = os.open(tmp_full, os.O_RDONLY)
@@ -84,10 +97,10 @@ def _instqueue(trg_queue, uid, gid, root=_c.FSQ_ROOT, is_down=False,
             os.close(fd)
 
         # bless our queue with its children
-        _instdir(fsq_path.tmp(tmp_queue, root=root), mode, uid, gid)
-        _instdir(fsq_path.queue(tmp_queue, root=root), mode, uid, gid)
-        _instdir(fsq_path.done(tmp_queue, root=root), mode, uid, gid)
-        _instdir(fsq_path.fail(tmp_queue, root=root), mode, uid, gid)
+        _instdir(fsq_path.tmp(tmp_queue), mode, uid, gid)
+        _instdir(fsq_path.queue(tmp_queue), mode, uid, gid)
+        _instdir(fsq_path.done(tmp_queue), mode, uid, gid)
+        _instdir(fsq_path.fail(tmp_queue), mode, uid, gid)
 
         # down via configure.down if necessary
         if is_down:
@@ -97,7 +110,7 @@ def _instqueue(trg_queue, uid, gid, root=_c.FSQ_ROOT, is_down=False,
                     mode=item_mode)
 
         # atomic commit -- by rename
-        os.rename(tmp_full, fsq_path.base(trg_queue, root=root))
+        os.rename(tmp_full, fsq_path.base(trg_queue))
     except (OSError, IOError, ), e:
         shutil.rmtree(tmp_full)
         if e.errno == errno.ENOTEMPTY:
@@ -107,24 +120,6 @@ def _instqueue(trg_queue, uid, gid, root=_c.FSQ_ROOT, is_down=False,
             raise e
         raise FSQInstallError(e.errno, wrap_io_os_err(e))
 
-####### EXPOSED METHODS #######
-def install(trg_queue, is_down=False, is_triggered=False, user=None,
-            group=None, mode=None, item_user=None, item_group=None,
-            item_mode=None, hosts=None):
-    '''Atomically install a queue'''
-    mode, user, group, item_user, item_group, item_mode =\
-        _def_mode(mode, user, group, item_user, item_group, item_mode)
-    if hosts and not hasattr(hosts, '__iter__'):
-        raise TypeError
-    # validate here, so that we don't throw an odd exception on the tmp name
-    trg_queue = fsq_path.valid_name(trg_queue)
-    # uid_gid makes calls to the pw db and|or gr db, in addition to
-    # potentially stat'ing, as such, we want to avoid calling it unless we
-    # absoultely have to
-    uid, gid = uid_gid(user, group)
-    _instqueue(trg_queue, uid, gid, is_down=is_down, is_triggered=is_triggered,
-              user=user, group=group, mode=mode, item_user=item_user,
-              item_group=item_group, item_mode=item_mode)
     if hosts:
         install_host(trg_queue, hosts, is_down=is_down,  user=user,
                      group=group, mode=mode, item_user=item_user,
@@ -155,12 +150,11 @@ def uninstall(trg_queue, item_user=None, item_group=None, item_mode=None):
 def uninstall_host(trg_queue, host, item_user=None, item_group=None,
                    item_mode=None):
     try:
-        root = fsq_path.hosts(trg_queue)
         # immediately down the queue
         down_host(trg_queue, host, user=item_user, group=item_group,
              mode=(_c.FSQ_ITEM_MODE if item_mode is None else item_mode))
-        tmp_full, tmp_queue = _tmp_trg(host, root)
-        os.rename(fsq_path.base(host, root), tmp_full)
+        tmp_full, tmp_queue = _tmp_trg(host, fsq_path.hosts(trg_queue))
+        os.rename(fsq_path.base(trg_queue, host), tmp_full)
         # this makes me uneasy ... but here we go magick
         shutil.rmtree(tmp_full)
     except (OSError, IOError, ), e:
@@ -181,11 +175,45 @@ def install_host(trg_queue, hosts=None, user=None, group=None, mode=None,
     uid, gid = uid_gid(user, group)
     if not os.path.exists(fsq_path.hosts(trg_queue)):
         _instdir(fsq_path.hosts(trg_queue), mode, uid, gid)
-    root = fsq_path.hosts(trg_queue)
+    host = fsq_path.hosts(trg_queue)
     if hosts:
         for host in hosts:
             host = fsq_path.valid_name(host)
-            _instqueue(host, uid, gid, root=root, is_down=is_down, user=user,
-                       group=group, mode=mode, item_user=item_user,
-                       item_group=item_group, item_mode=item_mode)
 
+            # uid_gid makes calls to the pw db and|or gr db, in addition to
+            # potentially stat'ing, as such, we want to avoid calling it
+            # unless we absoultely have to
+            uid, gid = uid_gid(user, group)
+            tmp_full, tmp_queue = _tmp_trg(host, fsq_path.hosts(trg_queue))
+            try:
+                # open once to cut down on stat/open for chown/chmod combo
+                fd = os.open(tmp_full, os.O_RDONLY)
+                try:
+                    # always fchmod here as mkdtemp is different than normal
+                    # mkdir
+                    os.fchmod(fd, mode)
+                    if -1 != uid or -1 != gid:
+                        os.fchown(fd, uid, gid)
+                finally:
+                    os.close(fd)
+
+                # bless our queue with its children
+                _instdir(fsq_path.tmp(trg_queue, tmp_queue), mode, uid, gid)
+                _instdir(fsq_path.queue(trg_queue, tmp_queue), mode, uid, gid)
+                _instdir(fsq_path.done(trg_queue, tmp_queue), mode, uid, gid)
+                _instdir(fsq_path.fail(trg_queue, tmp_queue), mode, uid, gid)
+
+                # down via configure.down if necessary
+                if is_down:
+                    down(tmp_queue, host, user=item_user, group=item_group,
+                         mode=item_mode)
+
+                # atomic commit -- by rename
+                os.rename(tmp_full, fsq_path.base(trg_queue, host))
+            except (OSError, IOError, ), e:
+                shutil.rmtree(tmp_full)
+                if e.errno == errno.ENOTEMPTY:
+                    raise FSQInstallError(e.errno, u'queue exists: {0}'.format(
+                                          trg_queue))
+                if isinstance(e, FSQError):
+                    raise e

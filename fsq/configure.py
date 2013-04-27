@@ -50,11 +50,11 @@ def _queue_ok(q_path):
         raise FSQConfigError(e.errno, wrap_io_os_err(e))
 
 ####### EXPOSED METHODS #######
-def down(queue, user=None, group=None, mode=None, root=_c.FSQ_ROOT) :
+def down(queue, user=None, group=None, mode=None, host=None) :
     '''Down a queue, by creating a down file'''
     # default our owners and mode
     user, group, mode = _dflts(user, group, mode)
-    down_path = fsq_path.down(queue, root=root)
+    down_path = fsq_path.down(queue, host=host)
     fd = None
     created = False
     try:
@@ -78,10 +78,10 @@ def down(queue, user=None, group=None, mode=None, root=_c.FSQ_ROOT) :
         if fd is not None:
             os.close(fd)
 
-def up(queue, root=_c.FSQ_ROOT):
+def up(queue, host=None):
     '''Up a queue, by removing a down file -- if a queue has no down file,
        this function is a no-op.'''
-    down_path = fsq_path.down(queue, root=root)
+    down_path = fsq_path.down(queue, host=host)
     _queue_ok(os.path.dirname(down_path))
     try:
         os.unlink(down_path)
@@ -89,9 +89,9 @@ def up(queue, root=_c.FSQ_ROOT):
         if e.errno != errno.ENOENT:
             raise FSQConfigError(e.errno, wrap_io_os_err(e))
 
-def is_down(queue, root=_c.FSQ_ROOT):
+def is_down(queue, host=None):
     '''Returns True if queue is down, False if queue is up'''
-    down_path = fsq_path.down(queue, root=root)
+    down_path = fsq_path.down(queue, host=host)
     _queue_ok(os.path.dirname(down_path))
     # use stat instead of os.path.exists because non-ENOENT errors are a
     # configuration issue, and should raise exeptions (e.g. if you can't
@@ -104,12 +104,12 @@ def is_down(queue, root=_c.FSQ_ROOT):
         raise FSQConfigError(e.errno, wrap_io_os_err(e))
     return True
 
-def trigger(queue, user=None, group=None, mode=None, root=_c.FSQ_ROOT,
+def trigger(queue, user=None, group=None, mode=None, host=None,
             trigger=_c.FSQ_TRIGGER):
     '''Installs a trigger for the specified queue.'''
     # default our owners and mode
     user, group, mode = _dflts(user, group, mode)
-    trigger_path = fsq_path.trigger(queue, root=root, trigger=trigger)
+    trigger_path = fsq_path.trigger(queue, host=host, trigger=trigger)
     created = False
     try:
         # mkfifo is incapable of taking unicode, coerce back to str
@@ -133,10 +133,10 @@ def trigger(queue, user=None, group=None, mode=None, root=_c.FSQ_ROOT,
             _cleanup(trigger_path, e)
         _raise(trigger_path, e)
 
-def untrigger(queue, root=_c.FSQ_ROOT, trigger=_c.FSQ_TRIGGER):
+def untrigger(queue, host=None, trigger=_c.FSQ_TRIGGER):
     '''Uninstalls the trigger for the specified queue -- if a queue has no
        trigger, this function is a no-op.'''
-    trigger_path = fsq_path.trigger(queue, root=root, trigger=trigger)
+    trigger_path = fsq_path.trigger(queue, host=host, trigger=trigger)
     _queue_ok(os.path.dirname(trigger_path))
     try:
         os.unlink(trigger_path)
@@ -144,12 +144,11 @@ def untrigger(queue, root=_c.FSQ_ROOT, trigger=_c.FSQ_TRIGGER):
         if e.errno != errno.ENOENT:
             raise FSQConfigError(e.errno, wrap_io_os_err(e))
 
-def trigger_pull(queue, ignore_listener=False, root=_c.FSQ_ROOT,
-                 trigger=_c.FSQ_TRIGGER):
+def trigger_pull(queue, ignore_listener=False, trigger=_c.FSQ_TRIGGER):
     '''Write a non-blocking byte to a trigger fifo, to cause a triggered
        scan'''
     fd = None
-    trigger_path = fsq_path.trigger(queue, root=root, trigger=trigger)
+    trigger_path = fsq_path.trigger(queue, trigger=trigger)
     _queue_ok(os.path.dirname(trigger_path))
     try:
         fd = os.open(trigger_path,
@@ -167,14 +166,13 @@ def trigger_pull(queue, ignore_listener=False, root=_c.FSQ_ROOT,
             os.close(fd)
 
 def down_host(trg_queue, host, user=None, group=None, mode=None):
-    down(host, user=user, group=group, mode=mode,
-         root=fsq_path.hosts(trg_queue))
+    down(trg_queue, user=user, group=group, mode=mode, host=host)
 
 def up_host(trg_queue, host):
-    up(host, root=fsq_path.hosts(trg_queue))
+    up(trg_queue, host=host)
 
 def host_is_down(trg_queue, host):
-    return is_down(host, root=fsq_path.hosts(trg_queue))
+    return is_down(trg_queue, host)
 
 def host_trigger(trg_queue, user=None, group=None, mode=None):
     trigger(trg_queue, user=user, group=group, mode=mode,
