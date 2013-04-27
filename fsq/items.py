@@ -49,7 +49,7 @@ class FSQWorkItem(object):
        mechanism.'''
     ####### MAGICAL METHODS AND ATTRS #######
     def __init__(self, trg_queue, item_id, max_tries=None, ttl=None,
-                 lock=None, no_open=False):
+                 lock=None, no_open=False, host=None):
         '''Construct an FSQWorkItem object from an item_id (file-name), and
            queue-name.  The lock kwarg will override the default locking
            preference (taken from environment).'''
@@ -60,6 +60,7 @@ class FSQWorkItem(object):
         self.ttl = _c.FSQ_TTL if ttl is None else ttl
         self.lock = _c.FSQ_LOCK if lock is None else lock
         self.item = None
+        self.host = host
 
         # open file immediately
         if not no_open:
@@ -124,7 +125,8 @@ class FSQWorkItem(object):
     def open(self):
         self.close()
         try:
-            self.item = rationalize_file(fsq_path.item(self.queue, self.id),
+            self.item = rationalize_file(fsq_path.item(self.queue, self.id,
+                                                       host=self.host),
                                          _c.FSQ_CHARSET, lock=self.lock)
         except (OSError, IOError, ), e:
             if e.errno == errno.ENOENT:

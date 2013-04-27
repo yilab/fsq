@@ -303,6 +303,7 @@ def vreenqueue(item_f, args, **kwargs):
                 except (OSError, IOError, ), err:
                     if err.errno == errno.ENOENT:
                         pass
+                raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
         except (OSError, IOError, ), err:
             if err.errno != errno.ENOENT:
                raise FSQReenqueueError(err.errno, wrap_io_os_err(err))

@@ -29,8 +29,8 @@ def fail_tmp(item, max_tries=None, ttl=None):
                                _c.FSQ_CHARSET), item.entropy,
                                item.pid, item.hostname,
                                item.tries, ) + tuple(item.arguments))
-        os.rename(fsq_path.item(item.queue, item.id),
-				  fsq_path.item(item.queue, new_name))
+        os.rename(fsq_path.item(item.queue, item.id, host=item.host),
+				  fsq_path.item(item.queue, new_name, host=item.host))
         return new_name
     except (FSQMaxTriesError, FSQTTLExpiredError, FSQEnqueueError, ), e:
         fail_perm(item)
@@ -46,9 +46,10 @@ def fail_perm(item):
     # as an item may fail permanantly due to malformed item_id-ness
     item_id = item.id
     trg_queue = item.queue
+    host = item.host
     try:
-        os.rename(fsq_path.item(trg_queue, item_id),
-                  os.path.join(fsq_path.fail(trg_queue), item_id))
+        os.rename(fsq_path.item(trg_queue, item_id, host=host),
+                  os.path.join(fsq_path.fail(trg_queue, host=host), item_id))
     except (OSError, IOError, ), e:
         raise FSQFailError(e.errno, u'cannot mv item to fail: {0}:'\
                            u' {1}'.format(item.id, wrap_io_os_err(e)))
@@ -74,8 +75,9 @@ def success(item):
     try:
         # mv to done
         trg_queue = item.queue
-        os.rename(fsq_path.item(trg_queue, item.id),
-                  os.path.join(fsq_path.done(trg_queue), item.id))
+        os.rename(fsq_path.item(trg_queue, item.id, host=item.host),
+                  os.path.join(fsq_path.done(trg_queue, host=item.host),
+                               item.id))
     except AttributeError, e:
         # DuckType TypeError'ing
         raise TypeError(u'item must be an FSQWorkItem, not:'\
