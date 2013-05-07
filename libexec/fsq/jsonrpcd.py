@@ -24,7 +24,7 @@ from jsonrpclib.SimpleJSONRPCServer import SimpleJSONRPCRequestHandler as handle
 
 
 _PROG = os.path.basename(sys.argv[0])
-_OPTIONS = "wlvh"
+_OPTIONS = "w:lvh"
 _LONG_OPTS = ("json-rpc-version=", "workers=", "verbose", "help")
 _USAGE = ("usage: {0} [-w|--workers=<n>] "
           "[-v|--verbose] [-h|--help] <host> <port>".format(_PROG))

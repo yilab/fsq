@@ -10,13 +10,12 @@
 import jsonrpclib
 from . import FSQPushError, constants as _c, FSQWorkItem
 
-def push(remote_addr, port, src_queue, item_id, trg_queue, protocol=u'jsonrpc'):
-    remote = u'http://{0}:{1}'.format(remote_addr, port)
-    item = FSQWorkItem(src_queue, item_id, host=remote_addr)
+def push(remote_addr, src_queue, item_id, host, trg_queue, protocol=u'jsonrpc'):
+    item = FSQWorkItem(src_queue, item_id, host=host)
     try:
         if protocol == u'jsonrpc':
             try:
-                server = jsonrpclib.Server(remote, encoding=_c.FSQ_CHARSET)
+                server = jsonrpclib.Server(remote_addr, encoding=_c.FSQ_CHARSET)
                 out = server.enqueue(item.id, trg_queue, '', item.item.read())
                 item.done()
                 return out
