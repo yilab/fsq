@@ -92,3 +92,6 @@ class FSQHostsError(FSQError):
 class FSQReenqueueError(FSQError):
     '''An error occured while reenqueuing an item'''
 
+class FSQPushError(FSQError):
+    '''An error occured while push and item to a remote server'''
+

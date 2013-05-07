@@ -17,7 +17,7 @@ from exceptions import FSQError, FSQEnvError, FSQEncodeError,\
                        FSQWorkItemError, FSQTTLExpiredError,\
                        FSQMaxTriesError, FSQScanError, FSQDownError,\
                        FSQDoneError, FSQFailError, FSQTriggerPullError,\
-                       FSQHostsError, FSQReenqueueError
+                       FSQHostsError, FSQReenqueueError, FSQPushError
 
 # constants relies on: exceptions, internal
 import constants
@@ -55,6 +55,12 @@ from items import FSQWorkItem
 # scan relies on: exceptions, constants, path, items, configure, internal
 from scan import FSQScanGenerator, scan
 
+# remote.v1 relies on: enqueue
+import remote
+
+# push relies on: exceptions, constants and items
+from push import push
+
 __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'FSQMalformedEntryError', 'FSQCoerceError', 'FSQEnqueueError',
             'FSQConfigError', 'FSQCannotLock', 'FSQWorkItemError',
@@ -70,4 +76,4 @@ __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'hosts', 'down_host', 'up_host', 'host_is_down', 'host_trigger',
             'host_untrigger', 'host_trigger_pull', 'host_root',
             'uninstall_host', 'FSQReenqueueError', 'reenqueue', 'sreenqueue',
-            'vreenqueue', 'vsreenqueue', ]
+            'vreenqueue', 'vsreenqueue', 'remote', 'FSQPushError', 'push', ]

@@ -115,7 +115,7 @@ class FSQScanGenerator(object):
         raise StopIteration()
 
 def scan(queue, lock=None, ttl=None, max_tries=None, ignore_down=False,
-         no_open=False, generator=FSQScanGenerator, host=False, hosts=None):
+         no_open=False, generator=FSQScanGenerator, all_hosts=False, hosts=None):
     '''Given a queue, generate a list of files in that queue, and pass it to
        FSQScanGenerator for iteration.  The generator kwarg is provided here
        as a means of implementing a custom generator, use with caution.'''
@@ -124,7 +124,7 @@ def scan(queue, lock=None, ttl=None, max_tries=None, ignore_down=False,
     max_tries = _c.FSQ_MAX_TRIES if max_tries is None else max_tries
     item_ids = []
     try:
-        if not host and not hosts:
+        if not all_hosts and not hosts:
             item_ids = os.listdir(fsq_path.queue(queue))
         else:
             if not hosts:

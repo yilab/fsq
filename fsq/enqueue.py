@@ -249,7 +249,7 @@ def vreenqueue(item_f, args, **kwargs):
                         continue
                     raise e
             else:
-                line = src_file.readline()
+                msg = [src_file.readline()]
                 break
         if isinstance(args, basestring):
              args = (args,)
@@ -268,7 +268,8 @@ def vreenqueue(item_f, args, **kwargs):
                     raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
             # read src_file once and copy to n trg_queues
             else:
-                trg_fd = os.open(tmp_name, os.O_RDWR|os.O_CREAT|os.O_TRUNC)
+                trg_fd = os.open(tmp_name, os.O_RDWR|os.O_CREAT|os.O_TRUNC,
+                                 _c.FSQ_ITEM_MODE)
                 with closing(os.fdopen(trg_fd, 'wb', 1)) as trg_file:
                     trg_file.write(u''.join(msg))
                     # flush buffers, and force write to disk pre mv.
@@ -290,7 +291,10 @@ def vreenqueue(item_f, args, **kwargs):
     except Exception, e:
         try:
             if not link:
-                os.close(trg_fd)
+                try:
+                    os.close(trg_fd)
+                except UnboundLocalError:
+                    raise e
         except (OSError, IOError, ), err:
             if err.errno != errno.EBADF:
                 raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
