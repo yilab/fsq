@@ -241,7 +241,7 @@ def vreenqueue(item_f, args, **kwargs):
                 reads, dis, card = select.select([src_file], [], [])
                 try:
                     line = os.read(reads[0].fileno(), 2048)
-                    if 0 == len(msg):
+                    if 0 == len(line):
                         break
                     msg.append(line)
                 except (OSError, IOError, ), e:
