@@ -137,9 +137,8 @@ def main(argv):
         barf("error: the number of workers is less than 1: parsed {0}".format(n_forks))
 
     jsonrpclib.config.version = 1.0
-    jsonrpc_srv = server((host, port),
-                                      requestHandler=maskedHandler,
-                                      encoding='utf-8')
+    jsonrpc_srv = server((host, port), logRequests=verbose,
+                          requestHandler=maskedHandler, encoding='utf-8')
 
     for i in xrange(n_forks):
         pid = _spawn_worker(jsonrpc_srv, jsonrpc_srv.serve_forever,

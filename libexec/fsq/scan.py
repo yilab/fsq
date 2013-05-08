@@ -16,6 +16,9 @@
 #      be released.
 #  * like xargs(1), if scan is terminated by signal, it orphans ... if a child
 #      is terminated by signal, scan stops scanning.
+#  * when used in conjunction with fsq-push you must specify --no-open and
+#      --no-done (-Dn) as fsq-push will need to lock, open and
+#      done the file
 #
 # @author: Matthew Story <matt.story@axial.net>
 # @depends: fsq(1), fsq(7), python (>=2.7)
@@ -62,6 +65,8 @@ def usage(asked_for=0):
         shout('        [-l|--lock] [-L|--no-lock]', f)
         shout('        [-t ttl_seconds|--ttl=seconds]', f)
         shout('        [-m max_tries|--max-tries=int]', f)
+        shout('        [-a all_hosts |--all-hosts]', f)
+        shout('        [-A host |--host=host]', f)
         shout('        [-S success_code|--success-code=int]', f)
         shout('        [-T fail_tmp_code|--fail-tmp-code=int]', f)
         shout('        [-F fail_perm_code|--fail-perm-code=int]', f)
@@ -159,7 +164,10 @@ def main(argv):
             elif '-a' == flag or '--all-hosts' == flag:
                 all_hosts = True
             elif '-A' == flag or '--hosts' == flag:
-                hosts = opt
+                try:
+                    hosts.append(opt)
+                except AttributeError:
+                    hosts = [ opt, ]
             elif '-t' == flag or '--ttl' == flag:
                 fsq.set_const('FSQ_TTL', opt)
             elif '-m' == flag or '--max-tries' == flag:

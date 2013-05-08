@@ -82,10 +82,10 @@ class FSQScanGenerator(object):
             # always destroy self.item to close file if necessary
             if getattr(self, 'item', None) is not None:
                 del self.item
-            try:
+            if hasattr(self.item_ids[self._index], '__iter__'):
                 host = self.item_ids[self._index][0]
                 item = self.item_ids[self._index][1]
-            except TypeError:
+            else:
                 host = None
                 item = self.item_ids[self._index]
             if self.ignore_down or is_down(self.queue, host=host):

@@ -62,7 +62,7 @@ def main(argv):
             chirp('pushing item {0} from queue {1}, host {2} to remote {3},'\
                   ' queue {4}'.format(item_id, args[1], args[3], args[0],
                                       args[2]))
-            print fsq.push(args[0], args[1], item_id, args[3], args[2],
+            fsq.push(args[0], args[1], item_id, args[3], args[2],
                      protocol=protocol)
 
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):

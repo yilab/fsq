@@ -7,14 +7,15 @@
 #     they will be explicitly coerced to unicode.
 #
 # This software is for POSIX compliant systems only.
+import sys
 from .. import sreenqueue
 
-def enqueue(item_id, src_queue, hosts, data, debug=False):
+def enqueue(item_id, src_queue, hosts, data):
     if isinstance(hosts, basestring):
         hosts = (hosts,)
-    if data:
-        return sreenqueue(item_id, data, src_queue, hosts=hosts, debug=debug)
-    return sreenqueue(item_id, '', src_queue, hosts=hosts, debug=debug)
+    if not data:
+        data = ''
+    print >> sys.stdout, sreenqueue(item_id, data, src_queue, hosts=hosts)
 
 #libexec/fsq/jsonrpcd.py will load all functions in __all__
 __all__ = [ 'enqueue', ]
