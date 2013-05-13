@@ -31,22 +31,27 @@ def usage(asked_for=0):
     shout('{0} [opts] host queue [queue [...]]'.format(
           os.path.basename(_PROG)), f)
     if asked_for:
-        shout('{0} [-h|--help] [-v|--verbose]'.format(os.path.basename(_PROG))
+        shout('{0} [-h|--help] [-v|--verbose] [-f|--force]'.format(
+              os.path.basename(_PROG))
                                                       , f)
         shout('        host queue [queue [...]]', f)
     return 0 if asked_for else fsq.const('FSQ_FAIL_PERM')
 
+# TODO add -f --force
 def main(argv):
     global _PROG, _VERBOSE
     flag = None
+    force = False
 
     _PROG = argv[0]
     try:
-        opts, args = getopt.getopt(argv[1:], 'hv', ( '--help',
-                                   '--verbose', ))
+        opts, args = getopt.getopt(argv[1:], 'hvf', ( '--help',
+                                   '--verbose', '--force', ))
         for flag, opt in opts:
             if flag in ( '-v', '--verbose', ):
                 _VERBOSE = True
+            if flag in ( '-f', '--force', ):
+                force = True
             elif flag in ( '-h', '--help', ):
                 return usage(1)
 
@@ -55,7 +60,13 @@ def main(argv):
 
         for queue in args[1:]:
             chirp('removing host {0} for queue {1}'.format(args[0], queue))
-            fsq.uninstall_host(queue, args[0])
+            try:
+                fsq.uninstall_host(queue, args[0])
+            except fsq.FSQInstallError:
+                if force:
+                    pass
+                else:
+                    raise
 
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
         shout('invalid argument for flag: {0}'.format(flag))

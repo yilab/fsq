@@ -1,5 +1,6 @@
 # fsq -- a python library for manipulating and introspecting FSQ queues
 # @author: Matthew Story <matt.story@axial.net>
+# @author: Jeff Rand <jeff.rand@axial.net>
 #
 # fsq/items.py -- provides items classes for fsq: FSQItem, FSQEnqueueItem
 #

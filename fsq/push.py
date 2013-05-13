@@ -7,21 +7,16 @@
 #     they will be explicitly coerced to unicode.
 #
 # This software is for POSIX compliant systems only.
-import jsonrpclib
-from . import FSQPushError, constants as _c, FSQWorkItem
+from jsonrpclib import Server
+from . import FSQPushError, constants as _c
 
-def push(remote_addr, src_queue, item_id, host, trg_queue, protocol=u'jsonrpc'):
-    item = FSQWorkItem(src_queue, item_id, host=host)
-    try:
-        if protocol == u'jsonrpc':
-            try:
-                server = jsonrpclib.Server(remote_addr, encoding=_c.FSQ_CHARSET)
-                out = server.enqueue(item.id, trg_queue, '', item.item.read())
-                item.done()
-                return out
-            except Exception, e:
-                item.fail()
-                raise FSQPushError(e)
-        raise ValueError('Unknown protocol: {0}'.format(protocol))
-    finally:
-        item.close()
+def push(item, remote_addr, trg_queue, protocol=u'jsonrpc'):
+    ''' Enqueue an FSQWorkItem at a remote queue '''
+    if protocol == u'jsonrpc':
+        try:
+            server = Server(remote_addr, encoding=_c.FSQ_CHARSET)
+            return server.enqueue(item.id, trg_queue, item.item.read())
+        except Exception, e:
+            raise FSQPushError(e)
+
+    raise ValueError('Unknown protocol: {0}'.format(protocol))

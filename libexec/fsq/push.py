@@ -35,7 +35,7 @@ def usage(asked_for=0):
                 .format(os.path.basename(_PROG)), f)
         shout('{0} [-p|--protocol=jsonrpc] unix://var/sock/foo.sock'\
                 .format(os.path.basename(_PROG)), f)
-        shout('        src_queue trg_queue host item_id [item_id [...]]', f)
+        shout('        trg_queue item [item [...]]', f)
     return 0 if asked_for else fsq.const('FSQ_FAIL_PERM')
 
 def main(argv):
@@ -44,9 +44,8 @@ def main(argv):
 
     _PROG = argv[0]
     try:
-        opts, args = getopt.getopt(argv[1:], 'vhp:', ( '--verbose',
-                                                       '--help',
-                                                       '--protocol=', ))
+        opts, args = getopt.getopt(argv[1:], 'vhp:', ( '--verbose', '--help',
+                                                        '--protocol=', ))
         for flag, opt in opts:
             if flag in ( '-v', '--verbose', ):
                 _VERBOSE = True
@@ -55,15 +54,13 @@ def main(argv):
             elif flag in ( '-h', '--help', ):
                 return usage(1)
 
-        if 5 > len(args):
+        if 3 > len(args):
             return usage()
 
-        for item_id in args[4:]:
-            chirp('pushing item {0} from queue {1}, host {2} to remote {3},'\
-                  ' queue {4}'.format(item_id, args[1], args[3], args[0],
-                                      args[2]))
-            fsq.push(args[0], args[1], item_id, args[3], args[2],
-                     protocol=protocol)
+        for item in args[2:]:
+            chirp('pushing item {0} to remote {2},'\
+                  ' queue {2}'.format(item.id, args[0], args[1],))
+            fsq.push(item, args[0], args[1], protocol=protocol)
 
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
         shout('invalid argument for flag: {0}'.format(flag))

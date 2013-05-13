@@ -1,5 +1,6 @@
 # fsq -- a python library for manipulating and introspecting FSQ queues
 # @author: Matthew Story <matt.story@axial.net>
+# @author: Jeff Rand <jeff.rand@axial.net>
 #
 # fsq/constants.py -- a place for constants.  per FSQ specification,
 #   constants take their value from the calling program environment
@@ -49,7 +50,8 @@ class FSQScanGenerator(object):
        mechanism.'''
     ####### MAGICAL METHODS AND ATTRS #######
     def __init__(self, queue, item_ids, lock=None, ttl=None,
-                 max_tries=None, ignore_down=False, no_open=False):
+                 max_tries=None, ignore_down=False, no_open=False,
+                 host=False):
         '''Construct an FSQScanGenerator object from a list of item_ids and a
            queue name.  The lock kwarg will override the default locking
            preference (taken from environment).'''
@@ -59,6 +61,7 @@ class FSQScanGenerator(object):
         # current item
         self.item = None
         self.queue = queue
+        self.host = host
 
         # list of item ids
         self.item_ids = item_ids
@@ -82,13 +85,14 @@ class FSQScanGenerator(object):
             # always destroy self.item to close file if necessary
             if getattr(self, 'item', None) is not None:
                 del self.item
-            if hasattr(self.item_ids[self._index], '__iter__'):
+            if self.host:
                 host = self.item_ids[self._index][0]
                 item = self.item_ids[self._index][1]
             else:
                 host = None
                 item = self.item_ids[self._index]
-            if self.ignore_down or is_down(self.queue, host=host):
+            if not self.ignore_down and is_down(self.queue) and ( not host or
+                    host_is_down(self.queue, host)):
                 raise FSQDownError(errno.EAGAIN, u'queue {0}: is'\
                                    u' down'.format(self.queue))
             try:
@@ -115,7 +119,7 @@ class FSQScanGenerator(object):
         raise StopIteration()
 
 def scan(queue, lock=None, ttl=None, max_tries=None, ignore_down=False,
-         no_open=False, generator=FSQScanGenerator, all_hosts=False, hosts=None):
+         no_open=False, generator=FSQScanGenerator, host=False, hosts=None):
     '''Given a queue, generate a list of files in that queue, and pass it to
        FSQScanGenerator for iteration.  The generator kwarg is provided here
        as a means of implementing a custom generator, use with caution.'''
@@ -124,15 +128,16 @@ def scan(queue, lock=None, ttl=None, max_tries=None, ignore_down=False,
     max_tries = _c.FSQ_MAX_TRIES if max_tries is None else max_tries
     item_ids = []
     try:
-        if not all_hosts and not hosts:
+        if not host and hosts is None:
             item_ids = os.listdir(fsq_path.queue(queue))
+            item_ids.sort()
         else:
-            if not hosts:
+            if hosts is None:
                 hosts = fsq_hosts(queue)
-            for host in hosts:
-                if not host_is_down(queue, host):
-                    for item in os.listdir(fsq_path.queue(queue, host)):
-                        item_ids.append((host, item))
+            for trg_host in hosts:
+                for item in os.listdir(fsq_path.queue(queue, trg_host)):
+                    item_ids.append((trg_host, item))
+            item_ids.sort(key=lambda x: x[1])
     except (OSError, IOError, ), e:
         if e.errno == errno.ENOENT:
             raise FSQScanError(e.errno, u'no such queue:'\
@@ -142,6 +147,5 @@ def scan(queue, lock=None, ttl=None, max_tries=None, ignore_down=False,
         raise FSQScanError(e.errno, wrap_io_os_err(e))
 
     # sort here should yield time then entropy sorted
-    item_ids.sort()
     return generator(queue, item_ids, lock=lock, ttl=ttl, max_tries=max_tries,
-                     no_open=no_open)
+                     no_open=no_open, host=host)

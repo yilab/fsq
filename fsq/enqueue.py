@@ -20,7 +20,8 @@ from cStringIO import StringIO
 from contextlib import closing
 
 from . import FSQEnqueueError, FSQCoerceError, FSQError, FSQReenqueueError,\
-              constants as _c, path as fsq_path, construct, hosts as fsq_hosts
+              constants as _c, path as fsq_path, construct,\
+              hosts as fsq_hosts, FSQWorkItem
 from .internal import rationalize_file, wrap_io_os_err, fmt_time,\
                       coerce_unicode, uid_gid
 
@@ -51,13 +52,32 @@ def _formhostpath(args, hosts, all_hosts):
     path = []
     if not hosts and not all_hosts:
         for arg in args:
-            return ((arg, None),)
-    for arg in args:
-        if all_hosts:
-            hosts = fsq_hosts(arg)
-        for host in hosts:
-            path.append((arg, host))
+            path.append((arg, None))
+    else:
+        for arg in args:
+            if all_hosts:
+                hosts = fsq_hosts(arg)
+            for host in hosts:
+                path.append((arg, host))
     return tuple(path)
+
+def _unpack_args(item_f, src_queue, link, args):
+    if isinstance(item_f, FSQWorkItem):
+        item_id = item_f.id
+        src_queue = item_f.queue
+        item_f = item_f.item
+    elif src_queue:
+        item_id = coerce_unicode(item_f, _c.FSQ_CHARSET)
+        item_f = None
+    else:
+        args = list(args)
+        if link:
+            raise ValueError('Incorrect arguments')
+        try:
+            item_id = args.pop(0)
+        except IndexError:
+            raise ValueError('Insufficient arguments')
+    return item_f, src_queue, item_id , args, link
 
 ####### EXPOSED METHODS #######
 def enqueue(trg_queue, item_f, *args, **kwargs):
@@ -142,7 +162,7 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
                 # hard-link into queue, unlink tmp, failure case here leaves
                 # cruft in tmp, but no race condition into queue
                 os.link(tmp_name, os.path.join(fsq_path.item(trg_queue,
-                                                             item_name)))
+                                                            item_name)))
                 os.unlink(tmp_name)
 
                 # return the queue item id (filename)
@@ -198,116 +218,142 @@ def reenqueue(item_f, *args, **kwargs):
        (e.g. '/my/file') queue with arbitrary arguments from one queue to
        other queues, reenqueue is to vreenqueue what printf is to vprintf
     '''
-    return vreenqueue(item_f, args, **kwargs)
+    src_queue = kwargs.pop('src_queue', None)
+    link = kwargs.pop('link', False)
+    if isinstance(item_f, FSQWorkItem):
+        return vreenqueue(item_f, args, link=link, **kwargs)
+    item_f, src_queue, item_id, args, link = _unpack_args(item_f, src_queue,
+                                                          link, args)
+    if not item_f:
+        print 'pow'
+        return vreenqueue(item_id, args, src_queue=src_queue, link=link,
+                          **kwargs)
+    return vreenqueue(item_f, item_id, args, src_queue=src_queue, link=link,
+                      **kwargs)
 
-def sreenqueue(item_id, item_s, *args, **kwargs):
-    '''Enqueue a string, or string-like object to other queues, with arbitrary
-       arguments, sreenqueue is to reenqueue what sprintf is to printf,
-       sreenqueue is to vsreenqueue what sprintf is to vsprintf.
-    '''
-    return vsreenqueue(item_id, item_s, args, **kwargs)
-
-def vreenqueue(item_f, args, **kwargs):
+def vreenqueue(item_f, *args, **kwargs):
     '''Enqueue the contents of a file, or file-like object, FSQWorkItem,
        file-descriptor or the contents of a files queues at an address
        (e.g. '/my/file') queue with arbitrary arguments from one queue to
        other queues, reenqueue is to vreenqueue what printf is to vprintf
+       Uses include:
+            vreenqueue(FSQWorkItem, [trg_queue, ...], link=, kwargs)
+            vreenqueue(fileish, file_name, [trg_queue, ...], kwargs)
+            vreenqueue(fd, file_name, [trg_queue, ...], kwargs)
     '''
-    item_id = kwargs.pop('item_id', None)
+    item_id = None
     src_queue = kwargs.pop('src_queue', None)
     link = kwargs.pop('link', False)
     hosts = kwargs.pop('hosts', None)
     all_hosts = kwargs.pop('all_hosts', False)
-    if isinstance(item_f, basestring):
-        if None is src_queue:
-            raise TypeError
-        item_id = item_f
-        item_f = fsq_path.item(src_queue, item_f)
-    elif hasattr(item_f, 'queue'):
-        item_id = item_f.id
-        src_queue = item_f.queue
-        item_f = fsq_path.item(item_f.queue, item_f.id)
-    elif None is item_id:
-        raise FSQReenqueueError('Improper argmuents')
+    item_f, src_queue, item_id, args, link = _unpack_args(item_f, src_queue,
+                                                          link, args)
+    if 1 < len(args):
+        raise ValueError('Too many arguements')
     try:
-        src_file = rationalize_file(item_f, _c.FSQ_CHARSET)
+        args = args[0]
+    except IndexError:
+        raise ValueError('Insufficient arguments')
+    try:
+        if item_f is None:
+            item_f = fsq_path.item(src_queue, item_id)
+        if link:
+            src_file = item_f
+        else:
+            src_file = rationalize_file(item_f, _c.FSQ_CHARSET)
     except (OSError, IOError, ), e:
         raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
+    tmp_names = []
     try:
-        real_file = True if hasattr(src_file, 'fileno') else False
-        msg = []
-        while True:
-            if real_file:
-                reads, dis, card = select.select([src_file], [], [])
-                try:
-                    line = os.read(reads[0].fileno(), 2048)
-                    if 0 == len(line):
-                        break
-                    msg.append(line)
-                except (OSError, IOError, ), e:
-                    if e.errno in (errno.EWOULDBLOCK, errno.EAGAIN,):
-                        continue
-                    raise e
-            else:
-                msg = [src_file.readline()]
-                break
-        if isinstance(args, basestring):
-             args = (args,)
         paths = _formhostpath(args, hosts, all_hosts)
-        for queue, host in paths:
-            tmp_name = os.path.join(fsq_path.tmp(queue, host=host), item_id)
+        if link:
+            tmp_name = os.path.join(fsq_path.tmp(src_queue), item_id)
             # hard link directly to tmp
-            if link:
+            try:
                 try:
                     os.link(fsq_path.item(src_queue, item_id), tmp_name)
                 except (OSError, IOError, ), e:
-                    if e.errno == errno.EEXIST:
-                        os.unlink(tmp_name)
-                        os.link(fsq_path.tmp(src_queue, item_id), tmp_name)
-                        continue
-                    raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
-            # read src_file once and copy to n trg_queues
-            else:
-                trg_fd = os.open(tmp_name, os.O_RDWR|os.O_CREAT|os.O_TRUNC,
-                                 _c.FSQ_ITEM_MODE)
-                with closing(os.fdopen(trg_fd, 'wb', 1)) as trg_file:
-                    trg_file.write(u''.join(msg))
-                    # flush buffers, and force write to disk pre mv.
-                    trg_file.flush()
-                    os.fsync(trg_file.fileno())
-        for queue, host in paths:
-            tmp_name = os.path.join(fsq_path.tmp(queue, host=host), item_id)
-            # hard-link into queue, unlink tmp, failure case here leaves
-            # cruft in tmp, but no race condition into queue
-            try:
-                os.link(tmp_name, os.path.join(fsq_path.item(queue, item_id,
-                                                             host=host)))
-            except (OSError, IOError, ), e:
-                if link and not e.errno == errno.EEXIST:
-                    raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
+                    if not e.errno == errno.EEXIST:
+                        raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
+                for queue, host in paths:
+                    try:
+                        os.link(tmp_name, os.path.join(fsq_path.item(queue,
+                                                       item_id, host=host)))
+                    except (OSError, IOError, ), e:
+                        if not e.errno == errno.EEXIST:
+                            raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
             finally:
                 os.unlink(tmp_name)
+        else:
+            tmp_fos = []
+            try:
+                for queue, host in paths:
+                    try:
+                        tmp_name = os.path.join(fsq_path.tmp(queue, host=host),
+                                                             item_id)
+                        tmp_names.append(tmp_name)
+                        # copy to n trg_queues
+                        tmp_fo = os.open(tmp_name, os.O_RDWR|os.O_CREAT|\
+                                               os.O_TRUNC, _c.FSQ_ITEM_MODE)
+                        tmp_fos.append(os.fdopen(tmp_fo, 'wb', 1))
+                    except Exception, e:
+                        raise FSQReenqueueError(wrap_io_os_err(e))
+                real_file = True if hasattr(src_file, 'fileno') else False
+                # read src_file once
+                while True:
+                    if real_file:
+                        reads, dis, card = select.select([src_file], [], [])
+                        try:
+                            chunk = os.read(reads[0].fileno(), 2048)
+                            if 0 == len(chunk):
+                                break
+                        except (OSError, IOError, ), e:
+                            if e.errno in (errno.EWOULDBLOCK, errno.EAGAIN,):
+                                continue
+                            raise
+                    else:
+                        chunk = src_file.readline()
+                        break
+                    for tmp_fo in tmp_fos:
+                        tmp_fo.write(chunk)
+                        # flush buffers, and force write to disk pre mv.
+                        tmp_fo.flush()
+                        os.fsync(tmp_fo.fileno())
+                for queue, host in paths:
+                    tmp_name = os.path.join(fsq_path.tmp(queue, host=host),
+                                                         item_id)
+                    # hard-link into queue, unlink tmp, failure case here
+                    # leaves cruft in tmp, but no race condition into queue
+                    try:
+                        os.link(tmp_name, os.path.join(fsq_path.item(queue,
+                                                       item_id, host=host)))
+                    except (OSError, IOError, ), e:
+                        if link and not e.errno == errno.EEXIST:
+                            raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
+                    finally:
+                        os.unlink(tmp_name)
+            finally:
+                for tmp_fo in tmp_fos:
+                    tmp_fo.close()
         return item_id
     except Exception, e:
         try:
-            if not link:
-                try:
-                    os.close(trg_fd)
-                except UnboundLocalError:
-                    raise e
-        except (OSError, IOError, ), err:
-            if err.errno != errno.EBADF:
-                raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
-        try:
-            for queue, host in paths:
-                tmp_name = os.path.join(fsq_path.tmp(queue, host=host),
-                                                     item_id)
+            if link:
+                tmp_name = os.path.join(fsq_path.tmp(src_queue, item_id))
                 try:
                     os.unlink(tmp_name)
                 except (OSError, IOError, ), err:
                     if err.errno == errno.ENOENT:
                         pass
                 raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
+            else:
+                for tmp_name in tmp_names:
+                    try:
+                        os.unlink(tmp_name)
+                    except (OSError, IOError, ), err:
+                        if err.errno == errno.ENOENT:
+                            pass
+                        raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
         except (OSError, IOError, ), err:
             if err.errno != errno.ENOENT:
                raise FSQReenqueueError(err.errno, wrap_io_os_err(err))
@@ -319,7 +365,15 @@ def vreenqueue(item_f, args, **kwargs):
             raise FSQReenqueueError(e.errno, wrap_io_os_err(e))
         raise e
     finally:
-        src_file.close()
+        if not link:
+            src_file.close()
+
+def sreenqueue(item_id, item_s, *args, **kwargs):
+    '''Enqueue a string, or string-like object to other queues, with arbitrary
+       arguments, sreenqueue is to reenqueue what sprintf is to printf,
+       sreenqueue is to vsreenqueue what sprintf is to vsprintf.
+    '''
+    return vsreenqueue(item_id, item_s, args, **kwargs)
 
 def vsreenqueue(item_id, item_s, args, **kwargs):
     '''Enqueue a string, or string-like object to other queues, with arbitrary
@@ -340,5 +394,4 @@ def vsreenqueue(item_id, item_s, args, **kwargs):
             raise FSQCoerceError(errno.EINVAL, u'cannot encode item with'\
                                  u' charset {0}'.format(charset))
 
-    return vreenqueue(StringIO(item_s), args, **kwargs)
-
+    return vreenqueue(StringIO(item_s), item_id, args, **kwargs)

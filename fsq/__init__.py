@@ -28,10 +28,13 @@ from const import const, set_const # has tests
 # path relies on: exceptions, constants, internal
 import path # has tests
 
+# lists relies on: path
+from lists import hosts, queues
+
 # configure relies on: exceptions, path, constants, internal, hosts
 from configure import down, up, is_down, trigger, untrigger, trigger_pull,\
                       down_host, up_host, host_is_down, host_trigger,\
-                      host_untrigger, host_trigger_pull, hosts # has tests
+                      host_untrigger, host_trigger_pull # has tests
 
 # install relies on exceptions, path, constants, configure, internal, hosts
 from install import install, uninstall, install_host, uninstall_host # has tests
@@ -42,15 +45,15 @@ from encode import encode, decode # has tests
 # construct relies on: constants, exceptions, encode, internal
 from construct import construct, deconstruct # has tests
 
-# enqueue relies on: constants, exceptions, path, internal, mkitem
-from enqueue import enqueue, senqueue, venqueue, vsenqueue, reenqueue,\
-                    sreenqueue, vreenqueue, vsreenqueue
-
 # done relies on: constants, exceptions, path, internal, mkitem
 from done import done, success, fail, fail_tmp, fail_perm
 
 # items relies on: exceptions, constants, path, construct, internal
 from items import FSQWorkItem
+
+# enqueue relies on: constants, exceptions, path, internal, mkitem
+from enqueue import enqueue, senqueue, venqueue, vsenqueue, reenqueue,\
+                    sreenqueue, vreenqueue, vsreenqueue
 
 # scan relies on: exceptions, constants, path, items, configure, internal
 from scan import FSQScanGenerator, scan
@@ -60,6 +63,7 @@ import remote
 
 # push relies on: exceptions, constants and items
 from push import push
+
 
 __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'FSQMalformedEntryError', 'FSQCoerceError', 'FSQEnqueueError',
@@ -76,4 +80,5 @@ __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'hosts', 'down_host', 'up_host', 'host_is_down', 'host_trigger',
             'host_untrigger', 'host_trigger_pull', 'host_root',
             'uninstall_host', 'FSQReenqueueError', 'reenqueue', 'sreenqueue',
-            'vreenqueue', 'vsreenqueue', 'remote', 'FSQPushError', 'push', ]
+            'vreenqueue', 'vsreenqueue', 'remote', 'FSQPushError', 'push',
+            'queues', ]

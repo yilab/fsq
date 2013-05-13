@@ -1,7 +1,8 @@
 # fsq -- a python library for manipulating and introspecting FSQ queues
 # @author: Matthew Story <matt.story@axial.net>
+# @author: Jeff Rand <jeff.rand@axial.net>
 #
-# fsq/enqueue.py -- provides finishing functions: done, fail, fail_tmp,
+# fsq/done.py -- provides finishing functions: done, fail, fail_tmp,
 #                   fail_perm, retry
 #
 #     fsq is all unicode internally, if you pass in strings,
@@ -36,14 +37,14 @@ def fail_tmp(item, max_tries=None, ttl=None):
         fail_perm(item)
         e.strerror = u': '.join([
             e.strerror,
-            u'for item {0}; failed permanantly'.format(item.id),
+            u'for item {0}; failed permanently'.format(item.id),
         ])
         raise e
 
 def fail_perm(item):
     '''Fail a work-item permanatly by mv'ing it to queue's fail directory'''
     # The only thing we require to fail is an item_id and a queue
-    # as an item may fail permanantly due to malformed item_id-ness
+    # as an item may fail permanently due to malformed item_id-ness
     item_id = item.id
     trg_queue = item.queue
     host = item.host
@@ -64,7 +65,7 @@ def done(item, done_type=None, max_tries=None, ttl=None):
     return fail(item, fail_type=done_type, max_tries=max_tries, ttl=ttl)
 
 def fail(item, fail_type=None, max_tries=None, ttl=None):
-    '''Fail a work item, either temporarily or permanantly'''
+    '''Fail a work item, either temporarily or permanently'''
     # default to fail_perm
     if fail_type is not None and fail_type == _c.FSQ_FAIL_TMP:
         return fail_tmp(item, max_tries=max_tries, ttl=ttl)

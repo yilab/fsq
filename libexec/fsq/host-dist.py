@@ -47,7 +47,7 @@ def main(argv):
     _PROG = argv[0]
     try:
         opts, args = getopt.getopt(argv[1:], 'hvlt', ( '--help',
-                                   '--force', '--link', '--trigger', ))
+                                   '--verbose', '--link', '--trigger', ))
         for flag, opt in opts:
             if flag in ( '-v', '--verbose', ):
                 _VERBOSE = True
@@ -55,7 +55,7 @@ def main(argv):
                 link = True
             elif flag in ( '-t', '--trigger', ):
                 trigger = True
-            elif flag in ( '-o', '--open_file', ):
+            elif flag in ( '-h', '--help', ):
                 return usage(1)
 
         if 0 == len(args):
@@ -65,11 +65,14 @@ def main(argv):
 
         if 1 == len(args):
             all_hosts = True
+            hosts = None
+        else:
+            hosts = args[1:]
 
         chirp('distributing hosts for queue {0}'.format(queue))
-        for item in fsq.scan(queue, lock=True, ignore_down=True, no_open=True):
-            fsq.reenqueue(item, queue, hosts=args[1:],
-                          all_hosts=all_hosts, link=link)
+        for item in fsq.scan(queue, lock=True, ignore_down=True):
+            fsq.reenqueue(item, queue, hosts=hosts, all_hosts=all_hosts,
+                          link=link)
         if trigger:
             fsq.host_trigger(queue)
 

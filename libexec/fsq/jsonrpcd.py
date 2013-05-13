@@ -63,7 +63,18 @@ def _defer_sig(signum, frame):
     _deferred_sig = signum
     return
 
-def _spawn_worker(proxy, func, *args, **kwargs):
+def _noisy(func, verbose):
+    def decorated(*args, **kwargs):
+        if verbose:
+            shout('calling {0}: with args:{1}, kwargs: {2}'.format(
+                func.__name__, args, kwargs))
+        ret = func(*args, **kwargs)
+        if verbose:
+            shout('{0} returned: {1}'.format(func.__name__, ret))
+    decorated.__name__ = func.__name__
+    return decorated
+
+def _spawn_worker(proxy, verbose, func, *args, **kwargs):
     pid = os.fork()
     if pid == 0:
         for sig in _MASKED_SIGS:
@@ -74,7 +85,7 @@ def _spawn_worker(proxy, func, *args, **kwargs):
         for f in (v1.__dict__[s] for s in v1.__all__):
             if not callable(f):
                 barf("error: not a callable function: {0}".format(f))
-            proxy.register_function(f)
+            proxy.register_function(_noisy(f, verbose))
         proxy.register_introspection_functions()
         proxy.register_function(_api_version, 'api_version')
 
@@ -90,7 +101,7 @@ def _spawn_worker(proxy, func, *args, **kwargs):
     else:
         return pid
 
-class maskedHandler(handler):
+class MaskedHandler(handler):
     def setup(self):
         for sig in _MASKED_SIGS:
             signal.signal(sig, _defer_sig)
@@ -138,10 +149,10 @@ def main(argv):
 
     jsonrpclib.config.version = 1.0
     jsonrpc_srv = server((host, port), logRequests=verbose,
-                          requestHandler=maskedHandler, encoding='utf-8')
+                          requestHandler=MaskedHandler, encoding='utf-8')
 
     for i in xrange(n_forks):
-        pid = _spawn_worker(jsonrpc_srv, jsonrpc_srv.serve_forever,
+        pid = _spawn_worker(jsonrpc_srv, verbose, jsonrpc_srv.serve_forever,
                             poll_interval=_POLL_INTERVAL)
         _cpids.append(pid)
 
@@ -171,7 +182,8 @@ def main(argv):
 
             _cpids.remove(pid)
             if not _signalled or _signalled == signal.SIGHUP:
-                p = _spawn_worker(jsonrpc_srv, jsonrpc_srv.serve_forever,
+                p = _spawn_worker(jsonrpc_srv, verbose,
+                                  jsonrpc_srv.serve_forever,
                                   poll_interval=_POLL_INTERVAL)
                 _rpids.append(p)
 

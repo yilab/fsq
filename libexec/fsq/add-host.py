@@ -50,7 +50,7 @@ def main(argv):
     _PROG = argv[0]
     try:
         opts, args = getopt.getopt(argv[1:], 'hvfo:g:m:i', ( '--help',
-                                   '--force', '--triggered', '--owner',
+                                   '--force', '--verbose', '--owner',
                                    '--group', '--mode', '--ignore-exists', ))
         for flag, opt in opts:
             if flag in ( '-v', '--verbose', ):
@@ -74,21 +74,23 @@ def main(argv):
         if 2 > len(args):
             return usage()
 
+        host = args[0]
+
         for queue in args[1:]:
             try:
-                chirp('installing host {0} to {1}'.format(args[0], queue))
-                fsq.install_host(queue, args[0])
+                chirp('installing host {0} to {1}'.format(host, queue))
+                fsq.install_host(queue, host)
             except fsq.FSQInstallError, e:
                 if e.errno == errno.ENOTEMPTY or e.errno == errno.ENOTDIR:
                     if force:
-                        fsq.uninstall_host(queue, [args[0]])
-                        fsq.install_host(queue, [args[0]])
+                        fsq.uninstall_host(queue, *host)
+                        fsq.install_host(queue, *host)
                     elif ignore:
                         chirp('skipping {0}; already installed'.format(queue))
                     else:
-                        raise e
+                        raise
                 else:
-                    raise e
+                    raise
 
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
         shout('invalid argument for flag: {0}'.format(flag))

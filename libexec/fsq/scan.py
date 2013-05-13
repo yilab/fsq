@@ -126,8 +126,8 @@ def main(argv):
     ignore_down = False
     empty_ok = False
     no_done = False
-    all_hosts = False
-    hosts = None
+    host = False
+    hosts = []
     main_rc = 0
 
     _PROG = argv[0]
@@ -137,7 +137,7 @@ def main(argv):
                                    'lock', 'no-lock', 'empty-ok', 'no-done',
                                    'ttl=', 'max-tries=', 'success-code=',
                                    'fail-tmp-code=', 'fail-perm-code=',
-                                   'verbose', 'all-host', 'hosts=' ))
+                                   'verbose', 'all-hosts', 'host=' ))
     except getopt.GetoptError, e:
         barf('invalid flag: -{0}{1}'.format('-' if 1 < len(e.opt) else '',
              e.opt))
@@ -162,12 +162,10 @@ def main(argv):
             elif '-D' == flag or '--no-done' == flag:
                 no_done = True
             elif '-a' == flag or '--all-hosts' == flag:
-                all_hosts = True
+                host = True
             elif '-A' == flag or '--hosts' == flag:
-                try:
-                    hosts.append(opt)
-                except AttributeError:
-                    hosts = [ opt, ]
+                hosts.append(opt)
+                host = True
             elif '-t' == flag or '--ttl' == flag:
                 fsq.set_const('FSQ_TTL', opt)
             elif '-m' == flag or '--max-tries' == flag:
@@ -190,7 +188,7 @@ def main(argv):
 
     try:
         items = fsq.scan(args[0], ignore_down=ignore_down, no_open=no_open,
-                         all_hosts=all_hosts, hosts=hosts)
+                         host=host, hosts=hosts if hosts else None)
     except fsq.FSQDownError:
         barf('{0} is down')
     except (fsq.FSQScanError, fsq.FSQPathError, ), e:

@@ -48,6 +48,7 @@ def main(argv):
     force = False
     is_down = False
     is_triggered = False
+    is_host_triggered = False
     ignore = False
     flag = None
     hosts = []
@@ -85,13 +86,15 @@ def main(argv):
 
         if 0 == len(args):
             return usage()
-
+        if hosts and is_triggered:
+            is_host_triggered = True
         for queue in args:
             try:
                 chirp('installing {0} to {1}'.format(queue,
                                                      fsq.const('FSQ_ROOT')))
                 fsq.install(queue, is_down=is_down, is_triggered=is_triggered,
-                            hosts=hosts or None)
+                            hosts=hosts or None,
+                            is_host_trigered=is_host_triggered)
             except fsq.FSQInstallError, e:
                 if e.errno == errno.ENOTEMPTY or e.errno == errno.ENOTDIR:
                     if force:
@@ -100,9 +103,9 @@ def main(argv):
                     elif ignore:
                         chirp('skipping {0}; already installed'.format(queue))
                     else:
-                        raise e
+                        raise
                 else:
-                    raise e
+                    raise
 
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
         shout('invalid argument for flag: {0}'.format(flag))

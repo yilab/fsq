@@ -15,7 +15,7 @@ import os
 import errno
 
 from . import constants as _c, path as fsq_path, FSQConfigError,\
-              FSQTriggerPullError, FSQHostsError, FSQError
+              FSQTriggerPullError, FSQError
 from .internal import uid_gid, wrap_io_os_err
 
 ####### INTERNAL MODULE FUNCTIONS AND ATTRIBUTES #######
@@ -166,34 +166,32 @@ def trigger_pull(queue, ignore_listener=False, trigger=_c.FSQ_TRIGGER):
             os.close(fd)
 
 def down_host(trg_queue, host, user=None, group=None, mode=None):
+    ''' Down a host queue by creating a down file in the host queue
+        directory '''
     down(trg_queue, user=user, group=group, mode=mode, host=host)
 
 def up_host(trg_queue, host):
+    '''Idempotently uninstall a queue, should you want to subvert FSQ_ROOT
+       settings, merely pass in an abolute path'''
+    # immediately down the queue
     up(trg_queue, host=host)
 
 def host_is_down(trg_queue, host):
+    '''Returns True if host queue is down, False if queue is up'''
     return is_down(trg_queue, host)
 
 def host_trigger(trg_queue, user=None, group=None, mode=None):
+    '''Installs a host trigger for the specified queue.'''
     trigger(trg_queue, user=user, group=group, mode=mode,
             trigger=_c.FSQ_HOSTS_TRIGGER)
 
 def host_untrigger(trg_queue):
+    '''Uninstalls the host trigger for the specified queue -- if a queue has no
+       trigger, this function is a no-op.'''
     untrigger(trg_queue, trigger=_c.FSQ_HOSTS_TRIGGER)
 
 def host_trigger_pull(trg_queue, ignore_listener=False):
+    '''Write a non-blocking byte to a host trigger fifo, to cause a triggered
+       scan'''
     trigger_pull(trg_queue, ignore_listener=ignore_listener,
                  trigger=_c.FSQ_HOSTS_TRIGGER)
-
-def hosts(trg_queue):
-    root = fsq_path.hosts(trg_queue)
-    try:
-        return tuple(os.listdir(root))
-    except (OSError, IOError), e:
-        if e.errno == errno.ENOENT:
-            raise FSQHostsError(e.errno, u'no such host:'\
-                               u' {0}'.format(root))
-        elif isinstance(e, FSQError):
-            raise e
-        raise FSQHostsError(e.errno, wrap_io_os_err(e))
-
