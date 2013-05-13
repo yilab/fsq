@@ -136,6 +136,7 @@ AUTHORS
     Matthew Story <matt.story@axial.net>
     Isaac (.ike) Levy <ike@blackskyresearch.net>
     Will O'Meara <will.omeara@axial.net>
+    Jeff Rand <jeff.rand@axial.net>
 
 With Additional Contributions From:
 

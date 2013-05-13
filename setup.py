@@ -19,11 +19,20 @@ setup(
                                  'libexec/fsq/enqueue.py',
                                  'libexec/fsq/install.py',
                                  'libexec/fsq/scan.py',
-                                 'libexec/fsq/up.py']),
+                                 'libexec/fsq/up.py',
+                                 'libexec/fsq/add-host.py',
+                                 'libexec/fsq/down-host.py',
+                                 'libexec/fsq/host-dist.py',
+                                 'libexec/fsq/push.py',
+                                 'libexec/fsq/rm-host.py',
+                                 'libexec/fsq/up-host.py',
+                                 'libexec/fsq/jsonrpcd.py',
+                                 ]),
                ],
     url='https://github.com/axialmarket/fsq',
     license='3-BSD',
     description='File System Queue',
     long_description=open('README.md').read(),
+    requires= ['jsonrpclib']
 )
 
