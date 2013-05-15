@@ -104,12 +104,11 @@ def is_down(queue, host=None):
         raise FSQConfigError(e.errno, wrap_io_os_err(e))
     return True
 
-def trigger(queue, user=None, group=None, mode=None, host=None,
-            trigger=_c.FSQ_TRIGGER):
+def trigger(queue, user=None, group=None, mode=None, trigger=_c.FSQ_TRIGGER):
     '''Installs a trigger for the specified queue.'''
     # default our owners and mode
     user, group, mode = _dflts(user, group, mode)
-    trigger_path = fsq_path.trigger(queue, host=host, trigger=trigger)
+    trigger_path = fsq_path.trigger(queue, trigger=trigger)
     created = False
     try:
         # mkfifo is incapable of taking unicode, coerce back to str
@@ -133,10 +132,10 @@ def trigger(queue, user=None, group=None, mode=None, host=None,
             _cleanup(trigger_path, e)
         _raise(trigger_path, e)
 
-def untrigger(queue, host=None, trigger=_c.FSQ_TRIGGER):
+def untrigger(queue, trigger=_c.FSQ_TRIGGER):
     '''Uninstalls the trigger for the specified queue -- if a queue has no
        trigger, this function is a no-op.'''
-    trigger_path = fsq_path.trigger(queue, host=host, trigger=trigger)
+    trigger_path = fsq_path.trigger(queue, trigger=trigger)
     _queue_ok(os.path.dirname(trigger_path))
     try:
         os.unlink(trigger_path)

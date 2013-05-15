@@ -94,7 +94,7 @@ def main(argv):
                                                      fsq.const('FSQ_ROOT')))
                 fsq.install(queue, is_down=is_down, is_triggered=is_triggered,
                             hosts=hosts or None,
-                            is_host_trigered=is_host_triggered)
+                            is_host_triggered=is_host_triggered)
             except fsq.FSQInstallError, e:
                 if e.errno == errno.ENOTEMPTY or e.errno == errno.ENOTDIR:
                     if force:
