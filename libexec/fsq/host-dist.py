@@ -208,7 +208,7 @@ def main(argv):
                 except NameError:
                     pass
         if trigger:
-            fsq.host_trigger(queue)
+            fsq.host_trigger_pull(queue)
     except fsq.FSQDownError:
         barf('{0} is down'.format(args[0]))
     except fsq.FSQError, e:
