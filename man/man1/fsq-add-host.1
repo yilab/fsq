@@ -1,0 +1,112 @@
+.TH fsq\-add\-host 1 "2013-05-14" "Axial" "Axial System Commands Manual"
+.SH NAME
+fsq\-add\-host \- install a host to
+.BR fsq (7)
+host\-queues
+.SH SYNOPSIS
+.B "fsq add\-host"
+.BR "" "[ " flags " ]"
+.IR host " " queue " [ " queue " [...]]]"
+.br
+.B "fsq add\-host"
+.BR "" "[ " "\-h" "|" "\-\-help " "]"
+.BR "" "[ " "\-v" "|" "\-\-verbose " "]"
+.br
+.BR "             " "[ " "\-f" | "\-\-force" " ]"
+.BR "" "[ " "\-i "| "\-\-ignore\-exists" " ]"
+.br
+.BR "             " "[ " "\-o "owner| "\-\-owner" "=user|uid ]"
+.br
+.BR "             " "[ " "\-g "group| "\-\-group" "=group|gid ]"
+.br
+.BR "             " "[ " "\-m "mode| "\-\-mode" "=int ]"
+.br
+.IR "             host" " " queue " [ " queue " [...]]]"
+.SH DESCRIPTION
+The
+.BR fsq\-add\-host (1)
+program installs
+.I host
+to the
+.IR "FSQ_HOSTS"
+directory of one or more
+.BR fsq (7)
+.IR queue s
+already installed to
+.IR "FSQ_ROOT" .
+.BR fsq\-add\-host (1)
+will install the
+.I "FSQ_HOSTS"
+directory to
+.I queue
+if it is not already installed.
+Each installed
+.I host
+contains the directories
+.IR "FSQ_TMP" ", " "FSQ_QUEUE" ", " "FSQ_DONE" ", and " "FSQ_FAIL" ,
+used by the
+.BR fsq (7) " " functions " scan" ", " enqueue ", " reenqueue " and " push
+to scan, dispatch, and distribute work.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+.br
+Help.  Print usage to stdout and exit 0.
+.TP
+.BR \-v ", " \-\-verbose
+.br
+Verbose.  Print additional diagnostic information to stderr.
+.TP
+.BR \-f ", " \-\-force
+.br
+Force.  Forcably remove and re-install
+.I host
+if it already exists in
+.IR "FSQ_HOSTS" .
+.TP
+.BR \-i ", " \-\-ignore\-exists
+Ignore Exists.  If
+.I host
+exists, do not install and exit success. When multiple
+.I queue
+arguments are provided, do not install
+.I host
+to the
+.I queue " FSQ_HOSTS"
+directory and continue to next
+.IR queue .
+.TP
+.BR \-o user", " \-\-owner=user
+.br
+Owner.  Install
+.I host
+and all files and sub\-directories with user\-owner
+.IR user .
+Accepts either user name or id; default:
+.BR geteuid (2).
+.TP
+.BR \-g group", " \-\-group=group
+.br
+Group.  Install
+.I host
+and all files and sub\-directories with group\-owner
+.IR group .
+Accepts either group name or id; default:
+.BR getegid (2).
+.TP
+.BR \-m mode", " \-\-mode=mode
+.br
+Mode.  Install
+.I host
+and all files and sub\-directories with mode
+.IR mode ". " mode
+is expected to be an octal file\-system mode; default:
+.IR 02775 .
+.SH "EXIT STATUS"
+The
+.B fsq\-add\-host
+program exits 0 for success, 100 for bad usage, and 111 for expected error
+cases.  All other exit statuses imply that something beyond the imagination of
+the programmer has occured.
+.SH SEE ALSO
+.BR fsq\-install "(1), " fsq\-rm\-host "(1), " fsq (7)

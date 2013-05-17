@@ -23,6 +23,10 @@ queues in the file\-system
 .BR "            " "[ " "\-g "group| "\-\-group" "=group|gid ]"
 .br
 .BR "            " "[ " "\-m "mode| "\-\-mode" "=int ]"
+.br
+.BR "            " "[ " "\-a "host| "\-\-add\-host" "=host ]"
+.br
+.IR "            queue " [ " queue" " [...]]]"
 .SH DESCRIPTION
 The
 .BR fsq\-install (1)
@@ -55,6 +59,15 @@ Force.  Forcably remove and re-install
 .I queue
 if it already exists in
 .IR "FSQ_ROOT" .
+.sp
+If one or more
+.B \-a
+options are provided,
+.B \-t
+will additionall forcably remove and re-install
+.I host
+if it already exists in
+.IR "FSQ_HOSTS" .
 .TP
 .BR \-d ", " \-\-down
 .br
@@ -75,6 +88,15 @@ for use with the
 .BR trigger\-listen (1)
 program and the
 .BR fsq "(7) " "trigger_pull" " function."
+.sp
+If one or more
+.B \-a
+options are provided,
+.B \-t
+will additionally install a
+.I "FSQ_HOST_TRIGGER"
+.BR fifo (7)
+as well.
 .TP
 .BR \-i ", " \-\-ignore\-exists
 Ignore Exists.  If
@@ -83,7 +105,16 @@ exists, do not install and exit success. When multiple
 .I queue
 arguments are provided, do not install and continue to next
 .IR queue .
-.br
+.sp
+If one or more
+.B \-a
+options are provided and
+.IR host (s),
+exist
+.B \-i
+will not install
+.IR host (s)
+and exit success.
 .TP
 .BR \-o user", " \-\-owner=user
 .br
@@ -111,6 +142,15 @@ and all files and sub\-directories with mode
 .IR mode ". " mode
 is expected to be an octal file\-system mode; default:
 .IR 02775 .
+.TP
+.BR \-a host", " \-\-add\-host=host
+Add Host.  Install
+.IR host " to the " hosts " queue."
+Multple
+.I \-\-add\-host
+arguments may be passed to specify multiple
+.IR host s.
+
 .SH "EXIT STATUS"
 The
 .B fsq\-install

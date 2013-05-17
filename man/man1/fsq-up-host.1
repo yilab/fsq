@@ -1,0 +1,44 @@
+.TH fsq\-up\-host 1 "2013-05-14" "Axial" "Axial System Commands Manual"
+.SH NAME
+fsq\-up\-host \- a program for turning off
+.BR fsq (7)
+host\-queues
+.SH SYNOPSIS
+.B "fsq up\-host"
+.BR "" "[ " flags " ]"
+.IR host " " queue " [ " queue " [...]]]"
+.br
+.B "fsq up\-host"
+.BR "" "[ " "\-h" "|" "\-\-help " "]"
+.BR "" "[ " "\-v" "|" "\-\-verbose " "]"
+.br
+.IR "" "         " host " " queue " [ " queue " [...]]]"
+.SH DESCRIPTION
+The
+.BR fsq\-up\-host (1)
+uses the
+.BR fsq (7)
+.B "up_host"
+function to turn on a
+.I host
+in
+.IR queue s
+.BR fsq (7) " FSQ_HOSTS"
+directory by removing a file named
+.BR "FSQ_DOWN" " (default: down)."
+.SH OPTIONS
+.BR \-h ", " \-\-help
+.br
+Help.  Print usage to stdout and exit 0.
+.TP
+.BR \-v ", " \-\-verbose
+.br
+Verbose.  Print additional diagnostic information to stderr.
+.SH "EXIT STATUS"
+The
+.B fsq\-up\-host
+program exits 0 for success, 100 for bad usage, and 111 for expected error
+cases.  All other exit statuses imply that something beyond the imagination of
+the programmer has occured.
+.SH SEE ALSO
+.BR fsq\-down\-host "(1), " fsq (7)

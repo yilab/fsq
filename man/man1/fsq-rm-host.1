@@ -1,0 +1,51 @@
+.TH fsq\-rm\-host 1 "2013-05-14" "Axial" "Axial System Commands Manual"
+.SH NAME
+fsq\-rm\-host \- remove a host from
+.BR fsq (7)
+host\-queues
+.SH SYNOPSIS
+.B "fsq rm\-host"
+.BR "" "[ " flags " ]"
+.IR host " " queue " [ " queue " [...]]]"
+.br
+.B "fsq rm\-host"
+.BR "" "[ " "\-h" "|" "\-\-help " "]"
+.BR "" "[ " "\-v" "|" "\-\-verbose " "]"
+.br
+.BR "            " "[ " "\-f" "|" "\-\-force " "]"
+.br
+.IR "            host" " " queue " [ " queue " [...]]]"
+.SH DESCRIPTION
+The
+.BR fsq\-rm\-host (1)
+program removes
+.I host
+from the
+.IR "FSQ_HOSTS"
+directory of one or more
+.BR fsq (7)
+.IR queue s.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+.br
+Help.  Print usage to stdout and exit 0.
+.TP
+.BR \-v ", " \-\-verbose
+.br
+Verbose.  Print additional diagnostic information to stderr.
+.TP
+.BR \-f ", " \-\-force
+.br
+Force.  Ignore missing
+.I host
+directories in
+.IR "FSQ_HOSTS" .
+.SH "EXIT STATUS"
+The
+.B fsq\-rm\-host
+program exits 0 for success, 100 for bad usage, and 111 for expected error
+cases.  All other exit statuses imply that something beyond the imagination of
+the programmer has occured.
+.SH SEE ALSO
+.BR fsq\-add\-host "(1), " fsq (7)
