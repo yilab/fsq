@@ -97,6 +97,7 @@ def setenv(item, timefmt):
     for env, att in (( 'FSQ_ITEM_PID', 'pid', ),
                      ( 'FSQ_ITEM_ENTROPY', 'entropy', ),
                      ( 'FSQ_ITEM_HOSTNAME', 'hostname', ),
+                     ( 'FSQ_ITEM_HOST', 'host', ),
                      ( 'FSQ_ITEM_ID', 'id', ), ):
         try:
             os.putenv(env, getattr(item,
@@ -105,6 +106,9 @@ def setenv(item, timefmt):
             shout('cannot coerce item {0};'
                   ' charset={1}'.format(att, _CHARSET))
             return -1
+        except AttributeError:
+            if att != 'host':
+                raise
 
     # format tries and date to env
     os.putenv('FSQ_ITEM_TRIES', str(item.tries))

@@ -35,8 +35,8 @@ def usage(asked_for=0):
                 .format(os.path.basename(_PROG)), f)
         shout('{0} [-p|--protocol=jsonrpc] unix://var/sock/foo.sock'\
                 .format(os.path.basename(_PROG)), f)
-        shout('        trg_queue item [item [...]]', f)
-    return 0 if asked_for else fsq.const('FSQ_FAIL_PERM')
+        shout('        trg_queue host_queue item [item [...]]', f)
+    return exit
 
 def main(argv):
     global _PROG, _VERBOSE
@@ -54,12 +54,13 @@ def main(argv):
             elif flag in ( '-h', '--help', ):
                 return usage(1)
 
-        if 3 > len(args):
+        if 4 > len(args):
             return usage()
 
-        for item in args[2:]:
-            chirp('pushing item {0} to remote {2},'\
-                  ' queue {2}'.format(item.id, args[0], args[1],))
+        for item_id in args[3:]:
+            chirp('pushing item {0} to remote {1} from host queue {2}'\
+                  ' to queue {3}'.format(item_id, args[0], args[1], args[2],))
+            item = fsq.FSQWorkItem(args[2], item_id , host=args[0])
             fsq.push(item, args[0], args[1], protocol=protocol)
 
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
