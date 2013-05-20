@@ -79,7 +79,6 @@ def main(argv):
     no_open = False
     ignore_down = False
     no_done = False
-    main_rc = 0
 
     _PROG = argv[0]
     try:
@@ -124,105 +123,17 @@ def main(argv):
     if 0 == len(args):
         return usage()
 
-    queue = args[0]
-
     if 1 == len(args):
         all_hosts = True
         hosts = None
     else:
         hosts = args[1:]
 
-    try:
-        items = fsq.scan(queue, ignore_down=ignore_down, no_open=no_open,
-                         hosts=hosts)
-    except fsq.FSQDownError:
-        barf('{0} is down')
-    except (fsq.FSQScanError, fsq.FSQPathError, ), e:
-        barf(e.strerror)
-    except fsq.FSQCoerceError, e:
-        barf('cannot coerce queue; charset={0}'.format(_CHARSET))
-    try:
-        fail_perm = fsq.const('FSQ_FAIL_PERM')
-        fail_tmp = fsq.const('FSQ_FAIL_PERM')
-        success = fsq.const('FSQ_SUCCESS')
-        while True:
-            try:
-                item = items.next()
-
-                try:
-                    item_id = item.id.encode(_CHARSET)
-                except UnicodeEncodeError, e:
-                    barf('cannot coerce item id;'\
-                         ' charset={0}'.format(_CHARSET))
-                chirp('working on distributing {0} ...'.format(item_id))
-                try:
-                    pid = os.fork()
-                except Exception, e:
-                    barf("cannot fork; aborting")
-
-                if 0 == pid: # child fork
-                    if not no_open:
-                        try:
-                            # if available, open item for reading on stdin
-                            os.dup2(item.item.fileno(), sys.stdin.fileno())
-                        except ( OSError, IOError, ), e:
-                            barf('cannot dup: {0}'.format(e.strerror))
-                    # exec, potentially via PATH
-                    try:
-                        chirp(fsq.reenqueue(item, queue, hosts=hosts,
-                                      all_hosts=all_hosts, link=link))
-                        os._exit(0)
-                    except ( fsq.FSQReenqueueError ), e:
-                        shout('{0}: cannot reenqueue {0}'.format(e.strerror,
-                              item_id))
-                        os._exit(fail_tmp)
-                    except Exception, e:
-                        shout('cannot reenqueue ({0}: {1})'.format(
-                              e.__class__.__name__, e.message))
-                        os._exit(fail_tmp)
-                    ######### NOT REACHED
-                    os._exit(fail_perm)
-                else: # if pid is non-0, we are the parent fork
-                    pid, rc = os.waitpid(pid, 0) # wait on baby fork
-                    if os.WIFEXITED(rc):
-                        if not no_done and\
-                            -1 == done_item(item, os.WEXITSTATUS(rc)):
-                            sys.exit(fail_tmp)
-                        if rc == fail_perm:
-                            main_rc = rc
-                        elif main_rc != fail_perm and rc != success:
-                            main_rc = rc
-                    else:
-                        if not no_done and -1 == done_item(item, fail_perm):
-                            sys.exit(fail_tmp)
-                        barf('{0}: processing terminated by signal {1};'\
-                             ' aborting'.format(item_id, os.WTERMSIG(rc)))
-
-            except fsq.FSQError, e:
-                shout(e.strerror.encode(_CHARSET))
-            except StopIteration:
-                break
-            finally:
-                try:
-                    del item
-                except NameError:
-                    pass
-        if trigger:
-            fsq.host_trigger_pull(queue)
-    except fsq.FSQDownError:
-        barf('{0} is down'.format(args[0]))
-    except fsq.FSQError, e:
-        shout(e.strerror.encode(_CHARSET))
-    except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
-        shout('invalid argument for flag: {0}'.format(flag))
-        return fsq.const('FSQ_FAIL_PERM')
-    except fsq.FSQInstallError, e:
-        shout(e.strerror)
-        return fsq.const('FSQ_FAIL_TMP')
-    except getopt.GetoptError, e:
-        shout('invalid flag: -{0}{1}'.format('-' if 1 < len(e.opt) else '',
-              e.opt))
-        return fsq.const('FSQ_FAIL_TMP')
+    fsq.fork_exec_items(args[0], ignore_down=ignore_down, host=all_hosts,
+                        no_open=no_open, hosts=hosts if hosts else None,
+                        no_done=no_done, verbose=_VERBOSE, link=link)
+    if trigger:
+        fsq.host_trigger_pull(args[0])
 
 if __name__ == '__main__':
     main(sys.argv)

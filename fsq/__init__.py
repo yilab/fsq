@@ -64,6 +64,9 @@ import remote
 # push relies on: exceptions, constants and items
 from push import push
 
+# utility relies on: exceptions, scan, enqueue and done
+from utility import fork_exec_items
+
 
 __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'FSQMalformedEntryError', 'FSQCoerceError', 'FSQEnqueueError',
@@ -81,4 +84,4 @@ __all__ = [ 'FSQError', 'FSQEnvError', 'FSQEncodeError', 'FSQTimeFmtError',
             'host_untrigger', 'host_trigger_pull', 'host_root',
             'uninstall_host', 'FSQReenqueueError', 'reenqueue', 'sreenqueue',
             'vreenqueue', 'vsreenqueue', 'remote', 'FSQPushError', 'push',
-            'queues', ]
+            'queues', 'fork_exec_items', ]
