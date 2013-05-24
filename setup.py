@@ -6,7 +6,7 @@ setup(
     version='0.2.0',
     author='Matthew Story',
     author_email='matt.story@axial.net',
-    packages=['fsq', 'fsq.tests'],
+    packages=['fsq', 'fsq.tests', 'fsq.remote', ],
     scripts=['bin/fsq'],
     data_files=[('share/man/man1', ['man/man1/fsq.1',
                                     'man/man1/fsq-down.1',
