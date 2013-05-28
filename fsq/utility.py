@@ -104,7 +104,7 @@ def fork_exec_items(queue, ignore_down=False, no_open=False, host=False,
     _VERBOSE = verbose
     main_rc = 0
     try:
-        if not exec_args:
+        if exec_args:
             items = scan(queue, ignore_down=ignore_down, no_open=no_open,
                          host=host, hosts=hosts)
         else:
