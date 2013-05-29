@@ -31,26 +31,30 @@ def usage(asked_for=0):
     shout('{0} [opts] src_queue trg_queue host item_id [item_id [...]]'.format(
           os.path.basename(_PROG)), f)
     if asked_for:
-        shout('{0} [-p|--protocol=jsonrpc] <proto>://<host>:<port>/url'\
-                .format(os.path.basename(_PROG)), f)
-        shout('{0} [-p|--protocol=jsonrpc] unix://var/sock/foo.sock'\
-                .format(os.path.basename(_PROG)), f)
+        shout('{0} [-p|--protocol=jsonrpc] [-L|--no-lock]'\
+              '<proto>://<host>:<port>/url'.format(os.path.basename(_PROG)), f)
+        shout('{0} [-p|--protocol=jsonrpc] [-L|--no-lock]'\
+              'unix://var/sock/foo.sock'.format(os.path.basename(_PROG)), f)
         shout('        trg_queue host_queue item [item [...]]', f)
     return exit
 
 def main(argv):
     global _PROG, _VERBOSE
     protocol = 'jsonrpc'
+    lock = True
 
     _PROG = argv[0]
     try:
-        opts, args = getopt.getopt(argv[1:], 'vhp:', ( '--verbose', '--help',
+        opts, args = getopt.getopt(argv[1:], 'vhLp:', ( '--verbose', '--help',
+                                                        '--no-lock',
                                                         '--protocol=', ))
         for flag, opt in opts:
             if flag in ( '-v', '--verbose', ):
                 _VERBOSE = True
             if flag in ( '-p', '--protocol', ):
                 protocol = opt
+            if flag in ( '-L', '--no-lock', ):
+                lock = False
             elif flag in ( '-h', '--help', ):
                 return usage(1)
 
@@ -60,7 +64,7 @@ def main(argv):
         for item_id in args[3:]:
             chirp('pushing item {0} to remote {1} from host queue {2}'\
                   ' to queue {3}'.format(item_id, args[0], args[2], args[1],))
-            item = fsq.FSQWorkItem(args[1], item_id , host=args[2])
+            item = fsq.FSQWorkItem(args[1], item_id , host=args[2], lock=lock)
             fsq.push(item, args[0], args[1], protocol=protocol)
 
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
