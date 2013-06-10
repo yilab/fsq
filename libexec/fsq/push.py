@@ -35,7 +35,7 @@ def usage(asked_for=0):
               '<proto>://<host>:<port>/url'.format(os.path.basename(_PROG)), f)
         shout('{0} [-p|--protocol=jsonrpc] [-L|--no-lock]'\
               'unix://var/sock/foo.sock'.format(os.path.basename(_PROG)), f)
-        shout('        trg_queue host_queue item [item [...]]', f)
+        shout('        src_queue trg_queue host_queue item [item [...]]', f)
     return exit
 
 def main(argv):
@@ -58,14 +58,19 @@ def main(argv):
             elif flag in ( '-h', '--help', ):
                 return usage(1)
 
-        if 4 > len(args):
+        if 5 > len(args):
             return usage()
+        remote = args[0]
+        src_queue = args[1]
+        trg_queue = args[2]
+        host = args[3]
 
-        for item_id in args[3:]:
-            chirp('pushing item {0} to remote {1} from host queue {2}'\
-                  ' to queue {3}'.format(item_id, args[0], args[2], args[1],))
-            item = fsq.FSQWorkItem(args[1], item_id , host=args[2], lock=lock)
-            fsq.push(item, args[0], args[1], protocol=protocol)
+        for item_id in args[4:]:
+            chirp('pushing item {0} to remote {1} from queue {2}, host queue '\
+                  '{3} to queue {4}'.format(item_id, remote, src_queue, host,
+                                            trg_queue))
+            item = fsq.FSQWorkItem(src_queue, item_id , host=host, lock=lock)
+            fsq.push(item, remote, trg_queue, protocol=protocol)
 
     except ( fsq.FSQEnvError, fsq.FSQCoerceError, ):
         shout('invalid argument for flag: {0}'.format(flag))
