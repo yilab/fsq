@@ -225,7 +225,6 @@ def reenqueue(item_f, *args, **kwargs):
     item_f, src_queue, item_id, args, link = _unpack_args(item_f, src_queue,
                                                           link, args)
     if not item_f:
-        print 'pow'
         return vreenqueue(item_id, args, src_queue=src_queue, link=link,
                           **kwargs)
     return vreenqueue(item_f, item_id, args, src_queue=src_queue, link=link,
@@ -313,12 +312,13 @@ def vreenqueue(item_f, *args, **kwargs):
                             raise
                     else:
                         chunk = src_file.readline()
-                        break
                     for tmp_fo in tmp_fos:
                         tmp_fo.write(chunk)
                         # flush buffers, and force write to disk pre mv.
                         tmp_fo.flush()
                         os.fsync(tmp_fo.fileno())
+                    if not real_file:
+                        break
                 for queue, host in paths:
                     tmp_name = os.path.join(fsq_path.tmp(queue, host=host),
                                                          item_id)
