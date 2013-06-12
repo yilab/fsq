@@ -304,21 +304,19 @@ def vreenqueue(item_f, *args, **kwargs):
                         reads, dis, card = select.select([src_file], [], [])
                         try:
                             chunk = os.read(reads[0].fileno(), 2048)
-                            if 0 == len(chunk):
-                                break
                         except (OSError, IOError, ), e:
                             if e.errno in (errno.EWOULDBLOCK, errno.EAGAIN,):
                                 continue
                             raise
                     else:
                         chunk = src_file.readline()
+                    if 0 == len(chunk):
+                        break
                     for tmp_fo in tmp_fos:
                         tmp_fo.write(chunk)
                         # flush buffers, and force write to disk pre mv.
                         tmp_fo.flush()
                         os.fsync(tmp_fo.fileno())
-                    if not real_file:
-                        break
                 for queue, host in paths:
                     tmp_name = os.path.join(fsq_path.tmp(queue, host=host),
                                                          item_id)
