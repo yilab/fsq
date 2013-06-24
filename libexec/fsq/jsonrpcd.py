@@ -24,10 +24,10 @@ from jsonrpclib.SimpleJSONRPCServer import SimpleJSONRPCRequestHandler as handle
 
 
 _PROG = os.path.basename(sys.argv[0])
-_OPTIONS = "w:lvh"
-_LONG_OPTS = ("json-rpc-version=", "workers=", "verbose", "help")
+_OPTIONS = "w:vht"
+_LONG_OPTS = ("workers=", "json-rpc-version=",  "verbose", "help", 'trigger', )
 _USAGE = ("usage: {0} [-w|--workers=<n>] "
-          "[-v|--verbose] [-h|--help] <host> <port>".format(_PROG))
+          "[-v|--verbose] [-h|--help] [-t|--trigger] <host> <port>".format(_PROG))
 _JSONRPC_V = 1.0
 _N_FORKS = 5
 _REQ_QSIZE = 5
@@ -63,18 +63,25 @@ def _defer_sig(signum, frame):
     _deferred_sig = signum
     return
 
-def _noisy(func, verbose):
+def _noisy(func, verbose, pull_trigger):
     def decorated(*args, **kwargs):
+        from fsq import trigger_pull, FSQTriggerPullError, is_down
         if verbose:
             shout('calling {0}: with args:{1}, kwargs: {2}'.format(
                 func.__name__, args, kwargs))
         ret = func(*args, **kwargs)
         if verbose:
             shout('{0} returned: {1}'.format(func.__name__, ret))
+        trg_queue = args[1]
+        if pull_trigger and not is_down(trg_queue):
+            try:
+                trigger_pull(trg_queue)
+            except FSQTriggerPullError:
+                pass
     decorated.__name__ = func.__name__
     return decorated
 
-def _spawn_worker(proxy, verbose, func, *args, **kwargs):
+def _spawn_worker(proxy, verbose, pull_trigger, func, *args, **kwargs):
     pid = os.fork()
     if pid == 0:
         for sig in _MASKED_SIGS:
@@ -85,7 +92,7 @@ def _spawn_worker(proxy, verbose, func, *args, **kwargs):
         for f in (v1.__dict__[s] for s in v1.__all__):
             if not callable(f):
                 barf("error: not a callable function: {0}".format(f))
-            proxy.register_function(_noisy(f, verbose))
+            proxy.register_function(_noisy(f, verbose, pull_trigger))
         proxy.register_introspection_functions()
         proxy.register_function(_api_version, 'api_version')
 
@@ -121,6 +128,7 @@ def main(argv):
     global _cpids, _deferred_sig, _signalled
     host = port = None
     verbose = False
+    pull_trigger = False
     jsonrpc_v = _JSONRPC_V
     n_forks = _N_FORKS
 
@@ -131,11 +139,14 @@ def main(argv):
     for opt, arg in opts:
         if opt in ("-w", "--workers="):
             n_forks = int(arg)
+        elif opt in ("-t", "--trigger"):
+            pull_trigger = True
         elif opt in ("-v", "--verbose"):
             verbose = True
         elif opt in ("-h", "--help"):
             print _USAGE ; return 0
         else:
+            print argv
             barf("error: unhandled option: `{0}'".format(opt))
 
 
@@ -152,7 +163,8 @@ def main(argv):
                           requestHandler=MaskedHandler, encoding='utf-8')
 
     for i in xrange(n_forks):
-        pid = _spawn_worker(jsonrpc_srv, verbose, jsonrpc_srv.serve_forever,
+        pid = _spawn_worker(jsonrpc_srv, verbose, pull_trigger,
+                            jsonrpc_srv.serve_forever,
                             poll_interval=_POLL_INTERVAL)
         _cpids.append(pid)
 
