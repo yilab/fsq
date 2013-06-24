@@ -146,7 +146,6 @@ def main(argv):
         elif opt in ("-h", "--help"):
             print _USAGE ; return 0
         else:
-            print argv
             barf("error: unhandled option: `{0}'".format(opt))
 
 
