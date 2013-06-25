@@ -25,10 +25,9 @@ from jsonrpclib.SimpleJSONRPCServer import SimpleJSONRPCRequestHandler as handle
 
 _PROG = os.path.basename(sys.argv[0])
 _OPTIONS = "w:vht"
-_LONG_OPTS = ("workers=", "json-rpc-version=",  "verbose", "help", 'trigger', )
-_USAGE = ("usage: {0} [-w|--workers=<n>] "
-          "[-v|--verbose] [-h|--help] [-t|--trigger] <host> <port>".format(_PROG))
-_JSONRPC_V = 1.0
+_LONG_OPTS = ("workers=", "verbose", "help", 'trigger', )
+_USAGE = ("usage: {0} [-w|--workers=<n>] [-v|--verbose] [-h|--help]"
+          " [-t|--trigger] <host> <port>".format(_PROG))
 _N_FORKS = 5
 _REQ_QSIZE = 5
 _POLL_INTERVAL = 1.0
@@ -65,7 +64,7 @@ def _defer_sig(signum, frame):
 
 def _noisy(func, verbose, pull_trigger):
     def decorated(*args, **kwargs):
-        from fsq import trigger_pull, FSQTriggerPullError, is_down
+        from fsq import trigger_pull, is_down
         if verbose:
             shout('calling {0}: with args:{1}, kwargs: {2}'.format(
                 func.__name__, args, kwargs))
@@ -74,10 +73,7 @@ def _noisy(func, verbose, pull_trigger):
             shout('{0} returned: {1}'.format(func.__name__, ret))
         trg_queue = args[1]
         if pull_trigger and not is_down(trg_queue):
-            try:
-                trigger_pull(trg_queue)
-            except FSQTriggerPullError:
-                pass
+            trigger_pull(trg_queue, ignore_listener=True)
     decorated.__name__ = func.__name__
     return decorated
 
@@ -129,7 +125,6 @@ def main(argv):
     host = port = None
     verbose = False
     pull_trigger = False
-    jsonrpc_v = _JSONRPC_V
     n_forks = _N_FORKS
 
     try:
@@ -167,8 +162,7 @@ def main(argv):
                             poll_interval=_POLL_INTERVAL)
         _cpids.append(pid)
 
-    shout("starting {0} json-rpc {1} server on: {2}:{3}".format(
-            _PROG, jsonrpc_v, host, port))
+    shout("starting {0} server on: {1}:{2}".format( _PROG, host, port))
     if verbose:
         shout("parent pid: {0}, child pids: {1}".format(
                 os.getpid(), ", ".join((str(p) for p in _cpids))))
