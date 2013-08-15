@@ -42,7 +42,7 @@ def fail_tmp(item, max_tries=None, ttl=None):
         raise e
 
 def fail_perm(item):
-    '''Fail a work-item permanatly by mv'ing it to queue's fail directory'''
+    '''Fail a work-item permanently by mv'ing it to queue's fail directory'''
     # The only thing we require to fail is an item_id and a queue
     # as an item may fail permanently due to malformed item_id-ness
     item_id = item.id
