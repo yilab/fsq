@@ -94,7 +94,7 @@ def senqueue(trg_queue, item_s, *args, **kwargs):
     '''
     return vsenqueue(trg_queue, item_s, args, **kwargs)
 
-def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
+def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None, **kwargs):
     '''Enqueue the contents of a file, or file-like object, file-descriptor or
        the contents of a file at an address (e.g. '/my/file') queue with
        an argument list, venqueue is to enqueue what vprintf is to printf
@@ -108,7 +108,8 @@ def venqueue(trg_queue, item_f, args, user=None, group=None, mode=None):
     user = _c.FSQ_ITEM_USER if user is None else user
     group = _c.FSQ_ITEM_GROUP if group is None else group
     mode = _c.FSQ_ITEM_MODE if mode is None else mode
-    now = fmt_time(datetime.datetime.now(), _c.FSQ_TIMEFMT, _c.FSQ_CHARSET)
+    now = fmt_time(kwargs.get('timestamp', datetime.datetime.now()),
+                   _c.FSQ_TIMEFMT, _c.FSQ_CHARSET)
     pid = coerce_unicode(os.getpid(), _c.FSQ_CHARSET)
     host = coerce_unicode(_HOSTNAME, _c.FSQ_CHARSET)
     tries = u'0'
