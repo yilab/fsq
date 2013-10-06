@@ -248,12 +248,14 @@ AUTHORS
 | Jeff Rand <jeff.rand@axial.net>
 
 With Additional Contributions From:
+-----------------------------------
 
 | Will Martino
 | Will Slippey
 | Jacob Yuan
 
 And Thanks To:
+--------------
 
 | William Baxter (For trigger, and for inspiring fsq)
 | Bruce Guenter (For nullmailer, featuring a simpler file-system queue)
